@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>运营数据看板</title>
+<script src="echarts.min.js"></script>
+<style>
+:root{
+  --blue:#2c5cc5; --blue2:#4f7fe0; --bg:#eef2f8; --card:#fff; --line:#e6eaf0;
+  --ink:#1f2937; --sub:#6b7688; --red:#ea4335; --green:#34a853; --amber:#fbbc04;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink)}
+.topbar{background:linear-gradient(120deg,#1e47a8,#2c5cc5 55%,#4f7fe0);color:#fff;padding:18px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(30,71,168,.25)}
+.topbar .logo{font-size:22px;font-weight:800;letter-spacing:.5px;white-space:nowrap}
+.topbar .tag{position:relative;z-index:1;font-size:12px;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:20px}
+.tabs{display:flex;gap:4px;margin:18px 28px 0}
+.tab{padding:10px 20px;border-radius:10px 10px 0 0;background:#dfe6f2;color:var(--sub);cursor:pointer;font-weight:700;font-size:14px;user-select:none}
+.tab.active{background:#fff;color:var(--blue)}
+.panel{display:none;background:#fff;margin:0 28px 30px;padding:24px 26px;border-radius:0 12px 12px 12px;box-shadow:0 1px 4px rgba(20,40,80,.06);min-height:200px}
+.panel.active{display:block}
+.lbl{font-size:13px;color:var(--sub);margin-bottom:6px;font-weight:600}
+select,input[type=date]{font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+.sec-title{font-size:15px;font-weight:800;color:#12203a;margin:24px 0 10px;border-left:4px solid var(--blue);padding-left:10px}
+.chart{width:100%;height:380px}
+.metric-chk{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}
+.metric-chk label{display:inline-flex;align-items:center;gap:6px;background:#f3f6fc;border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:13px;cursor:pointer;user-select:none}
+.metric-chk input{accent-color:var(--blue)}
+.hint{font-size:12px;color:var(--sub);margin:4px 0 10px}
+.ring{display:inline-flex;gap:6px;align-items:center;font-size:12px;margin-left:8px}
+.ring.up{color:var(--green)} .ring.down{color:var(--red)} .ring.flat{color:var(--sub)}
+.pct-tbl{margin-top:14px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:center}
+th{background:#f3f6fc;color:#12203a}
+th .thu{display:block;font-weight:400;color:#98a2b3;font-size:11px;margin-top:1px}
+td.nm,th.nm{text-align:left}
+.foot{color:var(--sub);font-size:12px;margin-top:18px;text-align:center}
+.empty{color:var(--sub);padding:40px;text-align:center;background:#fafbfc;border:1px dashed #d7dce4;border-radius:10px}
+.cls{display:flex;gap:14px;margin:10px 0 4px;flex-wrap:wrap}
+.clsc{flex:1;min-width:120px;background:#f7f9fc;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+.clsc .cn{font-size:26px;font-weight:700;color:#ea4335}
+.clsc .cl{font-size:12px;color:var(--sub);margin-top:4px} .clsc .cl span{color:#98a2b3;font-size:11px}
+/* 核心指标：数量 / 耗时 分组 */
+.clsc.hrs .cn{color:#4285f4}
+.clsc.rate .cn{color:#12203a}
+.clsc.tot .cn{color:#0f9d58}
+.clsc.tot{background:#f2faf5;border-color:#cfe9db}
+.grp{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#344563;margin:16px 0 0}
+.grp .ic{font-size:14px;line-height:1}
+.grp .u{font-weight:400;color:#98a2b3;font-size:12px}
+.grp::after{content:"";flex:1;height:1px;background:var(--line)}
+/* 核心指标组内卡片更紧凑（仅作用于 .cls.compact，不动预警看板同类卡片） */
+.cls.compact .clsc{padding:10px}
+.cls.compact .clsc .cn{font-size:24px}
+.warn-tbl{margin-top:10px;overflow-x:auto}
+.warn-tbl table{width:100%;border-collapse:collapse;font-size:13px}
+.warn-tbl th,.warn-tbl td{border:1px solid var(--line);padding:9px 10px;text-align:center}
+.warn-tbl th{background:#f3f6fc;color:#12203a}
+.warn-tbl td.nm{text-align:left;color:#2a3547}
+.warn-tbl .ar-yes{color:#d1342f;font-weight:700}
+
+/* ===== 美化：单日详情日期栏（日历展开组件） ===== */
+.date-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.date-field{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#f6f9ff,#eef3fe);border:1px solid var(--line);border-radius:14px;padding:14px 18px;box-shadow:0 1px 3px rgba(44,92,197,.06)}
+.date-field .df-ico{font-size:24px;line-height:1}
+.date-field .lbl{margin-bottom:7px}
+.df-note{font-size:12px;color:var(--sub)}
+.single-frame{width:100%;border:1px solid var(--line);border-radius:12px;margin-top:6px;background:#fff;min-height:3400px;height:auto;box-shadow:0 1px 4px rgba(20,40,80,.06)}
+/* 日历选择器 */
+.date-picker{position:relative;display:inline-block}
+.date-picker-btn{font-size:14px;padding:10px 16px;border:1px solid #c9d6f0;border-radius:10px;background:#fff;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:border-color .15s,box-shadow .15s}
+.date-picker-btn:hover{border-color:var(--blue)}
+.date-picker-btn.active,.date-picker-btn:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(44,92,197,.18)}
+.date-picker-btn::after{content:"▼";font-size:10px;color:var(--sub);margin-left:4px}
+.date-picker-btn span{color:var(--blue);font-weight:700}
+.date-picker-pop{position:absolute;top:calc(100% + 8px);left:0;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 30px rgba(20,40,80,.15);padding:16px;width:286px;z-index:100;display:none}
+.date-picker-pop.open{display:block}
+.dp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.dp-title{font-size:16px;font-weight:800;color:var(--ink)}
+.dp-nav{width:28px;height:28px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--blue);cursor:pointer;font-size:12px;transition:background .15s}
+.dp-nav:hover{background:#f3f6fc}
+.dp-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--sub);margin-bottom:8px}
+.dp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.dp-day{display:flex;align-items:center;justify-content:center;height:32px;border-radius:8px;font-size:13px;cursor:pointer;transition:background .15s,color .15s}
+.dp-day:not(.other):not(.disabled):hover{background:#eef3fe}
+.dp-day.other,.dp-day.disabled{color:#c4cbd6;cursor:not-allowed}
+.dp-day.has-data{border:1.5px solid #a8c5f7;color:var(--blue);font-weight:700;background:#fff}
+.dp-day.selected{background:var(--blue);color:#fff;font-weight:700;border:1.5px solid var(--blue)}
+.dp-legend{display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--sub)}
+.dp-legend span{display:inline-flex;align-items:center;gap:6px}
+.dp-dot{width:12px;height:12px;border-radius:3px}
+.dp-dot.has-data{border:1.5px solid #a8c5f7;background:#fff}
+.dp-dot.selected{background:var(--blue)}
+
+/* ===== 美化：趋势分析日期区间 ===== */
+.date-inline{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.date-field-sm{display:flex;flex-direction:column;gap:7px;background:#f3f6fc;border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.date-field-sm .lbl{margin:0}
+.date-field-sm .date-picker-btn{padding:9px 14px;font-size:13px}
+.date-field-sm .date-picker-pop{width:264px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">运营数据看板</div>
+  <div class="tag" id="dayCount"></div>
+  <div class="tag">单日详情 · 趋势分析</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="single">单日详情</div>
+  <div class="tab" data-tab="trend">趋势分析</div>
+  <div class="tab" data-tab="warn">预警看板</div>
+  <div class="tab" data-tab="gongshi">每日工作量输出</div>
+</div>
+
+<!-- 单日详情：嵌入最早报告模板 -->
+<div class="panel active" id="panel-single">
+  <div class="date-bar">
+    <div class="date-field">
+      <span class="df-ico">📅</span>
+      <div>
+        <div class="lbl">选择日期（查看当日生成的数据）</div>
+        <div class="date-picker">
+          <button id="datePickerBtn" class="date-picker-btn">选择日期 <span id="datePickerVal"></span></button>
+          <div id="datePickerPop" class="date-picker-pop">
+            <div class="dp-header"><button id="dpPrev" class="dp-nav">◀</button><div class="dp-title" id="dpTitle"></div><button id="dpNext" class="dp-nav">▶</button></div>
+            <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+            <div id="dpDays" class="dp-days"></div>
+            <div class="dp-legend"><span><i class="dp-dot has-data"></i> 有数据</span><span><i class="dp-dot selected"></i> 当前选中</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="df-note" id="singleNote"></div>
+  </div>
+  <iframe id="singleFrame" class="single-frame" src="" scrolling="auto"></iframe>
+</div>
+
+<!-- 趋势分析（模板不动，仅修复图例重叠 + 美化日期框） -->
+<div class="panel" id="panel-trend">
+  <div class="row" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px">
+    <div class="date-inline">
+      <div class="date-field-sm">
+        <div class="lbl">区间开始</div>
+        <div class="date-picker">
+          <button id="rngStartBtn" class="date-picker-btn">选择日期 <span id="rngStartVal"></span></button>
+          <div id="rngStartPop" class="date-picker-pop">
+            <div class="dp-header"><button id="rngStartPrev" class="dp-nav">◀</button><div class="dp-title" id="rngStartTitle"></div><button id="rngStartNext" class="dp-nav">▶</button></div>
+            <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+            <div id="rngStartDays" class="dp-days"></div>
+            <div class="dp-legend"><span><i class="dp-dot has-data"></i> 有数据</span><span><i class="dp-dot selected"></i> 当前选中</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="date-field-sm">
+        <div class="lbl">区间结束</div>
+        <div class="date-picker">
+          <button id="rngEndBtn" class="date-picker-btn">选择日期 <span id="rngEndVal"></span></button>
+          <div id="rngEndPop" class="date-picker-pop">
+            <div class="dp-header"><button id="rngEndPrev" class="dp-nav">◀</button><div class="dp-title" id="rngEndTitle"></div><button id="rngEndNext" class="dp-nav">▶</button></div>
+            <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+            <div id="rngEndDays" class="dp-days"></div>
+            <div class="dp-legend"><span><i class="dp-dot has-data"></i> 有数据</span><span><i class="dp-dot selected"></i> 当前选中</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:260px">
+      <div class="lbl">指标多选（可勾选多项叠加）</div>
+      <div class="metric-chk" id="metricChk"></div>
+    </div>
+  </div>
+  <div class="hint">提示：鼠标悬停折线可查看当日精确数值；环比为「区间内相邻两日」的日环比（%）变化。</div>
+  <div class="sec-title">核心指标趋势</div>
+  <div class="chart" id="trendChart"></div>
+
+  <div class="sec-title">工单区域拆线（西安 / 太原 / 兰州）</div>
+  <div class="chart" id="regionChart"></div>
+
+  <div class="sec-title">区间环比（末日 vs 前一日）</div>
+  <div class="pct-tbl"><table id="pctTbl"></table></div>
+</div>
+
+<!-- 预警看板 -->
+<div class="panel" id="panel-warn">
+  <div class="date-bar">
+    <div class="date-field">
+      <span class="df-ico">🚨</span>
+      <div>
+        <div class="lbl">选择日期（查看当日西安未处理预警）</div>
+        <div class="date-picker">
+          <button id="warnDateBtn" class="date-picker-btn">选择日期 <span id="warnDateVal"></span></button>
+          <div id="warnDatePop" class="date-picker-pop">
+            <div class="dp-header"><button id="warnDatePrev" class="dp-nav">◀</button><div class="dp-title" id="warnDateTitle"></div><button id="warnDateNext" class="dp-nav">▶</button></div>
+            <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+            <div id="warnDateDays" class="dp-days"></div>
+            <div class="dp-legend"><span><i class="dp-dot has-data"></i> 有数据</span><span><i class="dp-dot selected"></i> 当前选中</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="df-note" id="warnNote"></div>
+  </div>
+  <div id="warnBody"></div>
+</div>
+
+<!-- 每日工作量输出 模块（取退货 / 消息对接 / SW稽核 · 核算起始 2026-09-14 · T-1 更新） -->
+<div class="panel" id="panel-gongshi">
+  <div class="date-bar">
+    <div class="date-field">
+      <span class="df-ico">📋</span>
+      <div>
+        <div class="lbl">选择日期（每日工作量输出 · 取退货 / 消息对接 / SW稽核 · 数据更新逻辑 T-1，核算起始 2026-09-14）</div>
+        <div class="date-picker">
+          <button id="gsBtn" class="date-picker-btn">选择日期 <span id="gsVal"></span></button>
+          <div id="gsPop" class="date-picker-pop">
+            <div class="dp-header"><button id="gsPrev" class="dp-nav">◀</button><div class="dp-title" id="gsTitle"></div><button id="gsNext" class="dp-nav">▶</button></div>
+            <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+            <div id="gsDays" class="dp-days"></div>
+            <div class="dp-legend"><span><i class="dp-dot has-data"></i> 有数据</span><span><i class="dp-dot selected"></i> 当前选中</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="df-note" id="gongshiNote"></div>
+  </div>
+
+  <div class="sec-title">核心指标（当日）</div>
+
+  <div class="grp"><span class="ic">📦</span>数量<span class="u">件 / 次</span></div>
+  <div class="cls compact">
+    <div class="clsc"><div class="cn" id="gsTqQty">—</div><div class="cl">取退货数量 <span>件</span></div></div>
+    <div class="clsc"><div class="cn" id="gsMsgQty">—</div><div class="cl">消息回复数量 <span>次</span></div></div>
+    <div class="clsc"><div class="cn" id="gsSwQty">—</div><div class="cl">SW稽核数量 <span>次</span></div></div>
+    <div class="clsc tot"><div class="cn" id="gsTotQty">—</div><div class="cl">总处理量 <span>件 / 次</span></div></div>
+  </div>
+
+  <div class="grp"><span class="ic">⏱</span>耗时<span class="u">分</span></div>
+  <div class="cls compact">
+    <div class="clsc hrs"><div class="cn" id="gsTqHours">—</div><div class="cl">取退货耗时 <span>分</span></div></div>
+    <div class="clsc hrs"><div class="cn" id="gsMsgHours">—</div><div class="cl">消息回复耗时 <span>分</span></div></div>
+    <div class="clsc hrs"><div class="cn" id="gsSwHours">—</div><div class="cl">SW稽核耗时 <span>分</span></div></div>
+    <div class="clsc tot"><div class="cn" id="gsTotHours">—</div><div class="cl">总耗时 <span>分</span></div></div>
+  </div>
+  <div class="hint" id="gsCoreNote"></div>
+
+  <div class="sec-title">工艺工时（标准）</div>
+  <div class="cls">
+    <div class="clsc rate"><div class="cn" id="gsTqRate">—</div><div class="cl">取退货标准工时 <span>分/件 · 7-9月</span></div></div>
+    <div class="clsc rate"><div class="cn" id="gsMsgRate">—</div><div class="cl">消息对接标准工时 <span>分/次 · 7-9月</span></div></div>
+  </div>
+  <div class="hint" id="gsSwNote"></div>
+
+  <div class="sec-title">各耗时量对比（当日）</div>
+  <div class="chart" id="gsCmpChart" style="height:300px"></div>
+
+  <div class="sec-title">总处理量（核算区间累计 · <span id="gsRangeTxt">—</span>）</div>
+  <div class="cls compact">
+    <div class="clsc tot"><div class="cn" id="gsCumQty">—</div><div class="cl">累计总处理量 <span>件 / 次</span></div></div>
+    <div class="clsc tot"><div class="cn" id="gsCumHours">—</div><div class="cl">累计总耗时 <span>分</span></div></div>
+    <div class="clsc tot"><div class="cn" id="gsAvgQty">—</div><div class="cl">日均处理量 <span>件 / 次 · 天</span></div></div>
+    <div class="clsc tot"><div class="cn" id="gsAvgHours">—</div><div class="cl">日均耗时 <span>分 · 天</span></div></div>
+  </div>
+
+  <div class="sec-title">每人处理量（当日）</div>
+  <div id="gsPerTable"></div>
+
+  <div class="sec-title">每人工作量（核算区间累计）</div>
+  <div id="gsPerTotTable"></div>
+
+  <div class="sec-title">趋势分析 ① 数量 &amp; 总处理量（折线图）</div>
+  <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
+  <div class="chart" id="gsQtyChart" style="height:340px"></div>
+
+  <div class="sec-title">趋势分析 ② 耗时（折线图）</div>
+  <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
+  <div class="chart" id="gsHoursChart" style="height:340px"></div>
+</div>
+
+<div class="foot" id="foot"></div>
+
+<script>
+window.DASH_DATA = {"meta": {"generated_at": "2026-09-16 15:05:04", "days_count": 1, "metrics": {"day_total": {"name": "当日处理总量", "unit": "单", "color": "#2c5cc5"}, "proc8": {"name": "处理量8项", "unit": "单", "color": "#fbbc04"}, "dy_audit": {"name": "抖音每日仓内稽核量", "unit": "条", "color": "#34a853"}, "tuihuo": {"name": "取退货量", "unit": "单", "color": "#ea4335"}, "wd": {"name": "工单处理量", "unit": "单", "color": "#a142f4"}, "ext_msgs": {"name": "外部群消息量", "unit": "条", "color": "#1aa3a3"}, "int_msgs": {"name": "内部群消息量", "unit": "条", "color": "#ff8c00"}, "quality_new": {"name": "素养检查检出问题", "unit": "条", "color": "#d1342f"}, "warn_new": {"name": "西安未处理预警", "unit": "条", "color": "#ea4335"}}}, "days": [{"date": "2026-09-15", "label": "9月15日", "kpis": {"day_total": 178, "proc8": 145, "dy_audit": 0, "tuihuo": 26, "wd": 7, "ext_msgs": 357, "int_msgs": 105, "quality_new": 14, "warn_new": 0}, "proc": {"异常上下架量": 48, "对外对接（电话）": 6, "对外对接(微信/企微)": 15, "异常处理量": 36, "外呼量": 5, "视频调取量": 35, "抖音贴膜": 0, "装跑APP": 0}, "wd_regions": {"西安": 7, "太原": 0, "兰州": 0}, "quality_cards": [{"dept": "前辅助", "owner": "雅杰", "issue": "", "det": "否", "finder": "杨凡凡"}, {"dept": "发货", "owner": "王飞", "issue": "", "det": "否", "finder": "杨凡凡"}, {"dept": "后辅助", "owner": "伯萱", "issue": "", "det": "否", "finder": "杨凡凡"}, {"dept": "多能", "owner": "刘俊", "issue": "", "det": "否", "finder": "杨凡凡"}, {"dept": "发货", "owner": "王飞", "issue": "", "det": "否", "finder": "张霞霞"}, {"dept": "后辅助", "owner": "伯萱", "issue": "", "det": "否", "finder": "张霞霞"}, {"dept": "前辅助", "owner": "雅杰", "issue": "", "det": "否", "finder": "张霞霞"}, {"dept": "收仓", "owner": "柏杰", "issue": "", "det": "否", "finder": "张霞霞"}, {"dept": "后辅助", "owner": "伯萱", "issue": "", "det": "否", "finder": "张霞霞"}, {"dept": "多能", "owner": "刘俊", "issue": "", "det": "否", "finder": "张霞霞"}, {"dept": "多能", "owner": "刘俊", "issue": "", "det": "否", "finder": "赵豫思"}, {"dept": "拆修", "owner": "泽伟", "issue": "", "det": "否", "finder": "赵豫思"}, {"dept": "多能", "owner": "刘俊", "issue": "", "det": "否", "finder": "赵豫思"}, {"dept": "拆修", "owner": "泽伟", "issue": "", "det": "否", "finder": "赵豫思"}], "warn_list": [], "ext": {"刘思凡": {"total_at": 1, "replied": 1, "pending": 0, "avg_reply_min": 3.0, "max_reply_min": 3.0}, "王妙星": {"total_at": 3, "replied": 2, "pending": 1, "avg_reply_min": 6.0, "max_reply_min": 9.0}, "杨凡凡": {"total_at": 1, "replied": 0, "pending": 1, "avg_reply_min": null, "max_reply_min": null}, "马红霞": {"total_at": 1, "replied": 1, "pending": 0, "avg_reply_min": 9.0, "max_reply_min": 9.0}, "赵豫思": {"total_at": 0, "replied": 0, "pending": 0, "avg_reply_min": null, "max_reply_min": null}, "洪朵": {"total_at": 0, "replied": 0, "pending": 0, "avg_reply_min": null, "max_reply_min": null}, "张霞霞": {"total_at": 0, "replied": 0, "pending": 0, "avg_reply_min": null, "max_reply_min": null}}, "int": {"刘思凡": {"total": 4}, "王妙星": {"total": 17}, "杨凡凡": {"total": 2}, "马红霞": {"total": 0}, "赵豫思": {"total": 2}, "洪朵": {"total": 0}, "张霞霞": {"total": 26}}, "ext_send_per": {"杨凡凡": {"total": 4, "by_group": {"供应链能力中心&顾问&异常协作群": 1, "加盟调拨异常沟通群西安": 3}}, "王妙星": {"total": 2, "by_group": {"供应链能力中心&顾问&异常协作群": 2}}}, "int_send_per": {"杨凡凡": {"total": 2, "by_group": {"西安仓储": 1, "西太兰体验运营沟通交流群（工单、异常外呼、呆滞）": 1}}, "张霞霞": {"total": 26, "by_group": {"取退货群": 26}}, "王妙星": {"total": 17, "by_group": {"取退货群": 17}}, "赵豫思": {"total": 2, "by_group": {"取退货群": 2}}, "刘思凡": {"total": 4, "by_group": {"西太兰体验运营沟通交流群（工单、异常外呼、呆滞）": 1, "美美桑内": 3}}}, "tuihuo_text": 0, "tuihuo_override": null}]};
+window.GONGSHI_DATA = {"baseline": {"tuihuo_rate": 2.6, "msg_rate": 15.72}, "dates": {"2026-09-15": {"tuihuo_qty": 44, "tuihuo_per": {"张霞霞": 25, "马红霞": 0, "赵豫思": 3, "王妙星": 16, "杨凡凡": 0}, "tuihuo_hours": 114.4, "msg_reply_qty": 4, "msg_reply_avg": 6.0, "msg_reply_hours": 62.9, "msg_reply_per": {"张霞霞": {"replied": 0, "avg": null}, "马红霞": {"replied": 1, "avg": 9.0}, "赵豫思": {"replied": 0, "avg": null}, "王妙星": {"replied": 2, "avg": 6.0}, "杨凡凡": {"replied": 0, "avg": null}}}}};
+window.SW_DATA = {"dates": {"2026-08-16": {"qty": 10.0, "hours": 158.0, "per": {"马红霞": {"qty": 5.0, "hours": 68.0}, "杨凡凡": {"qty": 0, "hours": 0.0}, "赵豫思": {"qty": 5.0, "hours": 90.0}}}, "2026-08-17": {"qty": 10.0, "hours": 136.0, "per": {"马红霞": {"qty": 5.0, "hours": 79.0}, "杨凡凡": {"qty": 5.0, "hours": 57.0}, "赵豫思": {"qty": 0, "hours": 0.0}}}, "2026-08-18": {"qty": 10.0, "hours": 101.0, "per": {"马红霞": {"qty": 0, "hours": 0.0}, "杨凡凡": {"qty": 5.0, "hours": 45.0}, "赵豫思": {"qty": 5.0, "hours": 56.0}}}, "2026-08-19": {"qty": 9.0, "hours": 97.0, "per": {"马红霞": {"qty": 0, "hours": 0.0}, "杨凡凡": {"qty": 4.0, "hours": 38.0}, "赵豫思": {"qty": 5.0, "hours": 59.0}}}, "2026-08-20": {"qty": 10.0, "hours": 167.0, "per": {"马红霞": {"qty": 5.0, "hours": 96.0}, "杨凡凡": {"qty": 5.0, "hours": 71.0}, "赵豫思": {"qty": 0, "hours": 0.0}}}, "2026-08-21": {"qty": 13.0, "hours": 273.0, "per": {"马红霞": {"qty": 4.0, "hours": 86.0}, "杨凡凡": {"qty": 5.0, "hours": 95.0}, "赵豫思": {"qty": 4.0, "hours": 92.0}}}, "2026-08-22": {"qty": 9.0, "hours": 162.0, "per": {"马红霞": {"qty": 4.0, "hours": 64.0}, "杨凡凡": {"qty": 0, "hours": 0.0}, "赵豫思": {"qty": 5.0, "hours": 98.0}}}, "2026-08-24": {"qty": 9.0, "hours": 125.0, "per": {"马红霞": {"qty": 4.0, "hours": 59.0}, "杨凡凡": {"qty": 5.0, "hours": 66.0}, "赵豫思": {"qty": 0, "hours": 0.0}}}, "2026-08-25": {"qty": 9.0, "hours": 121.0, "per": {"马红霞": {"qty": 0, "hours": 0.0}, "杨凡凡": {"qty": 4.0, "hours": 58.0}, "赵豫思": {"qty": 5.0, "hours": 63.0}}}, "2026-08-26": {"qty": 13.0, "hours": 190.0, "per": {"赵豫思": {"qty": 4.0, "hours": 63.0}, "马红霞": {"qty": 4.0, "hours": 58.0}, "杨凡凡": {"qty": 5.0, "hours": 69.0}}}, "2026-08-27": {"qty": 9.0, "hours": 81.0, "per": {"赵豫思": {"qty": 0, "hours": 0.0}, "马红霞": {"qty": 5.0, "hours": 43.0}, "杨凡凡": {"qty": 4.0, "hours": 38.0}}}, "2026-08-28": {"qty": 9.0, "hours": 141.0, "per": {"赵豫思": {"qty": 0, "hours": 0.0}, "马红霞": {"qty": 4.0, "hours": 59.0}, "杨凡凡": {"qty": 5.0, "hours": 82.0}}}, "2026-08-29": {"qty": 5.0, "hours": 75.0, "per": {"赵豫思": {"qty": 5.0, "hours": 75.0}, "马红霞": {"qty": 0, "hours": 0.0}, "杨凡凡": {"qty": 0, "hours": 0.0}}}, "2026-08-30": {"qty": 8.0, "hours": 140.0, "per": {"赵豫思": {"qty": 4.0, "hours": 73.0}, "马红霞": {"qty": 4.0, "hours": 67.0}, "杨凡凡": {"qty": 0, "hours": 0.0}}}, "2026-08-31": {"qty": 8.0, "hours": 136.0, "per": {"赵豫思": {"qty": 4.0, "hours": 67.0}, "马红霞": {"qty": 0, "hours": 0.0}, "杨凡凡": {"qty": 4.0, "hours": 69.0}}}, "2026-09-01": {"qty": 13.0, "hours": 236.0, "per": {"赵豫思": {"qty": 4.0, "hours": 73.0}, "马红霞": {"qty": 4.0, "hours": 72.0}, "杨凡凡": {"qty": 5.0, "hours": 91.0}}}, "2026-09-02": {"qty": 9.0, "hours": 130.0, "per": {"赵豫思": {"qty": 0, "hours": 0.0}, "马红霞": {"qty": 5.0, "hours": 62.0}, "杨凡凡": {"qty": 4.0, "hours": 68.0}}}, "2026-09-03": {"qty": 9.0, "hours": 128.0, "per": {"赵豫思": {"qty": 0, "hours": 0.0}, "马红霞": {"qty": 4.0, "hours": 52.0}, "杨凡凡": {"qty": 5.0, "hours": 76.0}}}, "2026-09-04": {"qty": 8.0, "hours": 95.0, "per": {"赵豫思": {"qty": 4.0, "hours": 56.0}, "马红霞": {"qty": 0, "hours": 0.0}, "杨凡凡": {"qty": 4.0, "hours": 39.0}}}, "2026-09-05": {"qty": 4.0, "hours": 68.0, "per": {"赵豫思": {"qty": 4.0, "hours": 68.0}, "马红霞": {"qty": 0, "hours": 0.0}, "杨凡凡": {"qty": 0, "hours": 0.0}}}, "2026-09-06": {"qty": 4.0, "hours": 69.0, "per": {"赵豫思": {"qty": 0, "hours": 0.0}, "马红霞": {"qty": 4.0, "hours": 69.0}, "杨凡凡": {"qty": 0, "hours": 0.0}}}, "2026-09-07": {"qty": 8.0, "hours": 113.0, "per": {"赵豫思": {"qty": 0, "hours": 0.0}, "马红霞": {"qty": 4.0, "hours": 47.0}, "杨凡凡": {"qty": 4.0, "hours": 66.0}}}, "2026-09-08": {"qty": 10.0, "hours": 137.0, "per": {"赵豫思": {"qty": 5.0, "hours": 78.0}, "马红霞": {"qty": 0, "hours": 0.0}, "杨凡凡": {"qty": 5.0, "hours": 59.0}}}, "2026-09-09": {"qty": 8.0, "hours": 63.0, "per": {"赵豫思": {"qty": 0, "hours": 0.0}, "马红霞": {"qty": 4.0, "hours": 35.0}, "杨凡凡": {"qty": 4.0, "hours": 28.0}}}, "2026-09-10": {"qty": 10.0, "hours": 152.0, "per": {"赵豫思": {"qty": 0, "hours": 0.0}, "马红霞": {"qty": 5.0, "hours": 72.0}, "杨凡凡": {"qty": 5.0, "hours": 80.0}}}, "2026-09-11": {"qty": 8.0, "hours": 139.0, "per": {"赵豫思": {"qty": 0, "hours": 0.0}, "马红霞": {"qty": 4.0, "hours": 76.0}, "杨凡凡": {"qty": 4.0, "hours": 63.0}}}, "2026-09-12": {"qty": 10.0, "hours": 110.0, "per": {"赵豫思": {"qty": 5.0, "hours": 72.0}, "马红霞": {"qty": 5.0, "hours": 38.0}, "杨凡凡": {"qty": 0, "hours": 0.0}}}, "2026-09-13": {"qty": 4.0, "hours": 78.0, "per": {"赵豫思": {"qty": 4.0, "hours": 78.0}, "马红霞": {"qty": 0, "hours": 0.0}, "杨凡凡": {"qty": 0, "hours": 0.0}}}, "2026-09-14": {"qty": 9.0, "hours": 55.2, "per": {"赵豫思": {"qty": 5.0, "hours": 27.7}, "马红霞": {"qty": 0, "hours": 0.0}, "杨凡凡": {"qty": 0, "hours": 0.0}, "张霞霞": {"qty": 4.0, "hours": 27.5}}}, "2026-09-15": {"qty": 14.0, "hours": 87.8, "per": {"赵豫思": {"qty": 4.0, "hours": 26.9}, "马红霞": {"qty": 0, "hours": 0.0}, "杨凡凡": {"qty": 4.0, "hours": 26.1}, "张霞霞": {"qty": 6.0, "hours": 34.8}}}}, "employees": ["马红霞", "杨凡凡", "赵豫思", "张霞霞"], "baseline": {"note": "SW稽核无单一标准工时：每图环节不同，工艺工时以每日实际审核图片(SW检查表附件)D板块SW.T+5%+60s计，不取均值（以图中为准）；5S/安全另按600s/次"}};
+const D = window.DASH_DATA;
+const G = window.GONGSHI_DATA;
+const S = window.SW_DATA;
+const METRICS = D.meta.metrics;          // key -> {name,unit,color}
+const DAYS = D.days.slice().sort((a,b)=>a.date<b.date?-1:1);
+const fmt = n => (n==null?'—':n.toLocaleString('zh-CN'));
+
+// ---------- tabs ----------
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('panel-'+t.dataset.tab).classList.add('active');
+  if(t.dataset.tab==='trend'){ renderTrend(); }
+  if(t.dataset.tab==='warn'){ renderWarn(); }
+  if(t.dataset.tab==='gongshi'){ renderGongshi(); }
+});
+
+// ---------- 单日详情：嵌入最早报告模板（日历展开组件） ----------
+const singleFrame=document.getElementById('singleFrame');
+function showDay(date){
+  singleFrame.src='reports/report_'+date+'.html';
+  const d=DAYS.find(x=>x.date===date);
+  document.getElementById('singleNote').textContent=d?('素养检查检出问题 '+d.quality_cards.length+' 条 · 西安未处理预警 '+fmt(d.kpis.warn_new)+' 条 · 工单 '+fmt(d.kpis.wd)+' 单 · 处理总量 '+fmt(d.kpis.day_total)+' 单'):'';
+}
+singleFrame.onload=()=>{try{singleFrame.style.height=(singleFrame.contentDocument.body.scrollHeight+24)+'px';}catch(e){singleFrame.style.height='1400px';}};
+
+// 通用日历选择器（单日详情 / 趋势区间开始 / 区间结束 共用）
+const ALL_PICKERS=[];
+function closeAllPickers(except){
+  ALL_PICKERS.forEach(p=>{ if(p!==except){ p.pop.classList.remove('open'); p.btn.classList.remove('active'); } });
+}
+function createDatePicker(opts){
+  const btn=document.getElementById(opts.btn);
+  const pop=document.getElementById(opts.pop);
+  const titleEl=document.getElementById(opts.title);
+  const daysEl=document.getElementById(opts.days);
+  const prev=document.getElementById(opts.prev);
+  const next=document.getElementById(opts.next);
+  const valEl=document.getElementById(opts.val);
+  // 可传入自定义「有数据」日期集合（字符串数组）；默认用主数据 DAYS
+  const hasData=new Set((opts.hasData||DAYS).map(d=>typeof d==='string'?d:d.date));
+  let selected=opts.initial||'';
+  let view=new Date();
+  if(selected){const p=selected.split('-').map(Number);view=new Date(p[0],p[1]-1,p[2]);}
+  function fmt(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day;}
+  function upd(){valEl.textContent=selected||'请选择';}
+  function render(){
+    const y=view.getFullYear(), m=view.getMonth();
+    titleEl.textContent=y+'年 '+(m+1)+'月';
+    const first=new Date(y,m,1), last=new Date(y,m+1,0);
+    const offset=first.getDay(), dim=last.getDate();
+    daysEl.innerHTML='';
+    const pl=new Date(y,m,0).getDate();
+    for(let i=offset-1;i>=0;i--){const c=document.createElement('span');c.className='dp-day other';c.textContent=pl-i;daysEl.appendChild(c);}
+    for(let d=1;d<=dim;d++){
+      const ds=fmt(new Date(y,m,d));
+      const c=document.createElement('span');c.className='dp-day';c.textContent=d;
+      const isData=hasData.has(ds), isSel=ds===selected;
+      if(isSel){c.classList.add('selected');}
+      else if(isData){c.classList.add('has-data');}
+      else{c.classList.add('disabled');}
+      if(isData || isSel){c.onclick=()=>{selected=ds;upd();render();if(opts.onChange)opts.onChange(selected);pop.classList.remove('open');btn.classList.remove('active');};}
+      daysEl.appendChild(c);
+    }
+    const total=daysEl.children.length, pad=(42-total%42)%42;
+    for(let d=1;d<=pad;d++){const c=document.createElement('span');c.className='dp-day other';c.textContent=d;daysEl.appendChild(c);}
+  }
+  const that={pop,btn,get value(){return selected;},set value(v){selected=v;if(v){const p=v.split('-').map(Number);view=new Date(p[0],p[1]-1,p[2]);}upd();render();}};
+  btn.onclick=(e)=>{e.stopPropagation();if(pop.classList.contains('open')){pop.classList.remove('open');btn.classList.remove('active');}else{closeAllPickers(that);render();pop.classList.add('open');btn.classList.add('active');}};
+  prev.onclick=(e)=>{e.stopPropagation();view.setMonth(view.getMonth()-1);render();};
+  next.onclick=(e)=>{e.stopPropagation();view.setMonth(view.getMonth()+1);render();};
+  upd();render();
+  ALL_PICKERS.push(that);
+  return that;
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('.date-picker')){ closeAllPickers(null); } });
+const singlePicker=createDatePicker({btn:'datePickerBtn',pop:'datePickerPop',title:'dpTitle',days:'dpDays',prev:'dpPrev',next:'dpNext',val:'datePickerVal',initial:DAYS.length?DAYS[DAYS.length-1].date:'',onChange:v=>showDay(v)});
+
+// ---------- 趋势分析 ----------
+const metricChk=document.getElementById('metricChk');
+Object.entries(METRICS).forEach(([key,m])=>{
+  const id='m_'+key;
+  const lab=document.createElement('label');
+  lab.innerHTML=`<input type="checkbox" id="${id}" value="${key}" ${['day_total','tuihuo','wd','dy_audit','quality_new','warn_new'].includes(key)?'checked':''}><span style="color:${m.color};font-weight:700">●</span> ${m.name}`;
+  metricChk.appendChild(lab);
+});
+metricChk.onchange=()=>renderTrend();
+
+const rngStartPicker=createDatePicker({btn:'rngStartBtn',pop:'rngStartPop',title:'rngStartTitle',days:'rngStartDays',prev:'rngStartPrev',next:'rngStartNext',val:'rngStartVal',initial:DAYS.length?DAYS[0].date:'',onChange:()=>renderTrend()});
+const rngEndPicker=createDatePicker({btn:'rngEndBtn',pop:'rngEndPop',title:'rngEndTitle',days:'rngEndDays',prev:'rngEndPrev',next:'rngEndNext',val:'rngEndVal',initial:DAYS.length?DAYS[DAYS.length-1].date:'',onChange:()=>renderTrend()});
+
+// ---------- 预警看板 ----------
+const warnPicker=createDatePicker({btn:'warnDateBtn',pop:'warnDatePop',title:'warnDateTitle',days:'warnDateDays',prev:'warnDatePrev',next:'warnDateNext',val:'warnDateVal',initial:DAYS.length?DAYS[DAYS.length-1].date:'',onChange:()=>renderWarn()});
+function renderWarn(){
+  const date=warnPicker.value;
+  const d=DAYS.find(x=>x.date===date);
+  const box=document.getElementById('warnBody');
+  if(!d){ box.innerHTML='<div class="empty">无数据</div>'; document.getElementById('warnNote').textContent=''; return; }
+  const list=d.warn_list||[];
+  if(!list.length){ box.innerHTML='<div class="empty">'+d.label+' 西安无未处理预警</div>'; document.getElementById('warnNote').textContent=''; return; }
+  const arCnt=list.filter(w=>w.apply_remove).length;
+  document.getElementById('warnNote').textContent='共 '+list.length+' 条预警'+(arCnt?'（其中 '+arCnt+' 条已申请剔除）':'');
+  const byType={};
+  list.forEach(w=>{ byType[w.wtype||'未分类']=(byType[w.wtype||'未分类']||0)+1; });
+  let html='<div class="cls">';
+  Object.entries(byType).sort((a,b)=>b[1]-a[1]).forEach(([t,c])=>{ html+='<div class="clsc"><div class="cn">'+c+'</div><div class="cl">'+t+'<br><span>未处理</span></div></div>'; });
+  html+='</div><div class="warn-tbl"><table><tr><th>运营中心</th><th>物品编号</th><th>预警类型</th><th>超时区间</th><th>超时时长</th><th>接收人员</th><th>原因反馈</th><th>申请剔除</th></tr>';
+  list.forEach(w=>{ const ar=w.apply_remove?'<span class="ar-yes">是</span>':'否'; html+='<tr><td>'+w.center+'</td><td class="nm">'+w.item+'</td><td>'+w.wtype+'</td><td>'+w.timeout+'</td><td>'+w.overdue+'</td><td>'+w.receiver+'</td><td class="nm">'+w.feedback+'</td><td>'+ar+'</td></tr>'; });
+  html+='</table></div>';
+  box.innerHTML=html;
+}
+
+let trendChart=null, regionChart=null, gsCmpChart=null, gsQtyChart=null, gsHoursChart=null;
+window.gsCmpChartRef = null;
+function selectedMetrics(){
+  return Object.keys(METRICS).filter(k=>document.getElementById('m_'+k)&&document.getElementById('m_'+k).checked);
+}
+function inRange(d){
+  return d.date>=rngStartPicker.value && d.date<=rngEndPicker.value;
+}
+function renderTrend(){
+  const sel=selectedMetrics();
+  const ds=DAYS.filter(inRange);
+  if(!ds.length){ if(trendChart)trendChart.clear(); if(regionChart)regionChart.clear(); document.getElementById('pctTbl').innerHTML='<div class="empty">区间内无数据</div>'; return; }
+  const dates=ds.map(x=>x.label);
+  // 核心指标多线（图例改为 scroll，避免多指标换行压住绘图区）
+  const series=sel.map(key=>({
+    name:METRICS[key].name, type:'line', smooth:true, symbol:'circle', symbolSize:7,
+    lineStyle:{width:2.5,color:METRICS[key].color}, itemStyle:{color:METRICS[key].color},
+    data:ds.map(x=>x.kpis[key])
+  }));
+  if(!trendChart) trendChart=echarts.init(document.getElementById('trendChart'));
+  trendChart.setOption({
+    tooltip:{trigger:'axis', valueFormatter:v=>fmt(v)},
+    legend:{top:6, type:'scroll', textStyle:{fontSize:12}},
+    grid:{left:54, right:28, top:52, bottom:42},
+    xAxis:{type:'category', data:dates, boundaryGap:false},
+    yAxis:{type:'value', name:'数值'},
+    series
+  }, true);
+
+  // 工单区域拆线
+  const regions=['西安','太原','兰州'];
+  const rcolors={'西安':'#4285f4','太原':'#34a853','兰州':'#fbbc04'};
+  const rseries=regions.map(r=>({
+    name:r, type:'line', smooth:true, symbol:'circle', symbolSize:6,
+    lineStyle:{width:2.5,color:rcolors[r]}, itemStyle:{color:rcolors[r]},
+    data:ds.map(x=>x.wd_regions[r]||0)
+  }));
+  if(!regionChart) regionChart=echarts.init(document.getElementById('regionChart'));
+  regionChart.setOption({
+    tooltip:{trigger:'axis', valueFormatter:v=>fmt(v)},
+    legend:{top:6, type:'scroll', textStyle:{fontSize:12}},
+    grid:{left:54, right:28, top:52, bottom:42},
+    xAxis:{type:'category', data:dates, boundaryGap:false},
+    yAxis:{type:'value', name:'工单量'},
+    series:rseries
+  }, true);
+
+  // 环比表（末日 vs 前一日）
+  const last=ds[ds.length-1], prev=ds.length>1?ds[ds.length-2]:null;
+  let th='<tr><th class="nm">指标</th><th>前一日</th><th>末日</th><th>环比</th></tr>';
+  sel.forEach(key=>{
+    const cur=last.kpis[key], pv=prev?prev.kpis[key]:null;
+    let ring='<span class="ring flat">—</span>';
+    if(prev && pv!=null && pv!==0){
+      const ch=((cur-pv)/Math.abs(pv)*100);
+      const cls=ch>0?'up':(ch<0?'down':'flat');
+      const arr=ch>0?'▲':(ch<0?'▼':'■');
+      ring=`<span class="ring ${cls}">${arr} ${ch.toFixed(1)}%</span>`;
+    } else if(prev && pv===0 && cur>0){ ring='<span class="ring up">▲ 新增</span>'; }
+    th+=`<tr><td class="nm">${METRICS[key].name}</td><td>${fmt(pv)}</td><td>${fmt(cur)}</td><td>${ring}</td></tr>`;
+  });
+  document.getElementById('pctTbl').innerHTML=th;
+}
+
+// ---------- 每日工作量输出 模块（取退货 / 消息对接 / SW稽核 · 核算起始 2026-09-14 · T-1 更新） ----------
+const G_LABEL = d => { const p=d.split('-'); return (p[1].replace(/^0/,'')+'月'+p[2].replace(/^0/,'')+'日'); };
+// 核算起始日：2026-09-14（数据更新逻辑 T-1）
+const GS_START = '2026-09-14';
+// 统一日期轴 = 取退货/消息对接 与 SW稽核 的并集，且不早于核算起始日
+const GS_DATES = Array.from(new Set([...Object.keys(G.dates), ...Object.keys(S.dates)]))
+  .filter(d => d >= GS_START).sort();
+const GS_LATEST = GS_DATES.length ? GS_DATES[GS_DATES.length-1] : '';
+const FIVE = ["王妙星","张霞霞","马红霞","杨凡凡","赵豫思"];
+const gongshiPicker = createDatePicker({btn:'gsBtn',pop:'gsPop',title:'gsTitle',days:'gsDays',prev:'gsPrev',next:'gsNext',val:'gsVal',
+  initial:GS_LATEST, hasData:GS_DATES, onChange:()=>renderGongshi()});
+// 某日三源合计（源缺数据按 0 计；两源皆无 → null 断线）
+function gsDayTotals(d){
+  const g=G.dates[d], s=S.dates[d];
+  if(!g && !s) return null;
+  const q=(g?g.tuihuo_qty:0)+(g?g.msg_reply_qty:0)+(s?s.qty:0);
+  const h=(g?g.tuihuo_hours:0)+(g?g.msg_reply_hours:0)+(s?s.hours:0);
+  return {qty:q, hours:h};
+}
+function renderGongshi(){
+  const date = gongshiPicker.value || GS_LATEST;
+  const grec = G.dates[date] || null;   // 取退货 / 消息对接 当日
+  const srec = S.dates[date] || null;   // SW稽核 当日
+
+  // ① 核心指标（数量组 / 耗时组 + 总处理量 / 总耗时）
+  const tq=grec?grec.tuihuo_qty:null, mq=grec?grec.msg_reply_qty:null, sq=srec?srec.qty:null;
+  const th=grec?grec.tuihuo_hours:null, mh=grec?grec.msg_reply_hours:null, sh=srec?srec.hours:null;
+  document.getElementById('gsTqQty').textContent    = grec?fmt(tq):'—';
+  document.getElementById('gsMsgQty').textContent   = grec?fmt(mq):'—';
+  document.getElementById('gsSwQty').textContent    = srec?fmt(sq):'—';
+  document.getElementById('gsTotQty').textContent   = (grec||srec)?fmt((tq||0)+(mq||0)+(sq||0)):'—';
+  document.getElementById('gsTqHours').textContent  = grec?fmt(th):'—';
+  document.getElementById('gsMsgHours').textContent = grec?fmt(mh):'—';
+  document.getElementById('gsSwHours').textContent  = srec?fmt(sh):'—';
+  document.getElementById('gsTotHours').textContent = (grec||srec)?fmt(+(((th||0)+(mh||0)+(sh||0)).toFixed(1))):'—';
+  document.getElementById('gsCoreNote').textContent =
+    '数量口径：取退货=5人当日2026编码+图片（取退货群消息）；消息回复=外部群@工单已回复；SW稽核=工艺sw+5S+安全。'
+   +'耗时口径：取退货=数量×2.6分/件；消息回复=数量×15.72分/次；SW稽核=各图SW.T+5%+60s逐条Σ（5S/安全各按600s）。';
+
+  // ② 工艺工时（放一起）
+  document.getElementById('gsTqRate').textContent  = (G.baseline.tuihuo_rate).toFixed(1);
+  document.getElementById('gsMsgRate').textContent = (G.baseline.msg_rate).toFixed(2);
+  document.getElementById('gsSwNote').textContent  = 'SW稽核工艺工时口径：' + ((S.baseline&&S.baseline.note)||'—');
+
+  // 说明条
+  const parts=[];
+  if(grec){ parts.push('取退货 '+fmt(grec.tuihuo_qty)+' 件 / '+fmt(grec.tuihuo_hours)+' 分'); parts.push('消息回复 '+fmt(grec.msg_reply_qty)+' 次 / '+fmt(grec.msg_reply_hours)+' 分'); }
+  if(srec){ parts.push('SW稽核 '+fmt(srec.qty)+' 次 / '+fmt(srec.hours)+' 分'); }
+  document.getElementById('gongshiNote').textContent = date+'（'+G_LABEL(date)+'）'+(parts.length?(' · '+parts.join(' · ')):' · 无数据');
+
+  // ③ 每人处理量（当日，合并一张表）
+  const emps = Array.from(new Set([...FIVE, ...(S.employees||[])]));
+  let html='<table><tr><th class="nm">姓名</th>'
+    +'<th>取退货数量<span class="thu">(件)</span></th><th>消息回复数量<span class="thu">(次)</span></th><th>SW稽核数量<span class="thu">(次)</span></th>'
+    +'<th>消息回复均时长<span class="thu">(分)</span></th><th>SW稽核耗时<span class="thu">(分)</span></th></tr>';
+  for(const p of emps){
+    const tq2 = (grec&&grec.tuihuo_per&&grec.tuihuo_per[p])||0;
+    const mp = (grec&&grec.msg_reply_per&&grec.msg_reply_per[p])||{replied:0,avg:null};
+    const sw = (srec&&srec.per&&srec.per[p])||{qty:0,hours:0};
+    const avg = (mp.avg==null)?'—':mp.avg.toFixed(1);
+    html+='<tr><td class="nm">'+p+'</td><td>'+fmt(tq2)+'</td><td>'+fmt(mp.replied||0)+'</td><td>'+fmt(sw.qty)+'</td><td>'+avg+'</td><td>'+fmt(sw.hours)+'</td></tr>';
+  }
+  html+='</table>';
+  document.getElementById('gsPerTable').innerHTML=html;
+
+  // ④ 总处理量（核算区间累计）
+  let cumQ=0, cumH=0;
+  for(const d of GS_DATES){ const t=gsDayTotals(d); if(t){ cumQ+=t.qty; cumH+=t.hours; } }
+  cumH=+cumH.toFixed(1);
+  const nDays=GS_DATES.length||1;
+  document.getElementById('gsRangeTxt').textContent = GS_DATES.length ? (GS_DATES[0]+' ~ '+GS_LATEST) : '—';
+  document.getElementById('gsCumQty').textContent  = GS_DATES.length?fmt(cumQ):'—';
+  document.getElementById('gsCumHours').textContent= GS_DATES.length?fmt(cumH):'—';
+  document.getElementById('gsAvgQty').textContent  = GS_DATES.length?fmt(+(cumQ/nDays).toFixed(1)):'—';
+  document.getElementById('gsAvgHours').textContent= GS_DATES.length?fmt(+(cumH/nDays).toFixed(1)):'—';
+
+  // ⑤ 每人工作量（核算区间累计）
+  let html2='<table><tr><th class="nm">姓名</th>'
+    +'<th>取退货合计<span class="thu">(件)</span></th><th>消息回复合计<span class="thu">(次)</span></th>'
+    +'<th>SW稽核合计<span class="thu">(次)</span></th><th>SW稽核合计耗时<span class="thu">(分)</span></th><th>个人总处理量<span class="thu">(件 / 次)</span></th></tr>';
+  for(const p of emps){
+    let a=0,b=0,c=0,ch=0;
+    for(const d of GS_DATES){
+      const g2=G.dates[d], s2=S.dates[d];
+      a += (g2&&g2.tuihuo_per&&g2.tuihuo_per[p])||0;
+      b += (g2&&g2.msg_reply_per&&g2.msg_reply_per[p])?g2.msg_reply_per[p].replied||0:0;
+      c += (s2&&s2.per&&s2.per[p])?s2.per[p].qty||0:0;
+      ch+= (s2&&s2.per&&s2.per[p])?s2.per[p].hours||0:0;
+    }
+    ch=+ch.toFixed(1);
+    html2+='<tr><td class="nm">'+p+'</td><td>'+fmt(a)+'</td><td>'+fmt(b)+'</td><td>'+fmt(c)+'</td><td>'+fmt(ch)+'</td><td>'+fmt(a+b+c)+'</td></tr>';
+  }
+  html2+='</table>';
+  document.getElementById('gsPerTotTable').innerHTML=html2;
+
+  // ⑥ 各耗时量对比（当日：柱状 + 占比环形）
+  if(!gsCmpChart) gsCmpChart=echarts.init(document.getElementById('gsCmpChart'));
+  const cmpNames=['取退货','消息回复','SW稽核'];
+  const cmpColors=['#ea4335','#4285f4','#e67e22'];
+  const cmpVals=[th||0, mh||0, sh||0];
+  const hasCmp=(grec||srec);
+  if(!hasCmp){ gsCmpChart.clear(); }
+  else{
+    gsCmpChart.setOption({
+      tooltip:{trigger:'item', valueFormatter:v=>fmt(v)+' 分'},
+      legend:{show:false},
+      grid:[{left:64, right:'56%', top:36, bottom:30}],
+      xAxis:[{gridIndex:0, type:'category', data:cmpNames, axisLabel:{fontSize:12}}],
+      yAxis:[{gridIndex:0, type:'value', name:'耗时(分)', nameTextStyle:{fontSize:11}}],
+      series:[
+        {name:'耗时(分)', type:'bar', xAxisIndex:0, yAxisIndex:0, barWidth:'48%',
+         data:cmpVals.map((v,i)=>({value:v, itemStyle:{color:cmpColors[i], borderRadius:[4,4,0,0]}})),
+         label:{show:true, position:'top', formatter:p=>fmt(p.value)+' 分', fontSize:12, fontWeight:600}},
+        {name:'耗时占比', type:'pie', radius:['36%','62%'], center:['77%','52%'], avoidLabelOverlap:true,
+         data:cmpVals.map((v,i)=>({name:cmpNames[i], value:v, itemStyle:{color:cmpColors[i]}})),
+         label:{formatter:'{b}\n{d}%', fontSize:11}, labelLine:{length:10, length2:8}}
+      ]
+    }, true);
+  }
+
+  // ⑦ 趋势分析：数量 & 总处理量 一张、耗时一张（折线）
+  if(!gsQtyChart)   gsQtyChart=echarts.init(document.getElementById('gsQtyChart'));
+  if(!gsHoursChart) gsHoursChart=echarts.init(document.getElementById('gsHoursChart'));
+  // 该源当日无数据 → null（折线断开），避免误画成 0
+  const gv=(d,k)=>{const r=G.dates[d];return r?(r[k]==null?0:r[k]):null;};
+  const sv=(d,k)=>{const r=S.dates[d];return r?(r[k]==null?0:r[k]):null;};
+  const tv=(d,k)=>{const t=gsDayTotals(d);return t?t[k]:null;};
+  const xlab = GS_DATES.map(G_LABEL);
+  const mk=(name,color,data,bold)=>({name:name,type:'line',smooth:true,symbol:'circle',symbolSize:6,
+    connectNulls:false,lineStyle:{width:bold?3.4:2.4,color:color},itemStyle:{color:color},data:data});
+  // 天数多时才开区间缩放滑块（当前核算区间较短）
+  const useZoom = GS_DATES.length>14;
+  const zoomStart = useZoom ? Math.round((1-30/GS_DATES.length)*100) : 0;
+  const baseOpt = {
+    tooltip:{trigger:'axis', valueFormatter:v=>fmt(v)},
+    legend:{top:6, type:'scroll', textStyle:{fontSize:12}},
+    grid:{left:58, right:34, top:56, bottom: useZoom?74:44},
+    xAxis:{type:'category', data:xlab, boundaryGap:false, axisLabel:{hideOverlap:true}}
+  };
+  if(useZoom){ baseOpt.dataZoom=[{type:'inside', start:zoomStart, end:100},
+              {type:'slider', height:18, bottom:14, start:zoomStart, end:100, brushSelect:false}]; }
+  gsQtyChart.setOption(Object.assign({}, baseOpt, {
+    yAxis:{type:'value', name:'数量(件 / 次)', nameTextStyle:{fontSize:11}},
+    series:[
+      mk('总处理量','#0f9d58', GS_DATES.map(d=>tv(d,'qty')), true),
+      mk('取退货数量','#ea4335', GS_DATES.map(d=>gv(d,'tuihuo_qty'))),
+      mk('消息回复数量','#1aa3a3', GS_DATES.map(d=>gv(d,'msg_reply_qty'))),
+      mk('SW稽核数量','#8e44ad', GS_DATES.map(d=>sv(d,'qty')))
+    ]
+  }), true);
+  gsHoursChart.setOption(Object.assign({}, baseOpt, {
+    yAxis:{type:'value', name:'耗时(分)', nameTextStyle:{fontSize:11}},
+    series:[
+      mk('总耗时','#0f9d58', GS_DATES.map(d=>tv(d,'hours')), true),
+      mk('取退货耗时','#fbbc04', GS_DATES.map(d=>gv(d,'tuihuo_hours'))),
+      mk('消息回复耗时','#4285f4', GS_DATES.map(d=>gv(d,'msg_reply_hours'))),
+      mk('SW稽核耗时','#e67e22', GS_DATES.map(d=>sv(d,'hours')))
+    ]
+  }), true);
+  // 页面初始化时该面板可能处于隐藏态（容器 0 宽），切页签后强制重算尺寸
+  gsCmpChart.resize(); gsQtyChart.resize(); gsHoursChart.resize();
+}
+
+// ---------- init ----------
+document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天（'+DAYS[0].date+' ~ '+DAYS[DAYS.length-1].date+'）';
+document.getElementById('foot').textContent='数据生成时间：'+D.meta.generated_at+' · 数据源：飞书群聊消息 + 飞书电子表格「抖音交付、稽核汇总」+ Base（抖音稽核 / 素养检查 / 预警未处理明细）';
+if(DAYS.length){ showDay(singlePicker.value); }
+if(GS_DATES.length){ renderGongshi(); }
+window.addEventListener('resize',()=>{if(trendChart)trendChart.resize();if(regionChart)regionChart.resize();if(gsCmpChart)gsCmpChart.resize();if(gsQtyChart)gsQtyChart.resize();if(gsHoursChart)gsHoursChart.resize();});
+</script>
+</body>
+</html>
