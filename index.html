@@ -42,7 +42,7 @@ td.nm,th.nm{text-align:left}
 .clsc{flex:1;min-width:120px;background:#f7f9fc;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
 .clsc .cn{font-size:26px;font-weight:700;color:#ea4335}
 .clsc .cl{font-size:12px;color:var(--sub);margin-top:4px} .clsc .cl span{color:#98a2b3;font-size:11px}
-/* 核心指标：数量 / 耗时 分组 */
+/* 核心指标：数量 / 理论耗时 分组 */
 .clsc.hrs .cn{color:#4285f4}
 .clsc.rate .cn{color:#12203a}
 .clsc.tot .cn{color:#0f9d58}
@@ -238,12 +238,12 @@ td.nm,th.nm{text-align:left}
     <div class="clsc tot"><div class="cn" id="gsTotQty">—</div><div class="cl">总处理量 <span>件 / 次</span></div></div>
   </div>
 
-  <div class="grp"><span class="ic">⏱</span>耗时<span class="u">分</span></div>
+  <div class="grp"><span class="ic">⏱</span>理论耗时<span class="u">分</span></div>
   <div class="cls compact">
-    <div class="clsc hrs"><div class="cn" id="gsTqHours">—</div><div class="cl">取退货耗时 <span>分</span></div></div>
-    <div class="clsc hrs"><div class="cn" id="gsMsgHours">—</div><div class="cl">消息回复耗时 <span>分</span></div></div>
-    <div class="clsc hrs"><div class="cn" id="gsSwHours">—</div><div class="cl">SW稽核耗时 <span>分</span></div></div>
-    <div class="clsc tot"><div class="cn" id="gsTotHours">—</div><div class="cl">总耗时 <span>分</span></div></div>
+    <div class="clsc hrs"><div class="cn" id="gsTqHours">—</div><div class="cl">取退货理论耗时 <span>分</span></div></div>
+    <div class="clsc hrs"><div class="cn" id="gsMsgHours">—</div><div class="cl">消息回复理论耗时 <span>分</span></div></div>
+    <div class="clsc hrs"><div class="cn" id="gsSwHours">—</div><div class="cl">SW稽核理论耗时 <span>分</span></div></div>
+    <div class="clsc tot"><div class="cn" id="gsTotHours">—</div><div class="cl">总理论耗时 <span>分</span></div></div>
   </div>
   <div class="hint" id="gsCoreNote"></div>
 
@@ -254,15 +254,15 @@ td.nm,th.nm{text-align:left}
   </div>
   <div class="hint" id="gsSwNote"></div>
 
-  <div class="sec-title">各耗时量对比（当日）</div>
+  <div class="sec-title">各理论耗时量对比（当日）</div>
   <div class="chart" id="gsCmpChart" style="height:300px"></div>
 
   <div class="sec-title">总处理量（核算区间累计 · <span id="gsRangeTxt">—</span>）</div>
   <div class="cls compact">
     <div class="clsc tot"><div class="cn" id="gsCumQty">—</div><div class="cl">累计总处理量 <span>件 / 次</span></div></div>
-    <div class="clsc tot"><div class="cn" id="gsCumHours">—</div><div class="cl">累计总耗时 <span>分</span></div></div>
+    <div class="clsc tot"><div class="cn" id="gsCumHours">—</div><div class="cl">累计总理论耗时 <span>分</span></div></div>
     <div class="clsc tot"><div class="cn" id="gsAvgQty">—</div><div class="cl">日均处理量 <span>件 / 次 · 天</span></div></div>
-    <div class="clsc tot"><div class="cn" id="gsAvgHours">—</div><div class="cl">日均耗时 <span>分 · 天</span></div></div>
+    <div class="clsc tot"><div class="cn" id="gsAvgHours">—</div><div class="cl">日均理论耗时 <span>分 · 天</span></div></div>
   </div>
 
   <div class="sec-title">每人处理量（当日）</div>
@@ -275,7 +275,7 @@ td.nm,th.nm{text-align:left}
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
   <div class="chart" id="gsQtyChart" style="height:340px"></div>
 
-  <div class="sec-title">趋势分析 ② 耗时（折线图）</div>
+  <div class="sec-title">趋势分析 ② 理论耗时（折线图）</div>
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
   <div class="chart" id="gsHoursChart" style="height:340px"></div>
 </div>
@@ -470,8 +470,11 @@ const GS_START = '2026-09-14';
 // 统一日期轴 = 取退货/消息对接 与 SW稽核 的并集，且不早于核算起始日
 const GS_DATES = Array.from(new Set([...Object.keys(G.dates), ...Object.keys(S.dates)]))
   .filter(d => d >= GS_START).sort();
-const GS_LATEST = GS_DATES.length ? GS_DATES[GS_DATES.length-1] : '';
-const FIVE = ["王妙星","张霞霞","马红霞","杨凡凡","赵豫思"];
+  const GS_LATEST = GS_DATES.length ? GS_DATES[GS_DATES.length-1] : '';
+  // ③ 消息回复工艺工时 & 规范化：消息回复理论耗时 = Σ(每人回复数量 × 消息回复工艺工时)
+  const MSG_RATE = (G.baseline && G.baseline.msg_rate) ? G.baseline.msg_rate : 15.72;
+  for(const _d in G.dates){ const _g=G.dates[_d]; if(_g && _g.msg_reply_per){ let _s=0; for(const _k in _g.msg_reply_per){ _s += (_g.msg_reply_per[_k].replied||0)*MSG_RATE; } _g.msg_reply_hours = +_s.toFixed(1); } }
+  const FIVE = ["王妙星","张霞霞","马红霞","杨凡凡","赵豫思"];
 const gongshiPicker = createDatePicker({btn:'gsBtn',pop:'gsPop',title:'gsTitle',days:'gsDays',prev:'gsPrev',next:'gsNext',val:'gsVal',
   initial:GS_LATEST, hasData:GS_DATES, onChange:()=>renderGongshi()});
 // 某日三源合计（源缺数据按 0 计；两源皆无 → null 断线）
@@ -487,7 +490,7 @@ function renderGongshi(){
   const grec = G.dates[date] || null;   // 取退货 / 消息对接 当日
   const srec = S.dates[date] || null;   // SW稽核 当日
 
-  // ① 核心指标（数量组 / 耗时组 + 总处理量 / 总耗时）
+  // ① 核心指标（数量组 / 理论耗时组 + 总处理量 / 总理论耗时）
   const tq=grec?grec.tuihuo_qty:null, mq=grec?grec.msg_reply_qty:null, sq=srec?srec.qty:null;
   const th=grec?grec.tuihuo_hours:null, mh=grec?grec.msg_reply_hours:null, sh=srec?srec.hours:null;
   document.getElementById('gsTqQty').textContent    = grec?fmt(tq):'—';
@@ -500,7 +503,7 @@ function renderGongshi(){
   document.getElementById('gsTotHours').textContent = (grec||srec)?fmt(+(((th||0)+(mh||0)+(sh||0)).toFixed(1))):'—';
   document.getElementById('gsCoreNote').textContent =
     '数量口径：取退货=5人当日2026编码+图片（取退货群消息）；消息回复=外部群@工单已回复；SW稽核=工艺sw+5S+安全。'
-   +'耗时口径：取退货=数量×2.6分/件；消息回复=数量×15.72分/次；SW稽核=各图SW.T+5%+60s逐条Σ（5S/安全各按600s）。';
+   +'理论耗时口径（标准工时取自「工艺工时摸底」子表）：取退货=数量×2.6分/件（7-9月前台退取货末次回复均值,n=324）；消息回复=数量×15.72分/次（7-9月看板响应时长加权均值）；SW稽核=各图SW.T+5%+60s逐条Σ（5S/安全各按600s）。';
 
   // ② 工艺工时（放一起）
   document.getElementById('gsTqRate').textContent  = (G.baseline.tuihuo_rate).toFixed(1);
@@ -517,13 +520,13 @@ function renderGongshi(){
   const emps = Array.from(new Set([...FIVE, ...(S.employees||[])]));
   let html='<table><tr><th class="nm">姓名</th>'
     +'<th>取退货数量<span class="thu">(件)</span></th><th>消息回复数量<span class="thu">(次)</span></th><th>SW稽核数量<span class="thu">(次)</span></th>'
-    +'<th>消息回复均时长<span class="thu">(分)</span></th><th>SW稽核耗时<span class="thu">(分)</span></th></tr>';
+    +'<th>消息回复理论时长<span class="thu">(分)</span></th><th>SW稽核理论耗时<span class="thu">(分)</span></th></tr>';
   for(const p of emps){
     const tq2 = (grec&&grec.tuihuo_per&&grec.tuihuo_per[p])||0;
     const mp = (grec&&grec.msg_reply_per&&grec.msg_reply_per[p])||{replied:0,avg:null};
     const sw = (srec&&srec.per&&srec.per[p])||{qty:0,hours:0};
-    const avg = (mp.avg==null)?'—':mp.avg.toFixed(1);
-    html+='<tr><td class="nm">'+p+'</td><td>'+fmt(tq2)+'</td><td>'+fmt(mp.replied||0)+'</td><td>'+fmt(sw.qty)+'</td><td>'+avg+'</td><td>'+fmt(sw.hours)+'</td></tr>';
+    const msgTheo = (mp.replied||0)*MSG_RATE;
+    html+='<tr><td class="nm">'+p+'</td><td>'+fmt(tq2)+'</td><td>'+fmt(mp.replied||0)+'</td><td>'+fmt(sw.qty)+'</td><td>'+msgTheo.toFixed(1)+'</td><td>'+fmt(sw.hours)+'</td></tr>';
   }
   html+='</table>';
   document.getElementById('gsPerTable').innerHTML=html;
@@ -542,7 +545,7 @@ function renderGongshi(){
   // ⑤ 每人工作量（核算区间累计）
   let html2='<table><tr><th class="nm">姓名</th>'
     +'<th>取退货合计<span class="thu">(件)</span></th><th>消息回复合计<span class="thu">(次)</span></th>'
-    +'<th>SW稽核合计<span class="thu">(次)</span></th><th>SW稽核合计耗时<span class="thu">(分)</span></th><th>个人总处理量<span class="thu">(件 / 次)</span></th></tr>';
+    +'<th>SW稽核合计<span class="thu">(次)</span></th><th>SW稽核合计理论耗时<span class="thu">(分)</span></th><th>个人总处理量<span class="thu">(件 / 次)</span></th></tr>';
   for(const p of emps){
     let a=0,b=0,c=0,ch=0;
     for(const d of GS_DATES){
@@ -558,7 +561,7 @@ function renderGongshi(){
   html2+='</table>';
   document.getElementById('gsPerTotTable').innerHTML=html2;
 
-  // ⑥ 各耗时量对比（当日：柱状 + 占比环形）
+  // ⑥ 各理论耗时量对比（当日：柱状 + 占比环形）
   if(!gsCmpChart) gsCmpChart=echarts.init(document.getElementById('gsCmpChart'));
   const cmpNames=['取退货','消息回复','SW稽核'];
   const cmpColors=['#ea4335','#4285f4','#e67e22'];
@@ -571,19 +574,19 @@ function renderGongshi(){
       legend:{show:false},
       grid:[{left:64, right:'56%', top:36, bottom:30}],
       xAxis:[{gridIndex:0, type:'category', data:cmpNames, axisLabel:{fontSize:12}}],
-      yAxis:[{gridIndex:0, type:'value', name:'耗时(分)', nameTextStyle:{fontSize:11}}],
+      yAxis:[{gridIndex:0, type:'value', name:'理论耗时(分)', nameTextStyle:{fontSize:11}}],
       series:[
-        {name:'耗时(分)', type:'bar', xAxisIndex:0, yAxisIndex:0, barWidth:'48%',
+        {name:'理论耗时(分)', type:'bar', xAxisIndex:0, yAxisIndex:0, barWidth:'48%',
          data:cmpVals.map((v,i)=>({value:v, itemStyle:{color:cmpColors[i], borderRadius:[4,4,0,0]}})),
          label:{show:true, position:'top', formatter:p=>fmt(p.value)+' 分', fontSize:12, fontWeight:600}},
-        {name:'耗时占比', type:'pie', radius:['36%','62%'], center:['77%','52%'], avoidLabelOverlap:true,
+        {name:'理论耗时占比', type:'pie', radius:['36%','62%'], center:['77%','52%'], avoidLabelOverlap:true,
          data:cmpVals.map((v,i)=>({name:cmpNames[i], value:v, itemStyle:{color:cmpColors[i]}})),
          label:{formatter:'{b}\n{d}%', fontSize:11}, labelLine:{length:10, length2:8}}
       ]
     }, true);
   }
 
-  // ⑦ 趋势分析：数量 & 总处理量 一张、耗时一张（折线）
+  // ⑦ 趋势分析：数量 & 总处理量 一张、理论耗时一张（折线）
   if(!gsQtyChart)   gsQtyChart=echarts.init(document.getElementById('gsQtyChart'));
   if(!gsHoursChart) gsHoursChart=echarts.init(document.getElementById('gsHoursChart'));
   // 该源当日无数据 → null（折线断开），避免误画成 0
@@ -614,12 +617,12 @@ function renderGongshi(){
     ]
   }), true);
   gsHoursChart.setOption(Object.assign({}, baseOpt, {
-    yAxis:{type:'value', name:'耗时(分)', nameTextStyle:{fontSize:11}},
+    yAxis:{type:'value', name:'理论耗时(分)', nameTextStyle:{fontSize:11}},
     series:[
-      mk('总耗时','#0f9d58', GS_DATES.map(d=>tv(d,'hours')), true),
-      mk('取退货耗时','#fbbc04', GS_DATES.map(d=>gv(d,'tuihuo_hours'))),
-      mk('消息回复耗时','#4285f4', GS_DATES.map(d=>gv(d,'msg_reply_hours'))),
-      mk('SW稽核耗时','#e67e22', GS_DATES.map(d=>sv(d,'hours')))
+      mk('总理论耗时','#0f9d58', GS_DATES.map(d=>tv(d,'hours')), true),
+      mk('取退货理论耗时','#fbbc04', GS_DATES.map(d=>gv(d,'tuihuo_hours'))),
+      mk('消息回复理论耗时','#4285f4', GS_DATES.map(d=>gv(d,'msg_reply_hours'))),
+      mk('SW稽核理论耗时','#e67e22', GS_DATES.map(d=>sv(d,'hours')))
     ]
   }), true);
   // 页面初始化时该面板可能处于隐藏态（容器 0 宽），切页签后强制重算尺寸
