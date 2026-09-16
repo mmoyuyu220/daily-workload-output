@@ -118,7 +118,6 @@ td.nm,th.nm{text-align:left}
   #panel-video td.att-off{color:#d1342f;font-weight:600;background:#fdf2f2}
   #panel-video td.att-na{color:#98a2b3}
   #panel-video table th,#panel-video table td{padding:7px 9px}
-  #panel-video td.att-sel{outline:2px solid var(--blue);outline-offset:-2px}
   #panel-video .vp-attstrip{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}
   #panel-video .vp-attchip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:13px;background:#fff}
   #panel-video .vp-attchip .nm{font-weight:600;color:#344563}
@@ -331,25 +330,16 @@ td.nm,th.nm{text-align:left}
   </div>
   <div class="hint" style="margin:2px 0 14px">选择日期可<b>按日期联动</b>查看当日视频调取明细 &amp; 考勤（灰色日期为无视频数据，仍显示当日考勤）；亦与「每日工作量输出」页的日期筛选联动。</div>
 
-  <div class="sec-title">📐 计算口径</div>
-  <div class="hint">每人每日视频调取量 = <b>Part 1</b> + <b>Part 2</b> + <b>Part 3</b> 三部分之和。</div>
-  <div class="vp-pills">
-    <span class="vp-pill"><b>Part 1</b> ｜ wiki「日期=当日 &amp; 仓=西安 &amp; 业务分类=流转专项」的 <b>物品编码</b> 单元格数（每格 1 个编码 = 1 视频），按单元格<b>编辑人</b>归属。</span>
-    <span class="vp-pill"><b>Part 2</b> ｜ Base「SW检查表附件」列，<b>1 张 SW 图 = 5 视频</b>，按图片<b>上传人</b>归属；<b>张霞霞 / 王妙星 各一半（非整数张多1）；当日一人未出勤则出勤者全额</b>。</span>
-    <span class="vp-pill"><b>Part 3</b> ｜ 「视频调取」群内 <b>杨凡凡 / 马红霞 / 赵豫思</b> 当日发送的视频消息数。</span>
-  </div>
-
   <div class="sec-title">📅 当日视频调取明细 <span class="vp-tag info" id="vpDayLbl"></span></div>
   <div id="videoDayWrap"></div>
 
-  <div class="sec-title">📅 考勤矩阵（来源：排班表 / 8月及以后 · Z6U6uk）</div>
-  <div class="hint">出勤=「上班」(绿)、休息=「休息」(红)；赵豫思 9/9–9/11 为婚假(红)。点击月份切换 8月 / 9月；选中日期已高亮。</div>
+  <div class="sec-title">📅 当日考勤（来源：排班表 / 8月及以后 · Z6U6uk）</div>
+  <div class="hint">出勤=「上班」(绿)、休息=「休息」(红)；赵豫思 9/9–9/11 为婚假(红)。用上方日期选择器选某天，下方仅显示当日考勤；也可点右侧筛选按钮快速跳到 8月 / 9月。</div>
   <div class="vp-mtoggle">
-    <button class="vp-mbtn" data-m="08">8月</button>
-    <button class="vp-mbtn active" data-m="09">9月</button>
+    <button class="vp-mbtn" data-m="08">筛选：8月</button>
+    <button class="vp-mbtn active" data-m="09">筛选：9月</button>
   </div>
   <div id="attTableWrap"></div>
-  <div class="vp-note warn">⚠ 一点与你此前示例不同：你曾说「9/16 张霞霞休假」，但表内 9/16 张霞霞为「上班」（当日仅赵豫思休息）。此处<b>以表为准</b>，如需调整请告知。</div>
 
   <details class="vp-hist">
     <summary>📎 历史快照：9/14 vs 9/15 完整明细</summary>
@@ -582,7 +572,7 @@ const GS_DATES = Array.from(new Set([...Object.keys(G.dates), ...Object.keys(S.d
   for(const _d in G.dates){ const _g=G.dates[_d]; if(_g && _g.msg_reply_per){ let _s=0; for(const _k in _g.msg_reply_per){ _s += (_g.msg_reply_per[_k].replied||0)*MSG_RATE; } _g.msg_reply_hours = +_s.toFixed(1); } }
   const FIVE = ["王妙星","张霞霞","马红霞","杨凡凡","赵豫思"];
 const gongshiPicker = createDatePicker({btn:'gsBtn',pop:'gsPop',title:'gsTitle',days:'gsDays',prev:'gsPrev',next:'gsNext',val:'gsVal',
-  initial:GS_LATEST, hasData:GS_DATES, onChange:()=>{ renderGongshi(); if(VIDEO_DATA[gongshiPicker.value]){ videoPicker.value=gongshiPicker.value; renderVideoDay(gongshiPicker.value); renderAtt(vpMonth,gongshiPicker.value); } }});
+  initial:GS_LATEST, hasData:GS_DATES, onChange:()=>{ renderGongshi(); if(VIDEO_DATA[gongshiPicker.value]){ videoPicker.value=gongshiPicker.value; renderVideoDay(gongshiPicker.value); renderAtt(gongshiPicker.value); } }});
 // 某日三源合计（源缺数据按 0 计；两源皆无 → null 断线）
 function gsDayTotals(d){
   const g=G.dates[d], s=S.dates[d];
@@ -743,52 +733,38 @@ const ATT_WK = ['日','一','二','三','四','五','六'];
 const VIDEO_DATA = {
   '2026-09-14':{
     part1:{cells:20,videos:20,owner:'编辑人无法经 API 获取'},
-    part2:[
-      {who:'张霞霞',imgs:4,vids:20,rule:'王妙星 9/14 休假 → 张霞霞全额 20，王妙星 0'},
-      {who:'赵豫思',imgs:5,vids:25,rule:'赵豫思 25'}
-    ],
-    part2sub:{imgs:9,vids:45,dist:'张20 王0 赵25'},
+    part2per:{王妙星:0,张霞霞:20,赵豫思:25,杨凡凡:0,马红霞:0},
     part3:{杨凡凡:0,马红霞:1,赵豫思:0,others:'张杰 19'},
-    note:'9/14 王妙星「休息」、张霞霞「上班」→ 张霞霞全额。'
+    note:'9/14 王妙星「休息」、张霞霞「上班」→ 张霞霞全额 20，王妙星 0。'
   },
   '2026-09-15':{
     part1:{cells:20,videos:20,owner:'编辑人无法经 API 获取'},
-    part2:[
-      {who:'杨凡凡',imgs:4,vids:20,rule:'杨凡凡 20'},
-      {who:'张霞霞',imgs:7,vids:35,rule:'两人均出勤 → 各一半（35/2=17.5，张多1 → 张18 / 王17）'},
-      {who:'赵豫思',imgs:4,vids:20,rule:'赵豫思 20'}
-    ],
-    part2sub:{imgs:15,vids:75,dist:'杨20 张18 王17 赵20'},
+    part2per:{杨凡凡:20,张霞霞:18,王妙星:17,赵豫思:20,马红霞:0},
     part3:{杨凡凡:0,马红霞:0,赵豫思:0,others:'张杰 12 ／ 谭添 1 ／ 郑志刚 1'},
-    note:'9/15 张霞霞、王妙星均「上班」→ 两人都出勤，各一半（张18/王17）。'
+    note:'9/15 张霞霞、王妙星均「上班」→ 两人都出勤，各一半（35/2=17.5，张多1 → 张18 / 王17）。'
   }
 };
-function renderAtt(month, selDate){
+function renderAtt(selDate){
   const wrap=document.getElementById('attTableWrap');
   if(!wrap) return;
-  const dates=Object.keys(ATT.attendance).filter(d=>d.slice(5,7)===month).sort();
+  if(!selDate || !ATT.attendance[selDate]){ wrap.innerHTML='<div class="empty">请选择日期查看当日考勤</div>'; return; }
   const P=ATT.people;
+  const wk=ATT_WK[new Date(selDate).getDay()];
   let h='<table><tr><th>日期</th>'+P.map(p=>'<th>'+p+'</th>').join('')+'</tr>';
-  dates.forEach(d=>{
-    const wk=ATT_WK[new Date(d).getDay()];
-    const isSel=(selDate && d===selDate);
-    h+='<tr><td class="nm'+(isSel?' att-sel':'')+'">'+d.slice(5)+' '+wk+(isSel?' ★':'')+'</td>';
-    P.forEach(p=>{
-      const s=(ATT.attendance[d][p]||'');
-      let cls='att-na',txt=s;
-      if(s==='出勤'){cls='att-on';txt='出';}
-      else if(s==='休息'){cls='att-off';txt='休';}
-      else if(s==='婚假'){cls='att-off';txt='婚';}
-      h+='<td class="'+(isSel?'att-sel ':'')+cls+'">'+txt+'</td>';
-    });
-    h+='</tr>';
+  h+='<tr><td class="nm">'+selDate.slice(5)+' '+wk+'</td>';
+  P.forEach(p=>{
+    const s=(ATT.attendance[selDate][p]||'');
+    let cls='att-na',txt=s;
+    if(s==='出勤'){cls='att-on';txt='出';}
+    else if(s==='休息'){cls='att-off';txt='休';}
+    else if(s==='婚假'){cls='att-off';txt='婚';}
+    h+='<td class="'+cls+'">'+txt+'</td>';
   });
-  h+='</table>';
+  h+='</tr></table>';
   wrap.innerHTML=h;
 }
-let vpMonth='09';
 const videoPicker = createDatePicker({btn:'vpBtn',pop:'vpPop',title:'vpTitle',days:'vpDays',prev:'vpPrev',next:'vpNext',val:'vpVal',
-  initial:'2026-09-15', hasData:Object.keys(VIDEO_DATA), onChange:v=>{ renderVideoDay(v); renderAtt(vpMonth,v); }});
+  initial:'2026-09-15', hasData:Object.keys(VIDEO_DATA), onChange:v=>{ renderVideoDay(v); renderAtt(v); }});
 function renderVideoDay(date){
   const lbl=document.getElementById('vpDayLbl');
   const wrap=document.getElementById('videoDayWrap');
@@ -813,12 +789,7 @@ function renderVideoDay(date){
     return;
   }
   const p2v={}, p3v={};
-  FIVE.forEach(p=>{ p2v[p]=0; p3v[p]=0; });
-  rec.part2.forEach(r=>{ if(p2v.hasOwnProperty(r.who)) p2v[r.who]=r.vids; });
-  if(rec.part3){ FIVE.forEach(p=>{ if(rec.part3.hasOwnProperty(p)) p3v[p]=rec.part3[p]; }); }
-  let p2='<table><tr><th>修改人(上传人代理)</th><th>图片数</th><th>视频数</th><th>半额规则后归属</th></tr>';
-  rec.part2.forEach(r=>{ p2+='<tr><td class="nm">'+r.who+'</td><td>'+r.imgs+'</td><td>'+r.vids+'</td><td style="text-align:left">'+r.rule+'</td></tr>'; });
-  p2+='<tr><td class="nm"><b>小计</b></td><td><b>'+rec.part2sub.imgs+'</b></td><td><b>'+rec.part2sub.vids+'</b></td><td style="text-align:left">'+rec.part2sub.dist+'</td></tr></table>';
+  FIVE.forEach(p=>{ p2v[p]=(rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0; p3v[p]=(rec.part3&&rec.part3[p]!=null)?rec.part3[p]:0; });
   let pt='<table><tr><th>人员</th><th>Part2</th><th>Part3</th><th>当日合计</th></tr>';
   FIVE.forEach(p=>{ pt+='<tr><td class="nm">'+p+'</td><td>'+p2v[p]+'</td><td>'+p3v[p]+'</td><td><b>'+(p2v[p]+p3v[p])+'</b></td></tr>'; });
   pt+='</table>';
@@ -826,27 +797,31 @@ function renderVideoDay(date){
     + '<div class="lbl">Part 1 ｜ wiki 物品编码 <span class="vp-tag warn">⚠ 暂无法归属个人</span></div>'
     + '<table><tr><th>西安+流转专项 物品编码单元格</th><th>折合视频数</th><th>归属状态</th></tr>'
     + '<tr><td>'+rec.part1.cells+'</td><td>'+rec.part1.videos+'</td><td style="text-align:left">'+rec.part1.owner+'</td></tr></table>'
-    + '<div class="lbl" style="margin-top:14px">Part 2 ｜ Base SW检查表附件（修正后半额规则）</div>'
-    + p2
     + '<div class="lbl" style="margin-top:14px">Part 3 ｜ “视频调取” 群视频</div>'
-    + '<table><tr><th>杨凡凡</th><th>马红霞</th><th>赵豫思</th><th>群内其他发送者</th></tr>'
-    + '<tr><td>'+(rec.part3?rec.part3['杨凡凡']||0:0)+'</td><td>'+(rec.part3?rec.part3['马红霞']||0:0)+'</td><td>'+(rec.part3?rec.part3['赵豫思']||0:0)+'</td><td style="text-align:left">'+(rec.part3?rec.part3.others||'—':'—')+'</td></tr></table>'
+    + '<table><tr><th>杨凡凡</th><th>马红霞</th><th>赵豫思</th></tr>'
+    + '<tr><td>'+(rec.part3?rec.part3['杨凡凡']||0:0)+'</td><td>'+(rec.part3?rec.part3['马红霞']||0:0)+'</td><td>'+(rec.part3?rec.part3['赵豫思']||0:0)+'</td></tr></table>'
     + '<div class="lbl" style="margin-top:14px">👤 每人当日合计（Part2 + Part3）</div>'
     + pt
     + '<div class="vp-note">'+rec.note+'</div>';
 }
+function bestDayForMonth(m){
+  const vd=Object.keys(VIDEO_DATA).filter(d=>d.slice(5,7)===m).sort();
+  if(vd.length) return vd[vd.length-1];
+  const att=Object.keys(ATT.attendance).filter(d=>d.slice(5,7)===m).sort();
+  return att.length?att[att.length-1]:null;
+}
 function syncVideoDate(d){
-  if(VIDEO_DATA[d]){ videoPicker.value=d; renderVideoDay(d); renderAtt(vpMonth,d); }
+  if(VIDEO_DATA[d]){ videoPicker.value=d; renderVideoDay(d); renderAtt(d); }
 }
 document.querySelectorAll('.vp-mbtn').forEach(b=>{
   b.onclick=()=>{
     document.querySelectorAll('.vp-mbtn').forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
-    vpMonth=b.dataset.m;
-    renderAtt(vpMonth, videoPicker?videoPicker.value:null);
+    const d=bestDayForMonth(b.dataset.m);
+    if(d){ videoPicker.value=d; renderVideoDay(d); renderAtt(d); }
   };
 });
-function renderVideo(){ const d=videoPicker?videoPicker.value:null; renderVideoDay(d); renderAtt(vpMonth,d); }
+function renderVideo(){ const d=videoPicker?videoPicker.value:null; renderVideoDay(d); renderAtt(d); }
 
 // ---------- init ----------
 document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天（'+DAYS[0].date+' ~ '+DAYS[DAYS.length-1].date+'）';
