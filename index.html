@@ -99,7 +99,25 @@ td.nm,th.nm{text-align:left}
 .date-field-sm{display:flex;flex-direction:column;gap:7px;background:#f3f6fc;border:1px solid var(--line);border-radius:12px;padding:12px 16px}
 .date-field-sm .lbl{margin:0}
 .date-field-sm .date-picker-btn{padding:9px 14px;font-size:13px}
-.date-field-sm .date-picker-pop{width:264px}
+  .date-field-sm .date-picker-pop{width:264px}
+
+  /* ===== 视频调取 & 考勤 面板 ===== */
+  #panel-video .vp-pills{display:flex;flex-direction:column;gap:8px;margin:6px 0 4px}
+  #panel-video .vp-pill{background:#f3f6fc;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;line-height:1.75}
+  #panel-video .vp-tag{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:600;margin-left:8px;vertical-align:middle;white-space:nowrap}
+  #panel-video .vp-tag.ok{background:#e7f7ee;color:#1a7f4b}
+  #panel-video .vp-tag.warn{background:#fff3e0;color:#b26a00}
+  #panel-video .vp-tag.info{background:#e8f0fe;color:#2b5fd0}
+  #panel-video .vp-note{font-size:12px;color:#8a93a3;line-height:1.7;margin-top:10px;background:#fafbfc;border:1px solid var(--line);border-radius:8px;padding:9px 13px}
+  #panel-video .vp-note.warn{border-color:#f3d9a6;background:#fff8ec;color:#8a5b00}
+  #panel-video .vp-mtoggle{display:flex;gap:8px;margin:8px 0 4px}
+  #panel-video .vp-mbtn{font-size:13px;padding:7px 18px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--sub);cursor:pointer;transition:all .15s}
+  #panel-video .vp-mbtn:hover{border-color:var(--blue)}
+  #panel-video .vp-mbtn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+  #panel-video td.att-on{color:#0f9d58;font-weight:700;background:#f2faf5}
+  #panel-video td.att-off{color:#d1342f;font-weight:600;background:#fdf2f2}
+  #panel-video td.att-na{color:#98a2b3}
+  #panel-video table th,#panel-video table td{padding:7px 9px}
 </style>
 </head>
 <body>
@@ -114,6 +132,7 @@ td.nm,th.nm{text-align:left}
   <div class="tab" data-tab="trend">趋势分析</div>
   <div class="tab" data-tab="warn">预警看板</div>
   <div class="tab" data-tab="gongshi">每日工作量输出</div>
+  <div class="tab" data-tab="video">视频调取 &amp; 考勤</div>
 </div>
 
 <!-- 单日详情：嵌入最早报告模板 -->
@@ -280,6 +299,80 @@ td.nm,th.nm{text-align:left}
   <div class="chart" id="gsHoursChart" style="height:340px"></div>
 </div>
 
+<!-- 视频调取 & 考勤 -->
+<div class="panel" id="panel-video">
+  <div class="date-bar">
+    <div class="date-field">
+      <span class="df-ico">🎬</span>
+      <div>
+        <div class="lbl">视频调取统计 &amp; 考勤（2026-08 ~ 2026-09）</div>
+        <div class="df-note">数据快照：9/14 &amp; 9/15 视频调取量（修正半额规则）+ 排班表「8月及以后」逐日出勤</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-title">📐 计算口径</div>
+  <div class="hint">每人每日视频调取量 = <b>Part 1</b> + <b>Part 2</b> + <b>Part 3</b> 三部分之和。</div>
+  <div class="vp-pills">
+    <span class="vp-pill"><b>Part 1</b> ｜ wiki「日期=当日 &amp; 仓=西安 &amp; 业务分类=流转专项」的 <b>物品编码</b> 单元格数（每格 1 个编码 = 1 视频），按单元格<b>编辑人</b>归属。</span>
+    <span class="vp-pill"><b>Part 2</b> ｜ Base「SW检查表附件」列，<b>1 张 SW 图 = 5 视频</b>，按图片<b>上传人</b>归属；<b>张霞霞 / 王妙星 各一半（非整数张多1）；当日一人未出勤则出勤者全额</b>。</span>
+    <span class="vp-pill"><b>Part 3</b> ｜ 「视频调取」群内 <b>杨凡凡 / 马红霞 / 赵豫思</b> 当日发送的视频消息数。</span>
+  </div>
+
+  <div class="sec-title">Part 2 ｜ Base SW检查表附件（修正后半额规则）<span class="vp-tag ok">已归因</span></div>
+  <div class="lbl" style="margin:6px 0">9/14（9 条记录 · 9 张图 → 45 视频）</div>
+  <table>
+    <tr><th>修改人(上传人代理)</th><th>图片数</th><th>视频数</th><th>半额规则后归属</th></tr>
+    <tr><td class="nm">张霞霞</td><td>4</td><td>20</td><td>王妙星 9/14 休假 → <b>张霞霞全额 20</b>，王妙星 0</td></tr>
+    <tr><td class="nm">赵豫思</td><td>5</td><td>25</td><td>赵豫思 25</td></tr>
+    <tr><td class="nm"><b>小计</b></td><td><b>9</b></td><td><b>45</b></td><td>张20 王0 赵25</td></tr>
+  </table>
+  <div class="lbl" style="margin:14px 0 6px">9/15（14 条记录 · 15 张图 → 75 视频）</div>
+  <table>
+    <tr><th>修改人(上传人代理)</th><th>图片数</th><th>视频数</th><th>半额规则后归属</th></tr>
+    <tr><td class="nm">杨凡凡</td><td>4</td><td>20</td><td>杨凡凡 20</td></tr>
+    <tr><td class="nm">张霞霞</td><td>7</td><td>35</td><td>两人均出勤 → 各一半（35/2=17.5，<b>张多1 → 张18 / 王17</b>）</td></tr>
+    <tr><td class="nm">赵豫思</td><td>4</td><td>20</td><td>赵豫思 20</td></tr>
+    <tr><td class="nm"><b>小计</b></td><td><b>15</b></td><td><b>75</b></td><td>杨20 张18 王17 赵20</td></tr>
+  </table>
+  <div class="vp-note">✅ 9/15 考勤已核实：来源「排班表 / 8月及以后」子表（sheet=<code>Z6U6uk</code>）——9/14 王妙星「休息」、张霞霞「上班」→ 张霞霞全额；9/15 张霞霞、王妙星均「上班」→ 两人都出勤，各一半（35/2=17.5，非整数张多1 → 张18/王17）。与上表一致。</div>
+
+  <div class="sec-title">Part 1 ｜ wiki 物品编码 <span class="vp-tag warn">⚠ 暂无法归属个人</span></div>
+  <table>
+    <tr><th>日期</th><th>西安+流转专项 物品编码单元格</th><th>折合视频数</th><th>归属状态</th></tr>
+    <tr><td class="nm">9/14</td><td>20</td><td>20</td><td>编辑人无法经 API 获取</td></tr>
+    <tr><td class="nm">9/15</td><td>20</td><td>20</td><td>编辑人无法经 API 获取</td></tr>
+  </table>
+  <div class="vp-note warn">⚠ Part 1（wiki 物品编码）单元格编辑人无法通过飞书 API 批量获取，需手动给「单元格→编辑人」映射，或确认作未归属池。</div>
+
+  <div class="sec-title">Part 3 ｜ “视频调取” 群视频 <span class="vp-tag ok">已归因</span></div>
+  <table>
+    <tr><th>日期</th><th>杨凡凡</th><th>马红霞</th><th>赵豫思</th><th>群内其他发送者</th></tr>
+    <tr><td class="nm">9/14</td><td>0</td><td>1</td><td>0</td><td style="text-align:left">张杰 19</td></tr>
+    <tr><td class="nm">9/15</td><td>0</td><td>0</td><td>0</td><td style="text-align:left">张杰 12 ／ 谭添 1 ／ 郑志刚 1</td></tr>
+  </table>
+
+  <div class="sec-title">👤 每人每日汇总（Part 2 + Part 3，Part 1 待归因）</div>
+  <table>
+    <tr><th rowspan="2">人员</th><th colspan="3">9/14</th><th colspan="3">9/15</th></tr>
+    <tr><th>Part2</th><th>Part3</th><th>合计</th><th>Part2</th><th>Part3</th><th>合计</th></tr>
+    <tr><td class="nm">张霞霞</td><td>20</td><td>0</td><td><b>20</b></td><td>18</td><td>0</td><td><b>18</b></td></tr>
+    <tr><td class="nm">王妙星</td><td>0</td><td>0</td><td><b>0</b></td><td>17</td><td>0</td><td><b>17</b></td></tr>
+    <tr><td class="nm">赵豫思</td><td>25</td><td>0</td><td><b>25</b></td><td>20</td><td>0</td><td><b>20</b></td></tr>
+    <tr><td class="nm">杨凡凡</td><td>0</td><td>0</td><td><b>0</b></td><td>20</td><td>0</td><td><b>20</b></td></tr>
+    <tr><td class="nm">马红霞</td><td>0</td><td>1</td><td><b>1</b></td><td>0</td><td>0</td><td><b>0</b></td></tr>
+  </table>
+
+  <div class="sec-title">📅 考勤矩阵（来源：排班表 / 8月及以后 · Z6U6uk）</div>
+  <div class="hint">出勤=「上班」(绿)、休息=「休息」(红)；赵豫思 9/9–9/11 为婚假(红)。点击月份切换 8月 / 9月。</div>
+  <div class="vp-mtoggle">
+    <button class="vp-mbtn" data-m="08">8月</button>
+    <button class="vp-mbtn active" data-m="09">9月</button>
+  </div>
+  <div id="attTableWrap"></div>
+  <div class="vp-note warn">⚠ 一点与你此前示例不同：你曾说「9/16 张霞霞休假」，但表内 9/16 张霞霞为「上班」（当日仅赵豫思休息）。此处<b>以表为准</b>，如需调整请告知。</div>
+</div>
+
 <div class="foot" id="foot"></div>
 
 <script>
@@ -302,6 +395,7 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   if(t.dataset.tab==='trend'){ renderTrend(); }
   if(t.dataset.tab==='warn'){ renderWarn(); }
   if(t.dataset.tab==='gongshi'){ renderGongshi(); }
+  if(t.dataset.tab==='video'){ renderVideo(); }
 });
 
 // ---------- 单日详情：嵌入最早报告模板（日历展开组件） ----------
@@ -629,11 +723,47 @@ function renderGongshi(){
   gsCmpChart.resize(); gsQtyChart.resize(); gsHoursChart.resize();
 }
 
+// ---------- 视频调取 & 考勤 ----------
+window.ATT_DATA = {"source": "排班表/8月及以后 (Z6U6uk)", "spreadsheet_token": "HaxHsvmTShvMGgtDcVFcc5Ytnsd", "people": ["王妙星", "张霞霞", "马红霞", "杨凡凡", "赵豫思"], "attendance": {"2026-08-01": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-08-02": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-08-03": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-08-04": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-08-05": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-08-06": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-08-07": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-08-08": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-08-09": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-08-10": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-08-11": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-08-12": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-08-13": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-08-14": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-08-15": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-08-16": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-08-17": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-08-18": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-08-19": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-08-20": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-08-21": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-08-22": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-08-23": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-08-24": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-08-25": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-08-26": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-08-27": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-08-28": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-08-29": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-08-30": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-08-31": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-09-01": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-09-02": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-09-03": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-09-04": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-09-05": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-09-06": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-09-07": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-09-08": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-09-09": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "婚假"}, "2026-09-10": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "婚假"}, "2026-09-11": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "婚假"}, "2026-09-12": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-09-13": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-09-14": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-09-15": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-09-16": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-09-17": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-09-18": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-09-19": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-09-20": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-09-21": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-09-22": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-09-23": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-09-24": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-09-25": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-09-26": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-09-27": {"王妙星": "出勤", "张霞霞": "休息", "马红霞": "出勤", "杨凡凡": "休息", "赵豫思": "出勤"}, "2026-09-28": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "休息"}, "2026-09-29": {"王妙星": "休息", "张霞霞": "出勤", "马红霞": "休息", "杨凡凡": "出勤", "赵豫思": "出勤"}, "2026-09-30": {"王妙星": "出勤", "张霞霞": "出勤", "马红霞": "出勤", "杨凡凡": "出勤", "赵豫思": "出勤"}}};
+const ATT = window.ATT_DATA;
+const ATT_WK = ['日','一','二','三','四','五','六'];
+function renderAtt(month){
+  const wrap=document.getElementById('attTableWrap');
+  if(!wrap) return;
+  const dates=Object.keys(ATT.attendance).filter(d=>d.slice(5,7)===month).sort();
+  const P=ATT.people;
+  let h='<table><tr><th>日期</th>'+P.map(p=>'<th>'+p+'</th>').join('')+'</tr>';
+  dates.forEach(d=>{
+    const wk=ATT_WK[new Date(d).getDay()];
+    h+='<tr><td class="nm">'+d.slice(5)+' '+wk+'</td>';
+    P.forEach(p=>{
+      const s=(ATT.attendance[d][p]||'');
+      let cls='att-na',txt=s;
+      if(s==='出勤'){cls='att-on';txt='出';}
+      else if(s==='休息'){cls='att-off';txt='休';}
+      else if(s==='婚假'){cls='att-off';txt='婚';}
+      h+='<td class="'+cls+'">'+txt+'</td>';
+    });
+    h+='</tr>';
+  });
+  h+='</table>';
+  wrap.innerHTML=h;
+}
+document.querySelectorAll('.vp-mbtn').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.vp-mbtn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    renderAtt(b.dataset.m);
+  };
+});
+function renderVideo(){ renderAtt('09'); }
+
 // ---------- init ----------
 document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天（'+DAYS[0].date+' ~ '+DAYS[DAYS.length-1].date+'）';
 document.getElementById('foot').textContent='数据生成时间：'+D.meta.generated_at+' · 数据源：飞书群聊消息 + 飞书电子表格「抖音交付、稽核汇总」+ Base（抖音稽核 / 素养检查 / 预警未处理明细）';
 if(DAYS.length){ showDay(singlePicker.value); }
 if(GS_DATES.length){ renderGongshi(); }
+if(ATT&&ATT.attendance){ renderVideo(); }
 window.addEventListener('resize',()=>{if(trendChart)trendChart.resize();if(regionChart)regionChart.resize();if(gsCmpChart)gsCmpChart.resize();if(gsQtyChart)gsQtyChart.resize();if(gsHoursChart)gsHoursChart.resize();});
 </script>
 </body>
