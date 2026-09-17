@@ -211,6 +211,7 @@ td.nm,th.nm{text-align:left}
     <tr><td class="nm">消息回复</td><td id="gsMsgQty">—</td><td id="gsMsgHours">—</td></tr>
     <tr><td class="nm">SW稽核</td><td id="gsSwQty">—</td><td id="gsSwHours">—</td></tr>
     <tr><td class="nm">视频调取</td><td id="gsVidQty">—</td><td class="calc">计算中</td></tr>
+    <tr><td class="nm">流转专项视频</td><td id="gsLzvQty">—</td><td class="calc">计算中</td></tr>
     <tr class="tot"><td class="nm">合计</td><td id="gsTotQty">—</td><td id="gsTotHours">—</td></tr>
   </table>
   <div class="hint" id="gsCoreNote"></div>
@@ -397,17 +398,24 @@ function renderGongshi(){
     const rec=VIDEO_DATA[d];
     FIVE.forEach(p=>{ vq += (rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0; });
   });
+  // 流转专项视频（西安流转专项 · wiki 物品编码 Part1，未归属池）：实际数量 = 区间内各视频日 part1.cells 求和
+  let lzv=0;
+  Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).forEach(d=>{
+    const rec=VIDEO_DATA[d];
+    lzv += (rec.part1&&rec.part1.cells!=null)?rec.part1.cells:0;
+  });
   setTxt('gsRangeLbl2', (start&&end)?(start+' ~ '+end):'—');
   setTxt('gsTqQty', hasRng?fmt(tq)+' 件':'—');
   setTxt('gsMsgQty', hasRng?fmt(mq)+' 次':'—');
   setTxt('gsSwQty', hasRng?fmt(sq)+' 次':'—');
   setTxt('gsVidQty', hasRng?fmt(vq)+' 个':'—');
-  setTxt('gsTotQty', hasRng?fmt(tq+mq+sq+vq):'—');
+  setTxt('gsLzvQty', hasRng?fmt(lzv)+' 个':'—');
+  setTxt('gsTotQty', hasRng?fmt(tq+mq+sq+vq+lzv):'—');
   setTxt('gsTqHours', hasRng?fmt(th)+' 分':'—');
   setTxt('gsMsgHours', hasRng?fmt(mh)+' 分':'—');
   setTxt('gsSwHours', hasRng?fmt(sh)+' 分':'—');
   setTxt('gsTotHours', hasRng?fmt(+((th+mh+sh).toFixed(1)))+' 分':'—');
-  setTxt('gsCoreNote', '数量口径：取退货=5人当日2026编码+图片（取退货群消息）；消息回复=外部群@工单已回复；SW稽核=工艺sw+5S+安全；视频调取=标准作业审核表「稽核点=工艺sw」归属量（5S/安全不计入）。'
+  setTxt('gsCoreNote', '数量口径：取退货=5人当日2026编码+图片（取退货群消息）；消息回复=外部群@工单已回复；SW稽核=工艺sw+5S+安全；视频调取=标准作业审核表「稽核点=工艺sw」归属量（5S/安全不计入）；流转专项视频=西安流转专项 wiki 物品编码（Part1）实际数量，未归属个人、理论耗时计算中。'
    +'理论耗时口径（标准工时取自「工艺工时摸底」子表）：取退货=数量×2.6分/件；消息回复=数量×15.72分/次；SW稽核=各图SW.T+5%+60s逐条Σ（5S/安全各按600s）。视频调取暂无标准工时，理论耗时计算中。');
 
   // ② 工艺工时对照表
@@ -537,9 +545,9 @@ const ATT_WK = ['日','一','二','三','四','五','六'];
 // 工艺工时摸底 · 标准工时对照表（源：飞书「员工工作量统计表」/「工艺工时摸底」子表，2026-09-16 更新）
 const GS_GONGSHI = [
   {name:'外呼', rate:'', logic:'', date:''},
-  {name:'上下架', rate:'1', logic:'', date:'9月8日'},
-  {name:'异常邮件跟进', rate:'1', logic:'异常邮件处理', date:'9月8日'},
-  {name:'工单处理', rate:'43.1', logic:'根据1-9月西安仓处理时效与工单总数计算（去掉异常数据）', date:'9月8日'},
+  {name:'上下架', rate:'1', logic:'', date:'2026-09-08'},
+  {name:'异常邮件跟进', rate:'1', logic:'异常邮件处理', date:'2026-09-08'},
+  {name:'工单处理', rate:'43.1', logic:'根据1-9月西安仓处理时效与工单总数计算（去掉异常数据）', date:'2026-09-08'},
   {name:'异常处理', rate:'', logic:'', date:''},
   {name:'取退货', rate:'2.6', logic:'7-9月 前台退取货→末次回复均值(剔除1条14.3h跨天异常, n=324)', date:'2026-09-15'},
   {name:'消息对接', rate:'15.72', logic:'7-9月 看板响应时长加权均值', date:'2026-09-15'},
