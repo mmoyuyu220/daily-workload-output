@@ -146,10 +146,6 @@ td.nm,th.nm{text-align:left}
   .m-video .vp-mbtn{font-size:13px;padding:7px 18px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--sub);cursor:pointer;transition:all .15s}
   .m-video .vp-mbtn:hover{border-color:var(--blue)}
   .m-video .vp-mbtn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
-  .m-video .vp-daytoggle{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
-  .m-video .vp-dchip{font-size:13px;padding:6px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--sub);cursor:pointer;transition:all .15s}
-  .m-video .vp-dchip:hover{border-color:var(--blue)}
-  .m-video .vp-dchip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
   .m-video .vp-dayblock .lbl{font-weight:600;color:#344563;margin-bottom:6px}
   .m-video td.att-on{color:#0f9d58;font-weight:700;background:#f2faf5}
   .m-video td.att-off{color:#d1342f;font-weight:600;background:#fdf2f2}
@@ -235,8 +231,6 @@ td.nm,th.nm{text-align:left}
   <div id="gsPerTotTable"></div>
 
   <div id="gsPart1Wrap"></div>
-
-  <div id="gsVidDayToggle" class="vp-daytoggle"></div>
 
   <div class="sec-title">趋势分析 ① 数量 &amp; 总处理量（折线图）</div>
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
@@ -344,23 +338,12 @@ function renderGongshi(){
 
   // ③ 每人工作量（区间累计：合并 处理量 + 理论耗时 + 个人总处理量 + 视频调取当日合计）
   // 视频调取「每人当日合计」第四列（当日合计 = Part2+Part3）并入本表，方便单表查看
-  const vds = Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).sort();
-  // 视频日解析：① 若已显式选了视频日（视频日 chips）且落在区间内 → 用它；
-  //            ② 否则取「筛选条件 · 查看当日」(数据日) 当日或之前最近的一个视频日；
-  //            ③ 再退化到区间内最后一个视频日。
-  let vidSelDay='';
-  if(vpSelDay && vds.includes(vpSelDay)) vidSelDay=vpSelDay;
-  else{
-    const pick=(gsDayEl && gsDayEl.value)?gsDayEl.value:end;
-    const cand=vds.filter(d=>d<=pick);
-    vidSelDay = cand.length ? cand[cand.length-1] : (vds.length ? vds[vds.length-1] : '');
-  }
+  const vidSelDay = gsResolveVidDay(start,end);
   const vidDayMap = {};
   if(vidSelDay){
     const rec=VIDEO_DATA[vidSelDay];
     FIVE.forEach(p=>{ vidDayMap[p] = ((rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0) + ((rec.part3&&rec.part3[p]!=null)?rec.part3[p]:0); });
   }
-  vpSelDay = vidSelDay; // 与下方视频明细区块保持同一选中日
   const emps = Array.from(new Set([...FIVE, ...(S.employees||[])]));
   let html2='<table><tr><th class="nm">姓名</th>'
     +'<th>取退货合计<span class="thu">(件)</span></th><th>消息回复合计<span class="thu">(次)</span></th>'
@@ -384,7 +367,7 @@ function renderGongshi(){
   }
   html2+='</table>';
   if(vidSelDay){
-    html2+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值）；个人总处理量（末列）= 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计。视频当量为单日值、其余三项为区间累计，分属不同口径，供对照查看；选中日随「筛选条件 · 查看当日」或「西安流转专项视频数量」日期切换联动。</div>';
+    html2+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值）；个人总处理量（末列）= 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计。视频当量为单日值、其余三项为区间累计，分属不同口径，供对照查看；取值日随「筛选条件 · 查看当日」自动联动。</div>';
   }
   document.getElementById('gsPerTotTable').innerHTML=html2;
 
@@ -459,8 +442,7 @@ function renderGongshi(){
     ]
   }), true);
   gsCmpChart.resize(); gsQtyChart.resize(); gsHoursChart.resize();
-  // 视频调取（Part 1）日期切换 + 考勤矩阵 随区间联动
-  renderVidDayToggle(start,end);
+  // 西安流转专项视频数量 + 考勤矩阵 随区间联动
   renderPart1(start,end);
   renderAttRange(start,end);
 }
@@ -509,25 +491,22 @@ const VIDEO_DATA = {
     note:'9/15 张霞霞、王妙星均「上班」→ 各一半（张18/王17）；视频调取量按标准作业审核表「稽核点=工艺sw」重核，5S/安全不计入：杨凡凡 20→10、赵豫思 20→15（张霞霞 35 均为工艺sw 不变）。'
   }
 };
-let vpSelDay=null;
-function renderVidDayToggle(start,end){
-  const tog=document.getElementById('gsVidDayToggle');
-  if(!tog) return;
-  const ds=Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).sort();
-  if(!ds.length){ tog.innerHTML='<div class="hint">所选区间内暂无视频调取记录（视频数据仅覆盖 9/14、9/15，可调整区间筛选纳入）。</div>'; return; }
-  // 联动：选中日随区间自动收敛到范围内最新视频日
-  if(!vpSelDay || !ds.includes(vpSelDay)) vpSelDay=ds[ds.length-1];
-  tog.innerHTML=ds.map(d=>'<button class="vp-dchip'+(d===vpSelDay?' active':'')+'" data-d="'+d+'">'+d.slice(5).replace('-','/')+'</button>').join('');
-  tog.querySelectorAll('.vp-dchip').forEach(b=>b.onclick=()=>{ vpSelDay=b.dataset.d; if(window.gsSetDayInput) window.gsSetDayInput(b.dataset.d); renderGongshi(); });
+// 视频日解析（唯一入口）：取「筛选条件 · 查看当日」(数据日) 当日或之前最近的一个视频日；
+// 该日之前无视频日时退化为区间内最早的一个视频日（避免把未来日错选进来）。
+function gsResolveVidDay(start,end){
+  const vds=Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).sort();
+  if(!vds.length) return '';
+  const pick=(gsDayEl && gsDayEl.value) ? gsDayEl.value : end;
+  const cand=vds.filter(d=>d<=pick);
+  return cand.length ? cand[cand.length-1] : vds[0];
 }
 // 西安流转专项视频数量（wiki 物品编码 Part1）—— 位于「每人工作量」板块内、每人工作量表下方
 function renderPart1(start,end){
   const wrap=document.getElementById('gsPart1Wrap');
   if(!wrap) return;
-  const ds=Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).sort();
-  if(!ds.length){ wrap.innerHTML='<div class="empty">所选区间内暂无视频调取记录（视频数据仅覆盖 9/14、9/15，可调整区间筛选纳入）。</div>'; return; }
-  if(!vpSelDay || !ds.includes(vpSelDay)) vpSelDay=ds[ds.length-1];
-  const rec=VIDEO_DATA[vpSelDay];
+  const vd=gsResolveVidDay(start,end);
+  if(!vd){ wrap.innerHTML='<div class="empty">所选区间内暂无视频调取记录（视频数据仅覆盖 9/14、9/15，可调整区间筛选纳入）。</div>'; return; }
+  const rec=VIDEO_DATA[vd];
   const p1=rec.part1||{};
   wrap.innerHTML='<div class="lbl" style="margin:6px 0 4px">西安流转专项视频数量</div>'
     + '<table><tr><th>西安流转专项视频数量</th><th>折合视频数</th><th>归属状态</th></tr>'
@@ -580,14 +559,11 @@ const gsRngEndPicker  ={get value(){return gsEndEl.value;}};
 gsStartEl.value=gsAllMin;
 gsEndEl.value=gsAllMax;
 gsDayEl.value=gsDataMax||gsAllMax;      // 查看当日默认 = 最新数据日（T-1）
-// 供视频日 chips 正向写入「查看当日」
-window.gsSetDayInput=d=>{ if(gsDayEl && d) gsDayEl.value=d; };
 function gsApplyFilter(){
   let st=gsStartEl.value||gsAllMin, en=gsEndEl.value||gsAllMax;
   if(st>en){ const t=st; st=en; en=t; }
   gsStartEl.value=st; gsEndEl.value=en;
   if(gsDayEl.value && (gsDayEl.value<st||gsDayEl.value>en)) gsDayEl.value=en;
-  vpSelDay=null;                         // 让视频日按新的「查看当日」重新解析
   renderGongshi();
 }
 function gsHighlightQuick(range){
@@ -605,13 +581,13 @@ document.getElementById('gsApplyBtn').onclick=()=>{
 };
 document.getElementById('gsResetBtn').onclick=()=>{
   gsStartEl.value=gsAllMin; gsEndEl.value=gsAllMax; gsDayEl.value=gsDataMax||gsAllMax;
-  vpSelDay=null; gsHighlightQuick('all'); renderGongshi();
+  gsHighlightQuick('all'); renderGongshi();
 };
 // 今天 / 昨天：切换「查看当日」（T-1 口径的数据日，考勤表含未来排班故不取 ATT 最大值）
-document.getElementById('gsTodayBtn').onclick=()=>{ gsDayEl.value=gsDataMax||gsAllMax; vpSelDay=null; renderGongshi(); };
+document.getElementById('gsTodayBtn').onclick=()=>{ gsDayEl.value=gsDataMax||gsAllMax; renderGongshi(); };
 document.getElementById('gsYestBtn').onclick=()=>{
   const i=gsAllDates.lastIndexOf(gsDataMax||gsAllMax);
-  gsDayEl.value=(i>0?gsAllDates[i-1]:(gsDataMax||gsAllMax)); vpSelDay=null; renderGongshi();
+  gsDayEl.value=(i>0?gsAllDates[i-1]:(gsDataMax||gsAllMax)); renderGongshi();
 };
 document.querySelectorAll('.fp-quick button').forEach(b=>{
   b.onclick=()=>{
@@ -623,7 +599,7 @@ document.querySelectorAll('.fp-quick button').forEach(b=>{
   };
 });
 [gsStartEl,gsEndEl].forEach(el=>el.addEventListener('keydown',ev=>{ if(ev.key==='Enter') gsApplyFilter(); }));
-gsDayEl.addEventListener('change',()=>{ if(gsDayEl.value){ vpSelDay=null; renderGongshi(); } });
+gsDayEl.addEventListener('change',()=>{ if(gsDayEl.value) renderGongshi(); });
 document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天（'+DAYS[0].date+' ~ '+DAYS[DAYS.length-1].date+'）';
 document.getElementById('foot').textContent='数据生成时间：'+D.meta.generated_at+' · 数据源：飞书群聊消息 + 飞书电子表格「抖音交付、稽核汇总」+ Base「标准作业审核表」（视频调取）/ 排班表（8月及以后 · 考勤）';
 if(GS_DATES.length || (ATT&&ATT.attendance)){ renderGongshi(); }
