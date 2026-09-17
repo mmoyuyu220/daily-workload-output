@@ -241,8 +241,9 @@ td.nm,th.nm{text-align:left}
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
   <div class="chart" id="gsHoursChart" style="height:340px"></div>
 
-  <div id="gsVidDayToggle" class="vp-daytoggle"></div>
   <div id="gsPart1Wrap"></div>
+
+  <div id="gsVidDayToggle" class="vp-daytoggle"></div>
 
 <!-- 视频调取 & 考勤（已合并进本面板，随上方区间筛选联动） -->
 <div class="m-video">
@@ -604,8 +605,7 @@ function renderPart1(start,end){
   const p1=rec.part1||{};
   wrap.innerHTML='<div class="lbl" style="margin:6px 0 4px">西安流转专项视频数量</div>'
     + '<table><tr><th>西安流转专项视频数量</th><th>折合视频数</th><th>归属状态</th></tr>'
-    + '<tr><td>'+(p1.cells||0)+'</td><td>'+(p1.videos||0)+'</td><td style="text-align:left">计算中</td></tr></table>'
-    + '<div class="vp-note warn">⚠ 西安流转专项视频数量（wiki 物品编码）单元格编辑人无法通过飞书 API 批量获取，暂作未归属池展示，归属状态计算中。'+(rec.note?('<br>'+rec.note):'')+'</div>';
+    + '<tr><td>'+(p1.cells||0)+'</td><td>'+(p1.videos||0)+'</td><td style="text-align:left">计算中</td></tr></table>';
 }
 function renderAttRange(start,end){
   const wrap=document.getElementById('attTableWrap');
