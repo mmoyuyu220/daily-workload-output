@@ -54,6 +54,13 @@ td.nm,th.nm{text-align:left}
 /* 核心指标组内卡片更紧凑（仅作用于 .cls.compact，不动预警看板同类卡片） */
 .cls.compact .clsc{padding:10px}
 .cls.compact .clsc .cn{font-size:24px}
+/* 核心指标合并表 */
+.core-tbl{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 2px;background:#fff;box-shadow:0 1px 4px rgba(20,40,80,.05);border-radius:10px;overflow:hidden}
+.core-tbl th,.core-tbl td{border:1px solid var(--line);padding:10px 12px;text-align:center}
+.core-tbl th{background:#f3f6fc;color:#12203a;font-weight:600}
+.core-tbl td.nm{text-align:left;font-weight:600;color:#2a3547}
+.core-tbl tr.tot td{background:#f2faf5;font-weight:700;color:#0f9d58}
+.core-tbl .calc{color:#b26a00;background:#fff8ec;font-weight:600}
 .warn-tbl{margin-top:10px;overflow-x:auto}
 .warn-tbl table{width:100%;border-collapse:collapse;font-size:13px}
 .warn-tbl th,.warn-tbl td{border:1px solid var(--line);padding:9px 10px;text-align:center}
@@ -114,6 +121,11 @@ td.nm,th.nm{text-align:left}
   .m-video .vp-mbtn{font-size:13px;padding:7px 18px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--sub);cursor:pointer;transition:all .15s}
   .m-video .vp-mbtn:hover{border-color:var(--blue)}
   .m-video .vp-mbtn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .m-video .vp-daytoggle{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+  .m-video .vp-dchip{font-size:13px;padding:6px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--sub);cursor:pointer;transition:all .15s}
+  .m-video .vp-dchip:hover{border-color:var(--blue)}
+  .m-video .vp-dchip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .m-video .vp-dayblock .lbl{font-weight:600;color:#344563;margin-bottom:6px}
   .m-video td.att-on{color:#0f9d58;font-weight:700;background:#f2faf5}
   .m-video td.att-off{color:#d1342f;font-weight:600;background:#fdf2f2}
   .m-video td.att-na{color:#98a2b3}
@@ -192,23 +204,15 @@ td.nm,th.nm{text-align:left}
     <div class="df-note" id="gongshiNote"></div>
   </div>
 
-  <div class="sec-title">核心指标（区间）</div>
-
-  <div class="grp"><span class="ic">📦</span>数量<span class="u">件 / 次</span></div>
-  <div class="cls compact">
-    <div class="clsc"><div class="cn" id="gsTqQty">—</div><div class="cl">取退货数量 <span>件</span></div></div>
-    <div class="clsc"><div class="cn" id="gsMsgQty">—</div><div class="cl">消息回复数量 <span>次</span></div></div>
-    <div class="clsc"><div class="cn" id="gsSwQty">—</div><div class="cl">SW稽核数量 <span>次</span></div></div>
-    <div class="clsc tot"><div class="cn" id="gsTotQty">—</div><div class="cl">总处理量 <span>件 / 次</span></div></div>
-  </div>
-
-  <div class="grp"><span class="ic">⏱</span>理论耗时<span class="u">分</span></div>
-  <div class="cls compact">
-    <div class="clsc hrs"><div class="cn" id="gsTqHours">—</div><div class="cl">取退货理论耗时 <span>分</span></div></div>
-    <div class="clsc hrs"><div class="cn" id="gsMsgHours">—</div><div class="cl">消息回复理论耗时 <span>分</span></div></div>
-    <div class="clsc hrs"><div class="cn" id="gsSwHours">—</div><div class="cl">SW稽核理论耗时 <span>分</span></div></div>
-    <div class="clsc tot"><div class="cn" id="gsTotHours">—</div><div class="cl">总理论耗时 <span>分</span></div></div>
-  </div>
+  <div class="sec-title">核心指标（区间：<span id="gsRangeLbl2">—</span>）</div>
+  <table class="core-tbl">
+    <tr><th class="nm">指标</th><th>数量</th><th>理论耗时</th></tr>
+    <tr><td class="nm">取退货</td><td id="gsTqQty">—</td><td id="gsTqHours">—</td></tr>
+    <tr><td class="nm">消息回复</td><td id="gsMsgQty">—</td><td id="gsMsgHours">—</td></tr>
+    <tr><td class="nm">SW稽核</td><td id="gsSwQty">—</td><td id="gsSwHours">—</td></tr>
+    <tr><td class="nm">视频调取</td><td id="gsVidQty">—</td><td class="calc">计算中</td></tr>
+    <tr class="tot"><td class="nm">合计</td><td id="gsTotQty">—</td><td id="gsTotHours">—</td></tr>
+  </table>
   <div class="hint" id="gsCoreNote"></div>
 
   <div class="sec-title">工艺工时（标准工时对照表）</div>
@@ -218,16 +222,12 @@ td.nm,th.nm{text-align:left}
   <div class="sec-title">各理论耗时量对比（区间）</div>
   <div class="chart" id="gsCmpChart" style="height:300px"></div>
 
-  <div class="sec-title">总处理量（核算区间累计 · <span id="gsRangeTxt">—</span>）</div>
+  <div class="sec-title">区间概览（<span id="gsRangeTxt2">—</span>）</div>
   <div class="cls compact">
-    <div class="clsc tot"><div class="cn" id="gsCumQty">—</div><div class="cl">累计总处理量 <span>件 / 次</span></div></div>
-    <div class="clsc tot"><div class="cn" id="gsCumHours">—</div><div class="cl">累计总理论耗时 <span>分</span></div></div>
+    <div class="clsc tot"><div class="cn" id="gsDaysCnt">—</div><div class="cl">区间天数 <span>天（有数据）</span></div></div>
     <div class="clsc tot"><div class="cn" id="gsAvgQty">—</div><div class="cl">日均处理量 <span>件 / 次 · 天</span></div></div>
     <div class="clsc tot"><div class="cn" id="gsAvgHours">—</div><div class="cl">日均理论耗时 <span>分 · 天</span></div></div>
   </div>
-
-  <div class="sec-title">每人处理量（区间）</div>
-  <div id="gsPerTable"></div>
 
   <div class="sec-title">每人工作量（区间累计）</div>
   <div id="gsPerTotTable"></div>
@@ -243,6 +243,7 @@ td.nm,th.nm{text-align:left}
 <!-- 视频调取 & 考勤（已合并进本面板，随上方区间筛选联动） -->
 <div class="m-video">
   <div class="sec-title">🎬 视频调取明细（区间：<span id="vpRangeLbl">—</span>）</div>
+  <div id="vpDayToggle" class="vp-daytoggle"></div>
   <div id="videoDayWrap"></div>
 
   <div class="sec-title">📅 考勤矩阵（来源：排班表 / 8月及以后 · Z6U6uk · 区间：<span id="attRangeLbl">—</span>）</div>
@@ -385,23 +386,30 @@ function renderGongshi(){
   const rngDays=gsRangeDays();
   const hasRng = rngDays.length>0;
   const setTxt=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
-  // ① 核心指标（区间累计）
-  let tq=0,mq=0,sq=0,th=0,mh=0,sh=0;
+  // ① 核心指标（区间累计，含视频调取）
+  let tq=0,mq=0,sq=0,th=0,mh=0,sh=0,vq=0;
   rngDays.forEach(d=>{
     const g=G.dates[d], s=S.dates[d];
     if(g){ tq+=g.tuihuo_qty||0; mq+=g.msg_reply_qty||0; th+=g.tuihuo_hours||0; mh+=g.msg_reply_hours||0; }
     if(s){ sq+=s.qty||0; sh+=s.hours||0; }
   });
-  setTxt('gsTqQty', hasRng?fmt(tq):'—');
-  setTxt('gsMsgQty', hasRng?fmt(mq):'—');
-  setTxt('gsSwQty', hasRng?fmt(sq):'—');
-  setTxt('gsTotQty', hasRng?fmt(tq+mq+sq):'—');
-  setTxt('gsTqHours', hasRng?fmt(th):'—');
-  setTxt('gsMsgHours', hasRng?fmt(mh):'—');
-  setTxt('gsSwHours', hasRng?fmt(sh):'—');
-  setTxt('gsTotHours', hasRng?fmt(+((th+mh+sh).toFixed(1))):'—');
-  setTxt('gsCoreNote', '数量口径：取退货=5人当日2026编码+图片（取退货群消息）；消息回复=外部群@工单已回复；SW稽核=工艺sw+5S+安全。'
-   +'理论耗时口径（标准工时取自「工艺工时摸底」子表）：取退货=数量×2.6分/件（7-9月前台退取货末次回复均值,n=324）；消息回复=数量×15.72分/次（7-9月看板响应时长加权均值）；SW稽核=各图SW.T+5%+60s逐条Σ（5S/安全各按600s）。');
+  // 视频调取总数量：区间内各视频日 part2per 求和
+  Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).forEach(d=>{
+    const rec=VIDEO_DATA[d];
+    FIVE.forEach(p=>{ vq += (rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0; });
+  });
+  setTxt('gsRangeLbl2', (start&&end)?(start+' ~ '+end):'—');
+  setTxt('gsTqQty', hasRng?fmt(tq)+' 件':'—');
+  setTxt('gsMsgQty', hasRng?fmt(mq)+' 次':'—');
+  setTxt('gsSwQty', hasRng?fmt(sq)+' 次':'—');
+  setTxt('gsVidQty', hasRng?fmt(vq)+' 个':'—');
+  setTxt('gsTotQty', hasRng?fmt(tq+mq+sq+vq):'—');
+  setTxt('gsTqHours', hasRng?fmt(th)+' 分':'—');
+  setTxt('gsMsgHours', hasRng?fmt(mh)+' 分':'—');
+  setTxt('gsSwHours', hasRng?fmt(sh)+' 分':'—');
+  setTxt('gsTotHours', hasRng?fmt(+((th+mh+sh).toFixed(1)))+' 分':'—');
+  setTxt('gsCoreNote', '数量口径：取退货=5人当日2026编码+图片（取退货群消息）；消息回复=外部群@工单已回复；SW稽核=工艺sw+5S+安全；视频调取=标准作业审核表「稽核点=工艺sw」归属量（5S/安全不计入）。'
+   +'理论耗时口径（标准工时取自「工艺工时摸底」子表）：取退货=数量×2.6分/件；消息回复=数量×15.72分/次；SW稽核=各图SW.T+5%+60s逐条Σ（5S/安全各按600s）。视频调取暂无标准工时，理论耗时计算中。');
 
   // ② 工艺工时对照表
   renderGongshiTable();
@@ -409,53 +417,35 @@ function renderGongshi(){
   // 说明条（区间）
   setTxt('gongshiNote', (start&&end)?(start+' ~ '+end+'（区间 '+rngDays.length+' 天有数据）'):'请选择区间');
 
-  // ③ 每人处理量（区间累计）
+  // ③ 每人工作量（区间累计：合并 处理量 + 理论耗时 + 个人总处理量）
   const emps = Array.from(new Set([...FIVE, ...(S.employees||[])]));
-  let html='<table><tr><th class="nm">姓名</th>'
-    +'<th>取退货数量<span class="thu">(件)</span></th><th>消息回复数量<span class="thu">(次)</span></th><th>SW稽核数量<span class="thu">(次)</span></th>'
-    +'<th>消息回复理论时长<span class="thu">(分)</span></th><th>SW稽核理论耗时<span class="thu">(分)</span></th></tr>';
-  for(const p of emps){
-    let tq2=0,mp2=0,sw2=0,swH2=0;
-    rngDays.forEach(d=>{ const g=G.dates[d], s=S.dates[d];
-      tq2 += (g&&g.tuihuo_per&&g.tuihuo_per[p])||0;
-      mp2 += (g&&g.msg_reply_per&&g.msg_reply_per[p])?g.msg_reply_per[p].replied||0:0;
-      sw2 += (s&&s.per&&s.per[p])?s.per[p].qty||0:0;
-      swH2 += (s&&s.per&&s.per[p])?s.per[p].hours||0:0;
-    });
-    const msgTheo = mp2*MSG_RATE;
-    html+='<tr><td class="nm">'+p+'</td><td>'+fmt(tq2)+'</td><td>'+fmt(mp2)+'</td><td>'+fmt(sw2)+'</td><td>'+msgTheo.toFixed(1)+'</td><td>'+fmt(swH2)+'</td></tr>';
-  }
-  html+='</table>';
-  document.getElementById('gsPerTable').innerHTML=html;
-
-  // ④ 区间累计概览
-  let cumQ=0, cumH=0;
-  rngDays.forEach(d=>{ const t=gsDayTotals(d); if(t){ cumQ+=t.qty; cumH+=t.hours; } });
-  cumH=+cumH.toFixed(1);
-  const nDays=rngDays.length||1;
-  setTxt('gsRangeTxt', (start&&end)?(start+' ~ '+end):'—');
-  setTxt('gsCumQty', hasRng?fmt(cumQ):'—');
-  setTxt('gsCumHours', hasRng?fmt(cumH):'—');
-  setTxt('gsAvgQty', hasRng?fmt(+(cumQ/nDays).toFixed(1)):'—');
-  setTxt('gsAvgHours', hasRng?fmt(+(cumH/nDays).toFixed(1)):'—');
-
-  // ⑤ 每人工作量（区间累计）
   let html2='<table><tr><th class="nm">姓名</th>'
     +'<th>取退货合计<span class="thu">(件)</span></th><th>消息回复合计<span class="thu">(次)</span></th>'
-    +'<th>SW稽核合计<span class="thu">(次)</span></th><th>SW稽核合计理论耗时<span class="thu">(分)</span></th><th>个人总处理量<span class="thu">(件 / 次)</span></th></tr>';
+    +'<th>SW稽核合计<span class="thu">(次)</span></th><th>消息回复理论时长<span class="thu">(分)</span></th>'
+    +'<th>SW稽核理论耗时<span class="thu">(分)</span></th><th>个人总处理量<span class="thu">(件 / 次)</span></th></tr>';
   for(const p of emps){
-    let a=0,b=0,c=0,ch=0;
+    let a=0,b=0,c=0,swH2=0;
     rngDays.forEach(d=>{ const g=G.dates[d], s=S.dates[d];
       a += (g&&g.tuihuo_per&&g.tuihuo_per[p])||0;
       b += (g&&g.msg_reply_per&&g.msg_reply_per[p])?g.msg_reply_per[p].replied||0:0;
       c += (s&&s.per&&s.per[p])?s.per[p].qty||0:0;
-      ch+= (s&&s.per&&s.per[p])?s.per[p].hours||0:0;
+      swH2 += (s&&s.per&&s.per[p])?s.per[p].hours||0:0;
     });
-    ch=+ch.toFixed(1);
-    html2+='<tr><td class="nm">'+p+'</td><td>'+fmt(a)+'</td><td>'+fmt(b)+'</td><td>'+fmt(c)+'</td><td>'+fmt(ch)+'</td><td>'+fmt(a+b+c)+'</td></tr>';
+    const msgTheo = b*MSG_RATE;
+    swH2 = +swH2.toFixed(1);
+    html2+='<tr><td class="nm">'+p+'</td><td>'+fmt(a)+'</td><td>'+fmt(b)+'</td><td>'+fmt(c)+'</td><td>'+msgTheo.toFixed(1)+'</td><td>'+fmt(swH2)+'</td><td>'+fmt(a+b+c)+'</td></tr>';
   }
   html2+='</table>';
   document.getElementById('gsPerTotTable').innerHTML=html2;
+
+  // ④ 区间概览（日均）
+  const cumQ = tq+mq+sq+vq;
+  const cumH = +(th+mh+sh).toFixed(1);
+  const nDays=rngDays.length||1;
+  setTxt('gsRangeTxt2', (start&&end)?(start+' ~ '+end):'—');
+  setTxt('gsDaysCnt', hasRng?rngDays.length:'—');
+  setTxt('gsAvgQty', hasRng?fmt(+(cumQ/nDays).toFixed(1)):'—');
+  setTxt('gsAvgHours', hasRng?fmt(+(cumH/nDays).toFixed(1)):'—');
 
   // ⑥ 各理论耗时量对比（区间累计：柱状 + 占比环形）
   if(!gsCmpChart) gsCmpChart=echarts.init(document.getElementById('gsCmpChart'));
@@ -568,31 +558,28 @@ const VIDEO_DATA = {
     note:'9/15 张霞霞、王妙星均「上班」→ 各一半（张18/王17）；视频调取量按标准作业审核表「稽核点=工艺sw」重核，5S/安全不计入：杨凡凡 20→10、赵豫思 20→15（张霞霞 35 均为工艺sw 不变）。'
   }
 };
+let vpSelDay=null;
 function renderVideoRange(start,end){
   const wrap=document.getElementById('videoDayWrap');
   const lbl=document.getElementById('vpRangeLbl');
+  const tog=document.getElementById('vpDayToggle');
   if(lbl) lbl.textContent=(start&&end)?(start+' ~ '+end):'—';
   if(!wrap) return;
   const ds=Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).sort();
-  if(!ds.length){ wrap.innerHTML='<div class="empty">所选区间内暂无视频调取记录（视频数据仅覆盖 9/14、9/15）。</div>'; return; }
-  let out='';
-  ds.forEach(date=>{
-    const rec=VIDEO_DATA[date];
-    const p2v={}, p3v={};
-    FIVE.forEach(p=>{ p2v[p]=(rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0; p3v[p]=(rec.part3&&rec.part3[p]!=null)?rec.part3[p]:0; });
-    let pt='<table><tr><th>人员</th><th>Part2 归属</th><th>Part3 群视频</th><th>当日合计</th></tr>';
-    FIVE.forEach(p=>{ pt+='<tr><td class="nm">'+p+'</td><td>'+p2v[p]+'</td><td>'+p3v[p]+'</td><td><b>'+(p2v[p]+p3v[p])+'</b></td></tr>'; });
-    pt+='</table>';
-    out += '<div class="vp-dayblock">'
-        + '<div class="lbl">📅 '+date.slice(5).replace('-','/')+' 视频调取明细</div>'
-        + '<div class="lbl" style="margin:8px 0 4px">Part 1 ｜ wiki 物品编码 <span class="vp-tag warn">⚠ 暂无法归属个人</span></div>'
-        + '<table><tr><th>西安+流转专项 物品编码单元格</th><th>折合视频数</th><th>归属状态</th></tr>'
-        + '<tr><td>'+rec.part1.cells+'</td><td>'+rec.part1.videos+'</td><td style="text-align:left">'+rec.part1.owner+'</td></tr></table>'
-        + '<div class="lbl" style="margin:14px 0 4px">👤 每人当日合计（Part2 + Part3，Part 1 待归因）</div>'
-        + pt
-        + '<div class="vp-note">'+rec.note+'</div></div>';
-  });
-  wrap.innerHTML=out;
+  if(!ds.length){ if(tog)tog.innerHTML=''; wrap.innerHTML='<div class="empty">所选区间内暂无视频调取记录（视频数据仅覆盖 9/14、9/15，可调整区间筛选纳入）。</div>'; return; }
+  // 联动：选中日随区间自动收敛到范围内最新视频日
+  if(!vpSelDay || !ds.includes(vpSelDay)) vpSelDay=ds[ds.length-1];
+  if(tog){
+    tog.innerHTML=ds.map(d=>'<button class="vp-dchip'+(d===vpSelDay?' active':'')+'" data-d="'+d+'">'+d.slice(5).replace('-','/')+'</button>').join('');
+    tog.querySelectorAll('.vp-dchip').forEach(b=>b.onclick=()=>{ vpSelDay=b.dataset.d; renderVideoRange(start,end); });
+  }
+  const rec=VIDEO_DATA[vpSelDay];
+  const p2v={}, p3v={};
+  FIVE.forEach(p=>{ p2v[p]=(rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0; p3v[p]=(rec.part3&&rec.part3[p]!=null)?rec.part3[p]:0; });
+  let pt='<table><tr><th>人员</th><th>Part2 归属</th><th>Part3 群视频</th><th>当日合计</th></tr>';
+  FIVE.forEach(p=>{ pt+='<tr><td class="nm">'+p+'</td><td>'+p2v[p]+'</td><td>'+p3v[p]+'</td><td><b>'+(p2v[p]+p3v[p])+'</b></td></tr>'; });
+  pt+='</table>';
+  wrap.innerHTML='<div class="vp-dayblock"><div class="lbl">📅 '+vpSelDay.slice(5).replace('-','/')+' 每人当日合计（Part2 + Part3）</div>'+pt+'<div class="vp-note">'+rec.note+'</div></div>';
 }
 function renderAttRange(start,end){
   const wrap=document.getElementById('attTableWrap');
