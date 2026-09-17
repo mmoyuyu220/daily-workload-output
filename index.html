@@ -417,12 +417,22 @@ function renderGongshi(){
   // 说明条（区间）
   setTxt('gongshiNote', (start&&end)?(start+' ~ '+end+'（区间 '+rngDays.length+' 天有数据）'):'请选择区间');
 
-  // ③ 每人工作量（区间累计：合并 处理量 + 理论耗时 + 个人总处理量）
+  // ③ 每人工作量（区间累计：合并 处理量 + 理论耗时 + 个人总处理量 + 视频调取当日合计）
+  // 视频调取「每人当日合计」第四列（当日合计 = Part2+Part3）并入本表，方便单表查看
+  const vds = Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).sort();
+  const vidSelDay = (vpSelDay && vds.includes(vpSelDay)) ? vpSelDay : (vds.length ? vds[vds.length-1] : '');
+  const vidDayMap = {};
+  if(vidSelDay){
+    const rec=VIDEO_DATA[vidSelDay];
+    FIVE.forEach(p=>{ vidDayMap[p] = ((rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0) + ((rec.part3&&rec.part3[p]!=null)?rec.part3[p]:0); });
+  }
+  vpSelDay = vidSelDay; // 与下方视频明细区块保持同一选中日
   const emps = Array.from(new Set([...FIVE, ...(S.employees||[])]));
   let html2='<table><tr><th class="nm">姓名</th>'
     +'<th>取退货合计<span class="thu">(件)</span></th><th>消息回复合计<span class="thu">(次)</span></th>'
     +'<th>SW稽核合计<span class="thu">(次)</span></th><th>消息回复理论时长<span class="thu">(分)</span></th>'
-    +'<th>SW稽核理论耗时<span class="thu">(分)</span></th><th>个人总处理量<span class="thu">(件 / 次)</span></th></tr>';
+    +'<th>SW稽核理论耗时<span class="thu">(分)</span></th><th>个人总处理量<span class="thu">(件 / 次)</span></th>'
+    +'<th>视频调取当日合计<span class="thu">('+(vidSelDay?vidSelDay.slice(5).replace('-','/'):'—')+')</span></th></tr>';
   for(const p of emps){
     let a=0,b=0,c=0,swH2=0;
     rngDays.forEach(d=>{ const g=G.dates[d], s=S.dates[d];
@@ -433,9 +443,13 @@ function renderGongshi(){
     });
     const msgTheo = b*MSG_RATE;
     swH2 = +swH2.toFixed(1);
-    html2+='<tr><td class="nm">'+p+'</td><td>'+fmt(a)+'</td><td>'+fmt(b)+'</td><td>'+fmt(c)+'</td><td>'+msgTheo.toFixed(1)+'</td><td>'+fmt(swH2)+'</td><td>'+fmt(a+b+c)+'</td></tr>';
+    const vid = (vidSelDay && vidDayMap[p]!=null) ? vidDayMap[p] : null;
+    html2+='<tr><td class="nm">'+p+'</td><td>'+fmt(a)+'</td><td>'+fmt(b)+'</td><td>'+fmt(c)+'</td><td>'+msgTheo.toFixed(1)+'</td><td>'+fmt(swH2)+'</td><td>'+fmt(a+b+c)+'</td><td>'+(vid!=null?fmt(vid):'—')+'</td></tr>';
   }
   html2+='</table>';
+  if(vidSelDay){
+    html2+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值），与上方区间累计分属不同口径，供对照查看；选中日随视频明细「日期切换」联动。</div>';
+  }
   document.getElementById('gsPerTotTable').innerHTML=html2;
 
   // ④ 区间概览（日均）
