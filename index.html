@@ -227,6 +227,14 @@ td.nm,th.nm{text-align:left}
     <div class="clsc tot"><div class="cn" id="gsAvgHours">—</div><div class="cl">日均理论耗时 <span>分 · 天</span></div></div>
   </div>
 
+  <!-- 每人每天的出勤详情（随上方「筛选条件」联动；默认显示最近 3 天，多余天数自动隐藏） -->
+  <div class="m-video">
+    <div class="sec-title">📅 每人每天的出勤详情（来源：排班表 / 8月及以后 · Z6U6uk · 区间：<span id="attRangeLbl">—</span>）</div>
+    <div class="hint">出勤=「上班」(绿)、休息=「休息」(红)、婚假(红)。每行一日、每列一人；默认仅显示最近 3 天明细，其余天数自动隐藏。如需查看完整明细，请用上方「筛选条件」选择所需区间（如近7天）。下方汇总统计所选区间全量出勤 / 休息天数。</div>
+    <div id="attTableWrap" class="att-scroll"></div>
+    <div id="attSummary" class="vp-attstrip att-sum"></div>
+  </div>
+
   <div class="sec-title">每人工作量（区间累计）</div>
   <div id="gsPerTotTable"></div>
 
@@ -240,15 +248,6 @@ td.nm,th.nm{text-align:left}
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
   <div class="chart" id="gsHoursChart" style="height:340px"></div>
 
-<!-- 视频调取 & 考勤（已合并进本面板，随上方区间筛选联动） -->
-<div class="m-video">
-  <div class="sec-title">📅 考勤矩阵（来源：排班表 / 8月及以后 · Z6U6uk · 区间：<span id="attRangeLbl">—</span>）</div>
-  <div class="hint">出勤=「上班」(绿)、休息=「休息」(红)、婚假(红)。矩阵随上方「区间筛选」联动；每行一日，每列一人。下方汇总统计每人区间内出勤 / 休息天数。</div>
-  <div id="attTableWrap" class="att-scroll"></div>
-  <div id="attSummary" class="vp-attstrip att-sum"></div>
-
-
-</div>
 </div>
 
 <div class="foot" id="foot"></div>
@@ -517,11 +516,26 @@ function renderAttRange(start,end){
   const lbl=document.getElementById('attRangeLbl');
   if(lbl) lbl.textContent=(start&&end)?(start+' ~ '+end):'—';
   if(!wrap) return;
-  const days=Object.keys(ATT.attendance).filter(d=>d>=start&&d<=end).sort();
+  const daysAll=Object.keys(ATT.attendance).filter(d=>d>=start&&d<=end).sort();
   const sm=document.getElementById('attSummary');
-  if(!days.length){ wrap.innerHTML='<div class="empty">所选区间内无考勤数据</div>'; if(sm) sm.innerHTML=''; return; }
+  if(!daysAll.length){ wrap.innerHTML='<div class="empty">所选区间内无考勤数据</div>'; if(sm) sm.innerHTML='<div class="hint">区间汇总：无考勤数据</div>'; return; }
+  // 默认（未手动筛选区间）仅显示最近 3 天明细，多余天数自动隐藏；手动筛选后按所选区间完整呈现
+  const ATT_DETAIL_MAX=3;
+  const capped = (!gsAttUserFiltered && daysAll.length>ATT_DETAIL_MAX);
+  let days;
+  if(capped){
+    // 「最近 3 天」以数据日(T-1)为锚点往前取，避免把排班表里的未来日期当成最近
+    const effEnd=(gsDataMax && gsDataMax<end)?gsDataMax:end;
+    const upTo=daysAll.filter(d=>d<=effEnd);
+    days=(upTo.length?upTo:daysAll).slice(-ATT_DETAIL_MAX);
+  } else {
+    days=daysAll;
+  }
   const P=ATT.people;
+  // 汇总始终按所选区间全量统计，避免被默认折叠误导
   const sum={}; P.forEach(p=>sum[p]={on:0,off:0});
+  daysAll.forEach(d=>{ P.forEach(p=>{ const s=(ATT.attendance[d][p]||'');
+    if(s==='出勤') sum[p].on++; else if(s==='休息'||s==='婚假') sum[p].off++; }); });
   let h='<table><tr><th>日期</th><th>周</th>'+P.map(p=>'<th>'+p+'</th>').join('')+'</tr>';
   days.forEach(d=>{
     const wk=ATT_WK[new Date(d).getDay()];
@@ -529,19 +543,23 @@ function renderAttRange(start,end){
     P.forEach(p=>{
       const s=(ATT.attendance[d][p]||'');
       let cls='att-na',txt=s;
-      if(s==='出勤'){cls='att-on';txt='出';sum[p].on++;}
-      else if(s==='休息'){cls='att-off';txt='休';sum[p].off++;}
-      else if(s==='婚假'){cls='att-off';txt='婚';sum[p].off++;}
+      if(s==='出勤'){cls='att-on';txt='出';}
+      else if(s==='休息'){cls='att-off';txt='休';}
+      else if(s==='婚假'){cls='att-off';txt='婚';}
       h+='<td class="'+cls+'">'+txt+'</td>';
     });
     h+='</tr>';
   });
   h+='</table>';
+  if(capped){
+    h+='<div class="hint" style="margin-top:6px">考勤明细默认显示最近 '+days.length+' 天（'+days[0].slice(5)+' ~ '+days[days.length-1].slice(5)+'，截至数据日 '+(gsDataMax||end)+'），其余 '+(daysAll.length-days.length)+' 天已隐藏；如需查看完整明细，请用上方「筛选条件 · 区间快速选择 / 应用筛选」选择所需区间。</div>';
+  }
   wrap.innerHTML=h;
   if(sm){
+    let head='<div class="hint" style="margin:10px 0 4px">区间汇总（全 '+daysAll.length+' 天）：每人出勤 / 休息天数</div>';
     let chips='';
     P.forEach(p=>{ chips+='<div class="vp-attchip"><span class="nm">'+p+'</span><span class="st on">出 '+sum[p].on+'</span><span class="st off">休 '+sum[p].off+'</span></div>'; });
-    sm.innerHTML=chips;
+    sm.innerHTML=head+chips;
   }
 }
 
@@ -556,6 +574,8 @@ const gsAllMin=gsAllDates[0]||'', gsAllMax=gsAllDates[gsAllDates.length-1]||'';
 const gsDataMax=(()=>{ const a=[...GS_DATES,...Object.keys(VIDEO_DATA)].sort(); return a.length?a[a.length-1]:(gsAllMax||''); })();
 const gsRngStartPicker={get value(){return gsStartEl.value;}};
 const gsRngEndPicker  ={get value(){return gsEndEl.value;}};
+// 考勤明细折叠开关：false=默认仅显示最近 3 天（多余隐藏）；true=按所选区间完整呈现（用户手动筛选后）
+let gsAttUserFiltered=false;
 gsStartEl.value=gsAllMin;
 gsEndEl.value=gsAllMax;
 gsDayEl.value=gsDataMax||gsAllMax;      // 查看当日默认 = 最新数据日（T-1）
@@ -577,11 +597,11 @@ function gsRangeStartFor(days){
 document.getElementById('gsApplyBtn').onclick=()=>{
   const b=document.getElementById('gsApplyBtn');
   b.classList.add('flash'); setTimeout(()=>b.classList.remove('flash'),520);
-  gsApplyFilter();
+  gsAttUserFiltered=true; gsApplyFilter();   // 手动应用区间 → 完整呈现考勤明细
 };
 document.getElementById('gsResetBtn').onclick=()=>{
   gsStartEl.value=gsAllMin; gsEndEl.value=gsAllMax; gsDayEl.value=gsDataMax||gsAllMax;
-  gsHighlightQuick('all'); renderGongshi();
+  gsAttUserFiltered=false; gsHighlightQuick('all'); renderGongshi();  // 重置=恢复默认（仅最近3天）
 };
 // 今天 / 昨天：切换「查看当日」（T-1 口径的数据日，考勤表含未来排班故不取 ATT 最大值）
 document.getElementById('gsTodayBtn').onclick=()=>{ gsDayEl.value=gsDataMax||gsAllMax; renderGongshi(); };
@@ -593,6 +613,7 @@ document.querySelectorAll('.fp-quick button').forEach(b=>{
   b.onclick=()=>{
     const r=b.dataset.range;
     gsHighlightQuick(r);
+    gsAttUserFiltered=true;   // 手动选择区间 → 完整呈现考勤明细
     if(r==='all'){ gsStartEl.value=gsAllMin; gsEndEl.value=gsAllMax; }
     else{ gsEndEl.value=gsDataMax||gsAllMax; gsStartEl.value=gsRangeStartFor(parseInt(r,10)); }
     gsApplyFilter();
