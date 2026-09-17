@@ -513,9 +513,10 @@ const VIDEO_DATA = {
 // 抓取口径：9/14~9/16 全部「异常待处理明细」邮件附件，按运营中心=西安统计数量；暂时无法定位到个人
 const MAIL_ANOMALY = {
   range: '2026-09-14 ~ 2026-09-16',
-  count: null,   // 实际抓取后填入（运营中心=西安 的数量）
-  byDay: {},     // 可选：按日拆分 { '2026-09-14': n, ... }
-  note: '飞书邮箱「大数据邮件组-异常待处理明细」每日附件，运营中心=西安'
+  count: 41,     // 区间合计（运营中心 = 优检西安小型检测中心）
+  byDay: {'2026-09-14': 18, '2026-09-15': 14, '2026-09-16': 9},
+  mails: {'2026-09-15': 6, '2026-09-16': 6, '2026-09-14': 6},   // 当日邮件封数
+  note: '飞书邮箱「大数据邮件组 <bi.data@atrenew.com>」主题「异常待处理明细」，每日 6 封、附件 xlsx；口径=运营中心「优检西安小型检测中心」条数'
 };
 // 视频日解析（唯一入口）：取「筛选条件 · 查看当日」(数据日) 当日或之前最近的一个视频日；
 // 该日之前无视频日时退化为区间内最早的一个视频日（避免把未来日错选进来）。
@@ -535,7 +536,6 @@ function renderPart1(start,end){
   // 折算（折合视频数）为空 / 未提供时一律默认为 0（不再依赖标准作业审核表折算公式）
   const cells = (p1.cells!=null && p1.cells!=='') ? Number(p1.cells) : 0;
   const videos = (p1.videos!=null && p1.videos!=='') ? Number(p1.videos) : 0;
-  const mailCount = (MAIL_ANOMALY && MAIL_ANOMALY.count!=null) ? MAIL_ANOMALY.count : '—';
   let h='<div class="lbl" style="margin:6px 0 4px">暂无法归属个人数量</div>';
   // 项1：西安流转专项视频数量（wiki 物品编码 Part1，未归属池）
   if(vd){
@@ -545,8 +545,22 @@ function renderPart1(start,end){
     h+='<div class="empty" style="margin:4px 0">区间内暂无视频调取记录（视频数据仅覆盖 9/14、9/15，可调整区间筛选纳入）。</div>';
   }
   // 项2：异常邮件跟进（飞书邮箱「大数据邮件组-异常待处理明细」每日附件，运营中心=西安）
-  h+='<table style="margin-top:8px"><tr><th>异常邮件跟进</th><th>数量（运营中心=西安）</th><th>归属状态</th></tr>'
-    + '<tr><td>大数据邮件组-异常待处理明细</td><td>'+mailCount+'</td><td style="text-align:left">计算中</td></tr></table>';
+  const ma = MAIL_ANOMALY || {};
+  const mailCount = (ma.count!=null) ? ma.count : '—';
+  let mailRows = '';
+  if(ma.byDay && Object.keys(ma.byDay).length){
+    Object.keys(ma.byDay).sort().forEach(d=>{
+      const md = (d||'').slice(5).replace('-','/');
+      const mails = (ma.mails && ma.mails[d]!=null) ? (ma.mails[d]+' 封') : '—';
+      mailRows += '<tr><td>'+md+'</td><td><b>'+ma.byDay[d]+'</b></td><td>'+mails+'</td></tr>';
+    });
+  }
+  h+='<table style="margin-top:8px">'
+    + '<tr><th rowspan="2">异常邮件跟进</th><th>数量（条）</th><th rowspan="2">邮件封数</th></tr>'
+    + '<tr><th>'+(ma.range||'—')+' 合计 '+mailCount+'</th></tr>'
+    + (mailRows || '<tr><td colspan="3" style="color:#98a2b3">按日明细待补</td></tr>')
+    + '</table>';
+  h+='<div class="hint" style="margin-top:6px">口径：飞书邮箱「大数据邮件组」主题「异常待处理明细」每日 6 封邮件的 xlsx 附件，统计<b>运营中心 = 优检西安小型检测中心</b>的条数；每日自动抓取。</div>';
   wrap.innerHTML=h;
 }
 function renderAttRange(start,end){
