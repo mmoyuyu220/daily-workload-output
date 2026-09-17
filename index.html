@@ -431,8 +431,8 @@ function renderGongshi(){
   let html2='<table><tr><th class="nm">姓名</th>'
     +'<th>取退货合计<span class="thu">(件)</span></th><th>消息回复合计<span class="thu">(次)</span></th>'
     +'<th>SW稽核合计<span class="thu">(次)</span></th><th>消息回复理论时长<span class="thu">(分)</span></th>'
-    +'<th>SW稽核理论耗时<span class="thu">(分)</span></th><th>个人总处理量<span class="thu">(件 / 次)</span></th>'
-    +'<th>视频调取当日合计<span class="thu">('+(vidSelDay?vidSelDay.slice(5).replace('-','/'):'—')+')</span></th></tr>';
+    +'<th>SW稽核理论耗时<span class="thu">(分)</span></th><th>视频调取当日合计<span class="thu">('+(vidSelDay?vidSelDay.slice(5).replace('-','/'):'—')+')</span></th>'
+    +'<th>个人总处理量<span class="thu">(件 / 次)</span></th></tr>';
   for(const p of emps){
     let a=0,b=0,c=0,swH2=0;
     rngDays.forEach(d=>{ const g=G.dates[d], s=S.dates[d];
@@ -444,11 +444,13 @@ function renderGongshi(){
     const msgTheo = b*MSG_RATE;
     swH2 = +swH2.toFixed(1);
     const vid = (vidSelDay && vidDayMap[p]!=null) ? vidDayMap[p] : null;
-    html2+='<tr><td class="nm">'+p+'</td><td>'+fmt(a)+'</td><td>'+fmt(b)+'</td><td>'+fmt(c)+'</td><td>'+msgTheo.toFixed(1)+'</td><td>'+fmt(swH2)+'</td><td>'+fmt(a+b+c)+'</td><td>'+(vid!=null?fmt(vid):'—')+'</td></tr>';
+    const vidVal = (vid!=null) ? vid : 0;
+    const perTot = a+b+c+vidVal;
+    html2+='<tr><td class="nm">'+p+'</td><td>'+fmt(a)+'</td><td>'+fmt(b)+'</td><td>'+fmt(c)+'</td><td>'+msgTheo.toFixed(1)+'</td><td>'+fmt(swH2)+'</td><td>'+(vid!=null?fmt(vid):'—')+'</td><td>'+fmt(perTot)+'</td></tr>';
   }
   html2+='</table>';
   if(vidSelDay){
-    html2+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值），与上方区间累计分属不同口径，供对照查看；选中日随视频明细「日期切换」联动。</div>';
+    html2+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值）；个人总处理量（末列）= 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计。视频当量为单日值、其余三项为区间累计，分属不同口径，供对照查看；选中日随视频明细「日期切换」联动。</div>';
   }
   document.getElementById('gsPerTotTable').innerHTML=html2;
 
