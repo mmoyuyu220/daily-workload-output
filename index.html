@@ -574,12 +574,20 @@ function renderVideoRange(start,end){
     tog.querySelectorAll('.vp-dchip').forEach(b=>b.onclick=()=>{ vpSelDay=b.dataset.d; renderVideoRange(start,end); });
   }
   const rec=VIDEO_DATA[vpSelDay];
+  const p1=rec.part1||{};
   const p2v={}, p3v={};
   FIVE.forEach(p=>{ p2v[p]=(rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0; p3v[p]=(rec.part3&&rec.part3[p]!=null)?rec.part3[p]:0; });
   let pt='<table><tr><th>人员</th><th>Part2 归属</th><th>Part3 群视频</th><th>当日合计</th></tr>';
   FIVE.forEach(p=>{ pt+='<tr><td class="nm">'+p+'</td><td>'+p2v[p]+'</td><td>'+p3v[p]+'</td><td><b>'+(p2v[p]+p3v[p])+'</b></td></tr>'; });
   pt+='</table>';
-  wrap.innerHTML='<div class="vp-dayblock"><div class="lbl">📅 '+vpSelDay.slice(5).replace('-','/')+' 每人当日合计（Part2 + Part3）</div>'+pt+'<div class="vp-note">'+rec.note+'</div></div>';
+  // Part 1 ｜ 没有归属视频（wiki 物品编码，暂无法归属个人）
+  const p1Html='<div class="lbl" style="margin:10px 0 4px">Part 1 ｜ wiki 物品编码（没有归属视频）<span class="vp-tag warn">⚠ 暂无法归属个人</span></div>'
+    + '<table><tr><th>西安+流转专项 物品编码单元格</th><th>折合视频数</th><th>归属状态</th></tr>'
+    + '<tr><td>'+(p1.cells||0)+'</td><td>'+(p1.videos||0)+'</td><td style="text-align:left">'+(p1.owner||'—')+'</td></tr></table>';
+  wrap.innerHTML='<div class="vp-dayblock"><div class="lbl">📅 '+vpSelDay.slice(5).replace('-','/')+' 视频调取明细</div>'
+    + p1Html
+    + '<div class="lbl" style="margin:14px 0 4px">👤 每人当日合计（Part2 + Part3）</div>'+pt
+    + '<div class="vp-note">'+rec.note+'</div></div>';
 }
 function renderAttRange(start,end){
   const wrap=document.getElementById('attTableWrap');
