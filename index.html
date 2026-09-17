@@ -68,6 +68,31 @@ td.nm,th.nm{text-align:left}
 .warn-tbl td.nm{text-align:left;color:#2a3547}
 .warn-tbl .ar-yes{color:#d1342f;font-weight:700}
 
+/* ===== 筛选条件面板（对齐「每日效率」页筛选面板样式） ===== */
+.fp{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;box-shadow:0 1px 4px rgba(20,40,80,.06);margin-bottom:16px}
+.fp-title{position:relative;padding-left:14px;font-size:15.5px;font-weight:700;color:#16223a;margin:0 0 16px}
+.fp-title::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:4px;height:16px;border-radius:3px;background:linear-gradient(180deg,var(--blue),#818cf8)}
+.fp-controls{display:flex;flex-wrap:wrap;gap:16px 18px;align-items:flex-end}
+.fp-field{display:flex;flex-direction:column;gap:6px}
+.fp-field label{font-size:12px;color:var(--sub);font-weight:600}
+.fp-field input[type=date]{height:42px;min-width:152px;padding:0 13px;border:1px solid #dbe2ec;border-radius:10px;font-size:14px;color:#111827;background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
+.fp-field input[type=date]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(44,92,197,.16)}
+.fp-btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.fp-btnrow button{border:0;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;height:42px;padding:0 19px;font-family:inherit;transition:all .16s}
+.fp-btnrow button.pri{background:linear-gradient(135deg,var(--blue),#5b6ef0);color:#fff;box-shadow:0 3px 10px rgba(44,92,197,.30)}
+.fp-btnrow button.pri:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(44,92,197,.40)}
+.fp-btnrow button.sec{background:#eef2f8;color:#334155;border:1px solid #e2e8f0}
+.fp-btnrow button.sec:hover{background:#e6ecf5;color:#0f172a}
+.fp-btnrow button:active{transform:scale(.97)}
+.fp-btnrow button.flash{animation:btnFlash .5s ease-out}
+@keyframes btnFlash{0%{box-shadow:0 0 0 0 rgba(44,92,197,.55);}100%{box-shadow:0 0 0 12px rgba(44,92,197,0);}}
+.fp-quick{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:15px;padding-top:15px;border-top:1px dashed #e6eaf0}
+.fp-quick span{font-size:12px;color:#9aa4b6}
+.fp-quick button{height:33px;padding:0 15px;border-radius:999px;background:#fff;border:1px solid #e2e8f0;color:#475569;font-size:13px;font-family:inherit;cursor:pointer;transition:.15s}
+.fp-quick button:hover{border-color:var(--blue);color:var(--blue)}
+.fp-quick button.active{background:#eef3fe;border-color:var(--blue);color:var(--blue);font-weight:700}
+.fp-note{font-size:12px;color:var(--sub);margin-top:8px}
+
 /* ===== 美化：单日详情日期栏（日历展开组件） ===== */
 .date-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
 .date-field{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#f6f9ff,#eef3fe);border:1px solid var(--line);border-radius:14px;padding:14px 18px;box-shadow:0 1px 3px rgba(44,92,197,.06)}
@@ -168,40 +193,19 @@ td.nm,th.nm{text-align:left}
 
 <!-- 每日工作量输出 模块（取退货 / 消息对接 / SW稽核 · 核算起始 2026-09-14 · T-1 更新） -->
 <div class="panel active" id="panel-gongshi">
-  <div class="date-bar">
-    <div class="date-field">
-      <span class="df-ico">📋</span>
-      <div>
-        <div class="lbl">选择区间（每日工作量输出 · 取退货 / 消息对接 / SW稽核 / 视频调取 / 考勤 · 数据更新逻辑 T-1，核算起始 2026-09-14）</div>
-        <div class="date-inline">
-          <div class="date-field-sm">
-            <div class="lbl">开始日期</div>
-            <div class="date-picker">
-              <button id="gsRngStartBtn" class="date-picker-btn">选择日期 <span id="gsRngStartVal"></span></button>
-              <div id="gsRngStartPop" class="date-picker-pop">
-                <div class="dp-header"><button id="gsRngStartPrev" class="dp-nav">◀</button><div class="dp-title" id="gsRngStartTitle"></div><button id="gsRngStartNext" class="dp-nav">▶</button></div>
-                <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
-                <div id="gsRngStartDays" class="dp-days"></div>
-                <div class="dp-legend"><span><i class="dp-dot has-data"></i> 有数据</span><span><i class="dp-dot selected"></i> 当前选中</span></div>
-              </div>
-            </div>
-          </div>
-          <div class="date-field-sm">
-            <div class="lbl">截止日期</div>
-            <div class="date-picker">
-              <button id="gsRngEndBtn" class="date-picker-btn">选择日期 <span id="gsRngEndVal"></span></button>
-              <div id="gsRngEndPop" class="date-picker-pop">
-                <div class="dp-header"><button id="gsRngEndPrev" class="dp-nav">◀</button><div class="dp-title" id="gsRngEndTitle"></div><button id="gsRngEndNext" class="dp-nav">▶</button></div>
-                <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
-                <div id="gsRngEndDays" class="dp-days"></div>
-                <div class="dp-legend"><span><i class="dp-dot has-data"></i> 有数据</span><span><i class="dp-dot selected"></i> 当前选中</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+  <!-- 筛选条件（对齐「每日效率」页筛选面板样式） -->
+  <div class="fp">
+    <div class="fp-title">筛选条件</div>
+    <div class="fp-controls">
+      <div class="fp-field"><label>开始日期</label><input type="date" id="gsStartInput"></div>
+      <div class="fp-field"><label>结束日期</label><input type="date" id="gsEndInput"></div>
+      <div class="fp-field"><label>查看当日</label><input type="date" id="gsDayInput"></div>
+      <div class="fp-btnrow"><button type="button" class="sec" id="gsTodayBtn">今天</button><button type="button" class="sec" id="gsYestBtn">昨天</button></div>
+      <div class="fp-btnrow"><button type="button" class="pri" id="gsApplyBtn">应用筛选</button><button type="button" class="sec" id="gsResetBtn">重置为全量</button></div>
     </div>
-    <div class="df-note" id="gongshiNote"></div>
+    <div class="fp-quick"><span>区间快速选择：</span><button type="button" data-range="all" class="active">全部</button><button type="button" data-range="7">近7天</button><button type="button" data-range="3">近3天</button></div>
+    <div class="fp-note" id="gongshiNote"></div>
+    <div class="fp-note">区间口径：取退货 / 消息对接 / SW稽核 / 视频调取 / 考勤 · 数据更新逻辑 T-1（核算起始 2026-09-14）；「查看当日」= 数据日（默认最新数据日 T-1），视频调取当日合计 / 西安流转专项视频数量 取该日或之前最近一个视频日（视频数据仅覆盖 9/14、9/15）。</div>
   </div>
 
   <div class="sec-title">核心指标（区间：<span id="gsRangeLbl2">—</span>）</div>
@@ -233,6 +237,10 @@ td.nm,th.nm{text-align:left}
   <div class="sec-title">每人工作量（区间累计）</div>
   <div id="gsPerTotTable"></div>
 
+  <div id="gsPart1Wrap"></div>
+
+  <div id="gsVidDayToggle" class="vp-daytoggle"></div>
+
   <div class="sec-title">趋势分析 ① 数量 &amp; 总处理量（折线图）</div>
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
   <div class="chart" id="gsQtyChart" style="height:340px"></div>
@@ -241,10 +249,6 @@ td.nm,th.nm{text-align:left}
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
   <div class="chart" id="gsHoursChart" style="height:340px"></div>
 
-  <div id="gsPart1Wrap"></div>
-
-  <div id="gsVidDayToggle" class="vp-daytoggle"></div>
-
 <!-- 视频调取 & 考勤（已合并进本面板，随上方区间筛选联动） -->
 <div class="m-video">
   <div class="sec-title">📅 考勤矩阵（来源：排班表 / 8月及以后 · Z6U6uk · 区间：<span id="attRangeLbl">—</span>）</div>
@@ -252,39 +256,7 @@ td.nm,th.nm{text-align:left}
   <div id="attTableWrap" class="att-scroll"></div>
   <div id="attSummary" class="vp-attstrip att-sum"></div>
 
-  <details class="vp-hist">
-    <summary>📎 历史快照：9/14 vs 9/15 完整明细</summary>
-    <div class="vp-hist-body">
-      <div class="lbl" style="margin:8px 0 4px">9/14（9 条记录 · 9 张图 → 45 视频）</div>
-      <table>
-        <tr><th>修改人(上传人代理)</th><th>图片数</th><th>视频数</th><th>半额规则后归属</th></tr>
-        <tr><td class="nm">张霞霞</td><td>4</td><td>20</td><td>王妙星 9/14 休假 → <b>张霞霞全额 20</b>，王妙星 0</td></tr>
-        <tr><td class="nm">赵豫思</td><td>5</td><td>25</td><td>赵豫思 25</td></tr>
-        <tr><td class="nm"><b>小计</b></td><td><b>9</b></td><td><b>45</b></td><td>张20 王0 赵25</td></tr>
-      </table>
-      <div class="lbl" style="margin:14px 0 4px">9/15（14 条记录 · 15 张图 → 60 视频）</div>
-      <table>
-        <tr><th>修改人(上传人代理)</th><th>图片数</th><th>视频数</th><th>半额规则后归属</th></tr>
-        <tr><td class="nm">杨凡凡</td><td>4</td><td>10</td><td>杨凡凡 10（5S/安全不计入视频调取）</td></tr>
-        <tr><td class="nm">张霞霞</td><td>7</td><td>35</td><td>两人均出勤 → 各一半（35/2=17.5，<b>张多1 → 张18 / 王17</b>）</td></tr>
-        <tr><td class="nm">赵豫思</td><td>4</td><td>15</td><td>赵豫思 15（5S/安全不计入视频调取）</td></tr>
-        <tr><td class="nm"><b>小计</b></td><td><b>15</b></td><td><b>60</b></td><td>杨10 张18 王17 赵15</td></tr>
-      </table>
-      <div class="vp-note">✅ 9/15 考勤已核实：来源「排班表 / 8月及以后」子表（sheet=<code>Z6U6uk</code>）——9/14 王妙星「休息」、张霞霞「上班」→ 张霞霞全额；9/15 张霞霞、王妙星均「上班」→ 两人都出勤，各一半（35/2=17.5，非整数张多1 → 张18/王17）。</div>
-      <div class="vp-note warn">⚠ 9/15 视频调取量已按「标准作业审核表」稽核点=工艺sw 重核：5S / 安全 不计入视频调取数量，故 杨凡凡 20→10、赵豫思 20→15（张霞霞 35 均为工艺sw 不变）。</div>
-      <div class="vp-note warn">⚠ Part 1（wiki 物品编码）单元格编辑人无法通过飞书 API 批量获取，需手动给「单元格→编辑人」映射，或确认作未归属池。</div>
-      <div class="lbl" style="margin:14px 0 4px">👤 每人每日汇总（Part 2 + Part 3，Part 1 待归因）</div>
-      <table>
-        <tr><th rowspan="2">人员</th><th colspan="3">9/14</th><th colspan="3">9/15</th></tr>
-        <tr><th>Part2</th><th>Part3</th><th>合计</th><th>Part2</th><th>Part3</th><th>合计</th></tr>
-        <tr><td class="nm">张霞霞</td><td>20</td><td>0</td><td><b>20</b></td><td>18</td><td>0</td><td><b>18</b></td></tr>
-        <tr><td class="nm">王妙星</td><td>0</td><td>0</td><td><b>0</b></td><td>17</td><td>0</td><td><b>17</b></td></tr>
-        <tr><td class="nm">赵豫思</td><td>25</td><td>0</td><td><b>25</b></td><td>15</td><td>0</td><td><b>15</b></td></tr>
-        <tr><td class="nm">杨凡凡</td><td>0</td><td>0</td><td><b>0</b></td><td>10</td><td>0</td><td><b>10</b></td></tr>
-        <tr><td class="nm">马红霞</td><td>0</td><td>1</td><td><b>1</b></td><td>0</td><td>0</td><td><b>0</b></td></tr>
-      </table>
-    </div>
-  </details>
+
 </div>
 </div>
 
@@ -303,58 +275,6 @@ const fmt = n => (n==null?'—':n.toLocaleString('zh-CN'));
 
 // ---------- tabs ----------
 // 仅保留「每日工作量输出」单一面板，无需 tab 切换
-
-
-// 通用日历选择器（区间开始 / 区间结束 共用）
-const ALL_PICKERS=[];
-function closeAllPickers(except){
-  ALL_PICKERS.forEach(p=>{ if(p!==except){ p.pop.classList.remove('open'); p.btn.classList.remove('active'); } });
-}
-function createDatePicker(opts){
-  const btn=document.getElementById(opts.btn);
-  const pop=document.getElementById(opts.pop);
-  const titleEl=document.getElementById(opts.title);
-  const daysEl=document.getElementById(opts.days);
-  const prev=document.getElementById(opts.prev);
-  const next=document.getElementById(opts.next);
-  const valEl=document.getElementById(opts.val);
-  // 可传入自定义「有数据」日期集合（字符串数组）；默认用主数据 DAYS
-  const hasData=new Set((opts.hasData||DAYS).map(d=>typeof d==='string'?d:d.date));
-  let selected=opts.initial||'';
-  let view=new Date();
-  if(selected){const p=selected.split('-').map(Number);view=new Date(p[0],p[1]-1,p[2]);}
-  function fmt(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day;}
-  function upd(){valEl.textContent=selected||'请选择';}
-  function render(){
-    const y=view.getFullYear(), m=view.getMonth();
-    titleEl.textContent=y+'年 '+(m+1)+'月';
-    const first=new Date(y,m,1), last=new Date(y,m+1,0);
-    const offset=first.getDay(), dim=last.getDate();
-    daysEl.innerHTML='';
-    const pl=new Date(y,m,0).getDate();
-    for(let i=offset-1;i>=0;i--){const c=document.createElement('span');c.className='dp-day other';c.textContent=pl-i;daysEl.appendChild(c);}
-    for(let d=1;d<=dim;d++){
-      const ds=fmt(new Date(y,m,d));
-      const c=document.createElement('span');c.className='dp-day';c.textContent=d;
-      const isData=hasData.has(ds), isSel=ds===selected;
-      if(isSel){c.classList.add('selected');}
-      else if(isData){c.classList.add('has-data');}
-      else{c.classList.add('disabled');}
-      if(isData || isSel){c.onclick=()=>{selected=ds;upd();render();if(opts.onChange)opts.onChange(selected);pop.classList.remove('open');btn.classList.remove('active');};}
-      daysEl.appendChild(c);
-    }
-    const total=daysEl.children.length, pad=(42-total%42)%42;
-    for(let d=1;d<=pad;d++){const c=document.createElement('span');c.className='dp-day other';c.textContent=d;daysEl.appendChild(c);}
-  }
-  const that={pop,btn,get value(){return selected;},set value(v){selected=v;if(v){const p=v.split('-').map(Number);view=new Date(p[0],p[1]-1,p[2]);}upd();render();}};
-  btn.onclick=(e)=>{e.stopPropagation();if(pop.classList.contains('open')){pop.classList.remove('open');btn.classList.remove('active');}else{closeAllPickers(that);render();pop.classList.add('open');btn.classList.add('active');}};
-  prev.onclick=(e)=>{e.stopPropagation();view.setMonth(view.getMonth()-1);render();};
-  next.onclick=(e)=>{e.stopPropagation();view.setMonth(view.getMonth()+1);render();};
-  upd();render();
-  ALL_PICKERS.push(that);
-  return that;
-}
-document.addEventListener('click',e=>{ if(!e.target.closest('.date-picker')){ closeAllPickers(null); } });
 
 
 let trendChart=null, regionChart=null, gsCmpChart=null, gsQtyChart=null, gsHoursChart=null;
@@ -428,7 +348,16 @@ function renderGongshi(){
   // ③ 每人工作量（区间累计：合并 处理量 + 理论耗时 + 个人总处理量 + 视频调取当日合计）
   // 视频调取「每人当日合计」第四列（当日合计 = Part2+Part3）并入本表，方便单表查看
   const vds = Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).sort();
-  const vidSelDay = (vpSelDay && vds.includes(vpSelDay)) ? vpSelDay : (vds.length ? vds[vds.length-1] : '');
+  // 视频日解析：① 若已显式选了视频日（视频日 chips）且落在区间内 → 用它；
+  //            ② 否则取「筛选条件 · 查看当日」(数据日) 当日或之前最近的一个视频日；
+  //            ③ 再退化到区间内最后一个视频日。
+  let vidSelDay='';
+  if(vpSelDay && vds.includes(vpSelDay)) vidSelDay=vpSelDay;
+  else{
+    const pick=(gsDayEl && gsDayEl.value)?gsDayEl.value:end;
+    const cand=vds.filter(d=>d<=pick);
+    vidSelDay = cand.length ? cand[cand.length-1] : (vds.length ? vds[vds.length-1] : '');
+  }
   const vidDayMap = {};
   if(vidSelDay){
     const rec=VIDEO_DATA[vidSelDay];
@@ -458,7 +387,7 @@ function renderGongshi(){
   }
   html2+='</table>';
   if(vidSelDay){
-    html2+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值）；个人总处理量（末列）= 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计。视频当量为单日值、其余三项为区间累计，分属不同口径，供对照查看；选中日随上方「西安流转专项视频数量」日期切换联动。</div>';
+    html2+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值）；个人总处理量（末列）= 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计。视频当量为单日值、其余三项为区间累计，分属不同口径，供对照查看；选中日随「筛选条件 · 查看当日」或「西安流转专项视频数量」日期切换联动。</div>';
   }
   document.getElementById('gsPerTotTable').innerHTML=html2;
 
@@ -592,9 +521,9 @@ function renderVidDayToggle(start,end){
   // 联动：选中日随区间自动收敛到范围内最新视频日
   if(!vpSelDay || !ds.includes(vpSelDay)) vpSelDay=ds[ds.length-1];
   tog.innerHTML=ds.map(d=>'<button class="vp-dchip'+(d===vpSelDay?' active':'')+'" data-d="'+d+'">'+d.slice(5).replace('-','/')+'</button>').join('');
-  tog.querySelectorAll('.vp-dchip').forEach(b=>b.onclick=()=>{ vpSelDay=b.dataset.d; renderGongshi(); });
+  tog.querySelectorAll('.vp-dchip').forEach(b=>b.onclick=()=>{ vpSelDay=b.dataset.d; if(window.gsSetDayInput) window.gsSetDayInput(b.dataset.d); renderGongshi(); });
 }
-// Part 1 ｜ 没有归属视频（wiki 物品编码，暂无法归属个人）—— 已移至「每人工作量」板块图表下方
+// 西安流转专项视频数量（wiki 物品编码 Part1）—— 位于「每人工作量」板块内、每人工作量表下方
 function renderPart1(start,end){
   const wrap=document.getElementById('gsPart1Wrap');
   if(!wrap) return;
@@ -642,10 +571,64 @@ function renderAttRange(start,end){
 
 // ---------- init（区间筛选选择器需在 ATT / VIDEO_DATA 常量定义之后创建，避免 const TDZ） ----------
 const gsAllDates = Array.from(new Set([...GS_DATES, ...Object.keys(VIDEO_DATA), ...Object.keys(ATT.attendance)])).sort();
-const gsRngStartPicker = createDatePicker({btn:'gsRngStartBtn',pop:'gsRngStartPop',title:'gsRngStartTitle',days:'gsRngStartDays',prev:'gsRngStartPrev',next:'gsRngStartNext',val:'gsRngStartVal',
-  initial:(Object.keys(ATT.attendance).sort()[0]||GS_DATES[0]||''), hasData:gsAllDates, onChange:()=>renderGongshi()});
-const gsRngEndPicker = createDatePicker({btn:'gsRngEndBtn',pop:'gsRngEndPop',title:'gsRngEndTitle',days:'gsRngEndDays',prev:'gsRngEndPrev',next:'gsRngEndNext',val:'gsRngEndVal',
-  initial:(Object.keys(ATT.attendance).sort().slice(-1)[0]||GS_LATEST||''), hasData:gsAllDates, onChange:()=>renderGongshi()});
+// 兼容既有渲染函数（原以 gsRngStartPicker.value / gsRngEndPicker.value 读取区间）
+const gsStartEl=document.getElementById('gsStartInput');
+const gsEndEl  =document.getElementById('gsEndInput');
+const gsDayEl  =document.getElementById('gsDayInput');
+const gsAllMin=gsAllDates[0]||'', gsAllMax=gsAllDates[gsAllDates.length-1]||'';
+const gsVideoDays=Object.keys(VIDEO_DATA).sort();
+const gsLastVideoDay=()=>gsVideoDays.length?gsVideoDays[gsVideoDays.length-1]:gsAllMax;
+// 最新「有工作量数据」的日期（T-1 口径；考勤表含未来排班，故不取 ATT 最大值）
+const gsDataMax=(()=>{ const a=[...GS_DATES,...Object.keys(VIDEO_DATA)].sort(); return a.length?a[a.length-1]:(gsAllMax||''); })();
+const gsRngStartPicker={get value(){return gsStartEl.value;}};
+const gsRngEndPicker  ={get value(){return gsEndEl.value;}};
+gsStartEl.value=gsAllMin;
+gsEndEl.value=gsAllMax;
+gsDayEl.value=gsDataMax||gsAllMax;      // 查看当日默认 = 最新数据日（T-1）
+// 供视频日 chips 正向写入「查看当日」
+window.gsSetDayInput=d=>{ if(gsDayEl && d) gsDayEl.value=d; };
+function gsApplyFilter(){
+  let st=gsStartEl.value||gsAllMin, en=gsEndEl.value||gsAllMax;
+  if(st>en){ const t=st; st=en; en=t; }
+  gsStartEl.value=st; gsEndEl.value=en;
+  if(gsDayEl.value && (gsDayEl.value<st||gsDayEl.value>en)) gsDayEl.value=en;
+  vpSelDay=null;                         // 让视频日按新的「查看当日」重新解析
+  renderGongshi();
+}
+function gsHighlightQuick(range){
+  document.querySelectorAll('.fp-quick button').forEach(b=>b.classList.toggle('active', b.dataset.range===range));
+}
+function gsRangeStartFor(days){
+  if(!days) return gsAllMin;
+  const i=gsAllDates.lastIndexOf(gsDataMax||gsAllMax);
+  return gsAllDates[Math.max(0, i-days+1)]||gsAllMin;
+}
+document.getElementById('gsApplyBtn').onclick=()=>{
+  const b=document.getElementById('gsApplyBtn');
+  b.classList.add('flash'); setTimeout(()=>b.classList.remove('flash'),520);
+  gsApplyFilter();
+};
+document.getElementById('gsResetBtn').onclick=()=>{
+  gsStartEl.value=gsAllMin; gsEndEl.value=gsAllMax; gsDayEl.value=gsDataMax||gsAllMax;
+  vpSelDay=null; gsHighlightQuick('all'); renderGongshi();
+};
+// 今天 / 昨天：切换「查看当日」（T-1 口径的数据日，考勤表含未来排班故不取 ATT 最大值）
+document.getElementById('gsTodayBtn').onclick=()=>{ gsDayEl.value=gsDataMax||gsAllMax; vpSelDay=null; renderGongshi(); };
+document.getElementById('gsYestBtn').onclick=()=>{
+  const i=gsAllDates.lastIndexOf(gsDataMax||gsAllMax);
+  gsDayEl.value=(i>0?gsAllDates[i-1]:(gsDataMax||gsAllMax)); vpSelDay=null; renderGongshi();
+};
+document.querySelectorAll('.fp-quick button').forEach(b=>{
+  b.onclick=()=>{
+    const r=b.dataset.range;
+    gsHighlightQuick(r);
+    if(r==='all'){ gsStartEl.value=gsAllMin; gsEndEl.value=gsAllMax; }
+    else{ gsEndEl.value=gsDataMax||gsAllMax; gsStartEl.value=gsRangeStartFor(parseInt(r,10)); }
+    gsApplyFilter();
+  };
+});
+[gsStartEl,gsEndEl].forEach(el=>el.addEventListener('keydown',ev=>{ if(ev.key==='Enter') gsApplyFilter(); }));
+gsDayEl.addEventListener('change',()=>{ if(gsDayEl.value){ vpSelDay=null; renderGongshi(); } });
 document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天（'+DAYS[0].date+' ~ '+DAYS[DAYS.length-1].date+'）';
 document.getElementById('foot').textContent='数据生成时间：'+D.meta.generated_at+' · 数据源：飞书群聊消息 + 飞书电子表格「抖音交付、稽核汇总」+ Base「标准作业审核表」（视频调取）/ 排班表（8月及以后 · 考勤）';
 if(GS_DATES.length || (ATT&&ATT.attendance)){ renderGongshi(); }
