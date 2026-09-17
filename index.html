@@ -170,9 +170,6 @@ td.nm,th.nm{text-align:left}
   #panel-gongshi #gsGongshiTable td.na{color:#98a2b3;text-align:center}
   .m-video .vp-attchip.off .st{background:#fdf2f2;color:#d1342f}
   .m-video .vp-attchip.na .st{background:#f2f4f8;color:#98a2b3}
-  .m-video .vp-hist{margin-top:18px;border:1px solid var(--line);border-radius:10px;background:#fafbfc}
-  .m-video .vp-hist>summary{cursor:pointer;padding:12px 16px;font-weight:700;color:#344563;font-size:14px}
-  .m-video .vp-hist-body{padding:0 16px 16px}
 .m-video .att-scroll{max-height:560px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:6px}
 .m-video .att-scroll table{width:100%;border-collapse:collapse}
 .m-video .att-scroll th,.m-video .att-scroll td{border:1px solid var(--line);padding:6px 8px;text-align:center}
@@ -576,8 +573,6 @@ const gsStartEl=document.getElementById('gsStartInput');
 const gsEndEl  =document.getElementById('gsEndInput');
 const gsDayEl  =document.getElementById('gsDayInput');
 const gsAllMin=gsAllDates[0]||'', gsAllMax=gsAllDates[gsAllDates.length-1]||'';
-const gsVideoDays=Object.keys(VIDEO_DATA).sort();
-const gsLastVideoDay=()=>gsVideoDays.length?gsVideoDays[gsVideoDays.length-1]:gsAllMax;
 // 最新「有工作量数据」的日期（T-1 口径；考勤表含未来排班，故不取 ATT 最大值）
 const gsDataMax=(()=>{ const a=[...GS_DATES,...Object.keys(VIDEO_DATA)].sort(); return a.length?a[a.length-1]:(gsAllMax||''); })();
 const gsRngStartPicker={get value(){return gsStartEl.value;}};
