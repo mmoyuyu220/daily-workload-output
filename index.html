@@ -23,6 +23,14 @@ body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
 .lbl{font-size:13px;color:var(--sub);margin-bottom:6px;font-weight:600}
 select,input[type=date]{font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
 .sec-title{font-size:15px;font-weight:800;color:#12203a;margin:24px 0 10px;border-left:4px solid var(--blue);padding-left:10px}
+/* 运营数据单日详情：独立看板跳转卡片（不内嵌，避免页面过长） */
+.ods-link{display:flex;align-items:center;gap:14px;margin:10px 0 4px;padding:16px 18px;background:linear-gradient(120deg,#f5f8ff,#eef4ff);border:1px solid #d6e2fb;border-radius:12px;text-decoration:none;color:inherit;transition:box-shadow .18s,border-color .18s,transform .18s}
+.ods-link:hover{border-color:var(--blue2);box-shadow:0 4px 14px rgba(44,92,197,.16);transform:translateY(-1px)}
+.ods-link .ods-ico{font-size:24px;line-height:1;flex:none}
+.ods-link .ods-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ods-link .ods-txt b{font-size:14px;color:var(--blue);font-weight:800}
+.ods-link .ods-txt em{font-style:normal;font-size:12px;color:var(--sub)}
+.ods-link .ods-go{flex:none;font-size:13px;font-weight:700;color:#fff;background:linear-gradient(120deg,#2c5cc5,#4f7fe0);padding:7px 14px;border-radius:20px;white-space:nowrap}
 .chart{width:100%;height:380px}
 .metric-chk{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}
 .metric-chk label{display:inline-flex;align-items:center;gap:6px;background:#f3f6fc;border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:13px;cursor:pointer;user-select:none}
@@ -248,9 +256,16 @@ td.nm,th.nm{text-align:left}
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
   <div class="chart" id="gsHoursChart" style="height:340px"></div>
 
-  <div class="sec-title">运营数据单日详情（来自「每日工作看板」· 每日自动同步）</div>
-  <div class="hint">下方为「运营数据单日详情」板块：消息对接 / 运营处理量 / 素养检查 / 预警看板 四大板块，按所选日期查看当日完整运营报告；数据与每日工作看板同源（ops_data.js），每日自动更新。板块内自带开始/结束/查看当日与区间快速选择筛选。</div>
-  <iframe id="odsFrame" src="ops_day.html" style="width:100%;border:0;min-height:1400px;display:block;" loading="lazy"></iframe>
+  <div class="sec-title">运营数据单日详情（独立看板 · 每日自动同步）</div>
+  <div class="hint">该板块内容较多，已拆分为独立看板页面，点击下方链接在新页面打开（每日自动更新，数据非静态）。</div>
+  <a class="ods-link" href="ops_day.html" target="_blank" rel="noopener">
+    <span class="ods-ico">📊</span>
+    <span class="ods-txt">
+      <b>打开「运营数据单日详情」看板</b>
+      <em>消息对接 · 运营处理量 · 素养检查 · 预警看板</em>
+    </span>
+    <span class="ods-go">前往 →</span>
+  </a>
 
 </div>
 
@@ -648,15 +663,6 @@ document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天�
 document.getElementById('foot').textContent='数据生成时间：'+D.meta.generated_at+' · 数据源：飞书群聊消息 + 飞书电子表格「抖音交付、稽核汇总」+ Base「标准作业审核表」（视频调取）/ 排班表（8月及以后 · 考勤）';
 if(GS_DATES.length || (ATT&&ATT.attendance)){ renderGongshi(); }
 window.addEventListener('resize',()=>{if(trendChart)trendChart.resize();if(regionChart)regionChart.resize();if(gsCmpChart)gsCmpChart.resize();if(gsQtyChart)gsQtyChart.resize();if(gsHoursChart)gsHoursChart.resize();});
-</script>
-<script>
-// 运营数据单日详情 iframe 自适应高度（同域，可读取内容高度）
-(function(){
-  var f=document.getElementById('odsFrame');
-  if(!f) return;
-  function resize(){ try{ var d=f.contentDocument; if(d&&d.body){ f.style.height=(d.body.scrollHeight+40)+'px'; } }catch(e){} }
-  f.addEventListener('load', function(){ resize(); setInterval(resize, 1000); });
-})();
 </script>
 </body>
 </html>
