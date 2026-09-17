@@ -240,7 +240,6 @@ td.nm,th.nm{text-align:left}
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
   <div class="chart" id="gsHoursChart" style="height:340px"></div>
 
-  <div class="sec-title">视频调取 · 未归属（wiki 物品编码 · Part 1）</div>
   <div id="gsVidDayToggle" class="vp-daytoggle"></div>
   <div id="gsPart1Wrap"></div>
 
@@ -450,7 +449,7 @@ function renderGongshi(){
   }
   html2+='</table>';
   if(vidSelDay){
-    html2+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值）；个人总处理量（末列）= 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计。视频当量为单日值、其余三项为区间累计，分属不同口径，供对照查看；选中日随上方「视频调取·未归属」日期切换联动。</div>';
+    html2+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值）；个人总处理量（末列）= 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计。视频当量为单日值、其余三项为区间累计，分属不同口径，供对照查看；选中日随上方「西安流转专项视频数量」日期切换联动。</div>';
   }
   document.getElementById('gsPerTotTable').innerHTML=html2;
 
@@ -595,10 +594,10 @@ function renderPart1(start,end){
   if(!vpSelDay || !ds.includes(vpSelDay)) vpSelDay=ds[ds.length-1];
   const rec=VIDEO_DATA[vpSelDay];
   const p1=rec.part1||{};
-  wrap.innerHTML='<div class="lbl" style="margin:6px 0 4px">📅 '+vpSelDay.slice(5).replace('-','/')+' ｜ wiki 物品编码（没有归属视频）<span class="vp-tag warn">⚠ 暂无法归属个人</span></div>'
-    + '<table><tr><th>西安+流转专项 物品编码单元格</th><th>折合视频数</th><th>归属状态</th></tr>'
-    + '<tr><td>'+(p1.cells||0)+'</td><td>'+(p1.videos||0)+'</td><td style="text-align:left">'+(p1.owner||'—')+'</td></tr></table>'
-    + '<div class="vp-note warn">⚠ Part 1（wiki 物品编码）单元格编辑人无法通过飞书 API 批量获取，暂作未归属池展示。'+(rec.note?('<br>'+rec.note):'')+'</div>';
+  wrap.innerHTML='<div class="lbl" style="margin:6px 0 4px">西安流转专项视频数量</div>'
+    + '<table><tr><th>西安流转专项视频数量</th><th>折合视频数</th><th>归属状态</th></tr>'
+    + '<tr><td>'+(p1.cells||0)+'</td><td>'+(p1.videos||0)+'</td><td style="text-align:left">计算中</td></tr></table>'
+    + '<div class="vp-note warn">⚠ 西安流转专项视频数量（wiki 物品编码）单元格编辑人无法通过飞书 API 批量获取，暂作未归属池展示，归属状态计算中。'+(rec.note?('<br>'+rec.note):'')+'</div>';
 }
 function renderAttRange(start,end){
   const wrap=document.getElementById('attTableWrap');
