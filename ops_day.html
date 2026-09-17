@@ -596,8 +596,28 @@
   .exp .scroll table thead th.metric .exp-row-filter{ font-weight:400; }
 </style>
 <style>#page-ops-day{display:block !important;padding:18px 0;}</style>
+<style>
+/* 独立页面顶部栏（本页已从主看板拆分为独立看板） */
+.ods-top{background:linear-gradient(120deg,#1e47a8,#2c5cc5 55%,#4f7fe0);color:#fff;padding:16px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(30,71,168,.25)}
+.ods-top .t-title{font-size:19px;font-weight:800;letter-spacing:.4px}
+.ods-top .t-sub{font-size:12px;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:20px}
+.ods-top .t-back{margin-left:auto;font-size:13px;font-weight:700;color:#1e47a8;background:#fff;padding:7px 14px;border-radius:20px;text-decoration:none;white-space:nowrap}
+.ods-top .t-back:hover{background:#eaf0fc}
+.ods-meta{font-size:12px;color:#6b7688;margin:12px 26px 0;padding:9px 14px;background:#f5f8ff;border:1px solid #dde6f8;border-radius:9px;display:flex;gap:16px;flex-wrap:wrap}
+.ods-meta b{color:#2c5cc5}
+</style>
 </head>
 <body>
+<div class="ods-top">
+  <span class="t-title">运营数据单日详情</span>
+  <span class="t-sub">每日自动同步 · 非静态数据</span>
+  <a class="t-back" href="index.html">← 返回「每日工作量输出」主看板</a>
+</div>
+<div class="ods-meta">
+  <span>数据覆盖：<b id="odsMetaRange">—</b></span>
+  <span>已收录：<b id="odsMetaDays">—</b> 天</span>
+  <span>最近同步：<b id="odsMetaSync">—</b></span>
+</div>
 <section class="page" id="page-ops-day">
   <div class="xian">
     <div class="panel"><div class="panel-title">筛选条件</div>
@@ -733,6 +753,12 @@
   function odsSetQuick(key){ document.querySelectorAll('#page-ops-day .quick button').forEach(function(b){ b.classList.toggle('active', b.dataset.range===key); }); }
   function odsMatchQuick(){ var s=$('odStart').value, e=$('odEnd').value, min=dates[0], max=dates[dates.length-1]; if(s===min&&e===max) return 'all'; var n7=Math.max(0,dates.length-7), n3=Math.max(0,dates.length-3); if(s===dates[n7]&&e===max) return '7'; if(s===dates[n3]&&e===max) return '3'; return ''; }
   function initOpsDay(){
+    // 顶部元信息：数据覆盖区间 / 天数 / 最近同步日（证明数据每日动态更新，非静态）
+    try{
+      if($('odsMetaRange')) $('odsMetaRange').textContent = (dates[0]||'—') + ' ~ ' + (dates[dates.length-1]||'—');
+      if($('odsMetaDays')) $('odsMetaDays').textContent = dates.length;
+      if($('odsMetaSync')) $('odsMetaSync').textContent = dates[dates.length-1] || '—';
+    }catch(e){}
     var s=$('odStart'), e=$('odEnd'), min=dates[0], max=dates[dates.length-1];
     s.min=e.min=min; s.max=e.max=max;
     s.value=max; e.value=max; // 默认显示最新一天（单日详情语义）
