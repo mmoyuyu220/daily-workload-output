@@ -507,9 +507,12 @@ function renderPart1(start,end){
   if(!vd){ wrap.innerHTML='<div class="empty">所选区间内暂无视频调取记录（视频数据仅覆盖 9/14、9/15，可调整区间筛选纳入）。</div>'; return; }
   const rec=VIDEO_DATA[vd];
   const p1=rec.part1||{};
+  // 折算（折合视频数）为空 / 未提供时一律默认为 0（不再依赖标准作业审核表折算公式）
+  const cells = (p1.cells!=null && p1.cells!=='') ? Number(p1.cells) : 0;
+  const videos = (p1.videos!=null && p1.videos!=='') ? Number(p1.videos) : 0;
   wrap.innerHTML='<div class="lbl" style="margin:6px 0 4px">西安流转专项视频数量</div>'
     + '<table><tr><th>西安流转专项视频数量</th><th>折合视频数</th><th>归属状态</th></tr>'
-    + '<tr><td>'+(p1.cells||0)+'</td><td>'+(p1.videos||0)+'</td><td style="text-align:left">计算中</td></tr></table>';
+    + '<tr><td>'+cells+'</td><td>'+videos+'</td><td style="text-align:left">计算中</td></tr></table>';
 }
 function renderAttRange(start,end){
   const wrap=document.getElementById('attTableWrap');
