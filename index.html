@@ -102,27 +102,27 @@ td.nm,th.nm{text-align:left}
   .date-field-sm .date-picker-pop{width:264px}
 
   /* ===== 视频调取 & 考勤 面板 ===== */
-  #panel-video .vp-pills{display:flex;flex-direction:column;gap:8px;margin:6px 0 4px}
-  #panel-video .vp-pill{background:#f3f6fc;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;line-height:1.75}
-  #panel-video .vp-tag{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:600;margin-left:8px;vertical-align:middle;white-space:nowrap}
-  #panel-video .vp-tag.ok{background:#e7f7ee;color:#1a7f4b}
-  #panel-video .vp-tag.warn{background:#fff3e0;color:#b26a00}
-  #panel-video .vp-tag.info{background:#e8f0fe;color:#2b5fd0}
-  #panel-video .vp-note{font-size:12px;color:#8a93a3;line-height:1.7;margin-top:10px;background:#fafbfc;border:1px solid var(--line);border-radius:8px;padding:9px 13px}
-  #panel-video .vp-note.warn{border-color:#f3d9a6;background:#fff8ec;color:#8a5b00}
-  #panel-video .vp-mtoggle{display:flex;gap:8px;margin:8px 0 4px}
-  #panel-video .vp-mbtn{font-size:13px;padding:7px 18px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--sub);cursor:pointer;transition:all .15s}
-  #panel-video .vp-mbtn:hover{border-color:var(--blue)}
-  #panel-video .vp-mbtn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
-  #panel-video td.att-on{color:#0f9d58;font-weight:700;background:#f2faf5}
-  #panel-video td.att-off{color:#d1342f;font-weight:600;background:#fdf2f2}
-  #panel-video td.att-na{color:#98a2b3}
-  #panel-video table th,#panel-video table td{padding:7px 9px}
-  #panel-video .vp-attstrip{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}
-  #panel-video .vp-attchip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:13px;background:#fff}
-  #panel-video .vp-attchip .nm{font-weight:600;color:#344563}
-  #panel-video .vp-attchip .st{font-weight:700;padding:1px 9px;border-radius:20px;font-size:12px}
-  #panel-video .vp-attchip.on .st{background:#e7f7ee;color:#1a7f4b}
+  .m-video .vp-pills{display:flex;flex-direction:column;gap:8px;margin:6px 0 4px}
+  .m-video .vp-pill{background:#f3f6fc;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;line-height:1.75}
+  .m-video .vp-tag{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:600;margin-left:8px;vertical-align:middle;white-space:nowrap}
+  .m-video .vp-tag.ok{background:#e7f7ee;color:#1a7f4b}
+  .m-video .vp-tag.warn{background:#fff3e0;color:#b26a00}
+  .m-video .vp-tag.info{background:#e8f0fe;color:#2b5fd0}
+  .m-video .vp-note{font-size:12px;color:#8a93a3;line-height:1.7;margin-top:10px;background:#fafbfc;border:1px solid var(--line);border-radius:8px;padding:9px 13px}
+  .m-video .vp-note.warn{border-color:#f3d9a6;background:#fff8ec;color:#8a5b00}
+  .m-video .vp-mtoggle{display:flex;gap:8px;margin:8px 0 4px}
+  .m-video .vp-mbtn{font-size:13px;padding:7px 18px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--sub);cursor:pointer;transition:all .15s}
+  .m-video .vp-mbtn:hover{border-color:var(--blue)}
+  .m-video .vp-mbtn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .m-video td.att-on{color:#0f9d58;font-weight:700;background:#f2faf5}
+  .m-video td.att-off{color:#d1342f;font-weight:600;background:#fdf2f2}
+  .m-video td.att-na{color:#98a2b3}
+  .m-video table th,.m-video table td{padding:7px 9px}
+  .m-video .vp-attstrip{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}
+  .m-video .vp-attchip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:13px;background:#fff}
+  .m-video .vp-attchip .nm{font-weight:600;color:#344563}
+  .m-video .vp-attchip .st{font-weight:700;padding:1px 9px;border-radius:20px;font-size:12px}
+  .m-video .vp-attchip.on .st{background:#e7f7ee;color:#1a7f4b}
   /* 工艺工时对照表 */
   #panel-gongshi #gsGongshiTable{margin-top:4px}
   #panel-gongshi #gsGongshiTable table{width:100%;border-collapse:collapse;font-size:13px}
@@ -131,11 +131,19 @@ td.nm,th.nm{text-align:left}
   #panel-gongshi #gsGongshiTable td.nm{font-weight:600;color:#344563;white-space:nowrap}
   #panel-gongshi #gsGongshiTable td.rate{font-weight:700;color:#1677ff;white-space:nowrap;text-align:center}
   #panel-gongshi #gsGongshiTable td.na{color:#98a2b3;text-align:center}
-  #panel-video .vp-attchip.off .st{background:#fdf2f2;color:#d1342f}
-  #panel-video .vp-attchip.na .st{background:#f2f4f8;color:#98a2b3}
-  #panel-video .vp-hist{margin-top:18px;border:1px solid var(--line);border-radius:10px;background:#fafbfc}
-  #panel-video .vp-hist>summary{cursor:pointer;padding:12px 16px;font-weight:700;color:#344563;font-size:14px}
-  #panel-video .vp-hist-body{padding:0 16px 16px}
+  .m-video .vp-attchip.off .st{background:#fdf2f2;color:#d1342f}
+  .m-video .vp-attchip.na .st{background:#f2f4f8;color:#98a2b3}
+  .m-video .vp-hist{margin-top:18px;border:1px solid var(--line);border-radius:10px;background:#fafbfc}
+  .m-video .vp-hist>summary{cursor:pointer;padding:12px 16px;font-weight:700;color:#344563;font-size:14px}
+  .m-video .vp-hist-body{padding:0 16px 16px}
+.m-video .att-scroll{max-height:560px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:6px}
+.m-video .att-scroll table{width:100%;border-collapse:collapse}
+.m-video .att-scroll th,.m-video .att-scroll td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+.m-video .att-scroll th{background:#f6f8fc;font-weight:600;color:#344563;position:sticky;top:0}
+.m-video .att-scroll td.nm{text-align:left;font-weight:600;color:#344563;white-space:nowrap}
+.m-video .vp-dayblock{margin:16px 0;padding:14px 0;border-top:1px dashed var(--line)}
+.m-video .vp-dayblock:first-of-type{border-top:none;padding-top:0}
+.m-video .att-sum{margin-top:12px}
 </style>
 </head>
 <body>
@@ -150,7 +158,6 @@ td.nm,th.nm{text-align:left}
   <div class="tab" data-tab="trend">趋势分析</div>
   <div class="tab" data-tab="warn">预警看板</div>
   <div class="tab" data-tab="gongshi">每日工作量输出</div>
-  <div class="tab" data-tab="video">视频调取 &amp; 考勤</div>
 </div>
 
 <!-- 单日详情：嵌入最早报告模板 -->
@@ -250,14 +257,31 @@ td.nm,th.nm{text-align:left}
     <div class="date-field">
       <span class="df-ico">📋</span>
       <div>
-        <div class="lbl">选择日期（每日工作量输出 · 取退货 / 消息对接 / SW稽核 · 数据更新逻辑 T-1，核算起始 2026-09-14）</div>
-        <div class="date-picker">
-          <button id="gsBtn" class="date-picker-btn">选择日期 <span id="gsVal"></span></button>
-          <div id="gsPop" class="date-picker-pop">
-            <div class="dp-header"><button id="gsPrev" class="dp-nav">◀</button><div class="dp-title" id="gsTitle"></div><button id="gsNext" class="dp-nav">▶</button></div>
-            <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
-            <div id="gsDays" class="dp-days"></div>
-            <div class="dp-legend"><span><i class="dp-dot has-data"></i> 有数据</span><span><i class="dp-dot selected"></i> 当前选中</span></div>
+        <div class="lbl">选择区间（每日工作量输出 · 取退货 / 消息对接 / SW稽核 / 视频调取 / 考勤 · 数据更新逻辑 T-1，核算起始 2026-09-14）</div>
+        <div class="date-inline">
+          <div class="date-field-sm">
+            <div class="lbl">开始日期</div>
+            <div class="date-picker">
+              <button id="gsRngStartBtn" class="date-picker-btn">选择日期 <span id="gsRngStartVal"></span></button>
+              <div id="gsRngStartPop" class="date-picker-pop">
+                <div class="dp-header"><button id="gsRngStartPrev" class="dp-nav">◀</button><div class="dp-title" id="gsRngStartTitle"></div><button id="gsRngStartNext" class="dp-nav">▶</button></div>
+                <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+                <div id="gsRngStartDays" class="dp-days"></div>
+                <div class="dp-legend"><span><i class="dp-dot has-data"></i> 有数据</span><span><i class="dp-dot selected"></i> 当前选中</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="date-field-sm">
+            <div class="lbl">截止日期</div>
+            <div class="date-picker">
+              <button id="gsRngEndBtn" class="date-picker-btn">选择日期 <span id="gsRngEndVal"></span></button>
+              <div id="gsRngEndPop" class="date-picker-pop">
+                <div class="dp-header"><button id="gsRngEndPrev" class="dp-nav">◀</button><div class="dp-title" id="gsRngEndTitle"></div><button id="gsRngEndNext" class="dp-nav">▶</button></div>
+                <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+                <div id="gsRngEndDays" class="dp-days"></div>
+                <div class="dp-legend"><span><i class="dp-dot has-data"></i> 有数据</span><span><i class="dp-dot selected"></i> 当前选中</span></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -265,7 +289,7 @@ td.nm,th.nm{text-align:left}
     <div class="df-note" id="gongshiNote"></div>
   </div>
 
-  <div class="sec-title">核心指标（当日）</div>
+  <div class="sec-title">核心指标（区间）</div>
 
   <div class="grp"><span class="ic">📦</span>数量<span class="u">件 / 次</span></div>
   <div class="cls compact">
@@ -288,7 +312,7 @@ td.nm,th.nm{text-align:left}
   <div class="hint">每日明细中（一部分）的耗时按本表标准工时自动计算（耗时 = 处理量 × 标准工时）。来源：飞书「工艺工时摸底」子表，更新于 2026-09-16。</div>
   <div id="gsGongshiTable"></div>
 
-  <div class="sec-title">各理论耗时量对比（当日）</div>
+  <div class="sec-title">各理论耗时量对比（区间）</div>
   <div class="chart" id="gsCmpChart" style="height:300px"></div>
 
   <div class="sec-title">总处理量（核算区间累计 · <span id="gsRangeTxt">—</span>）</div>
@@ -299,10 +323,10 @@ td.nm,th.nm{text-align:left}
     <div class="clsc tot"><div class="cn" id="gsAvgHours">—</div><div class="cl">日均理论耗时 <span>分 · 天</span></div></div>
   </div>
 
-  <div class="sec-title">每人处理量（当日）</div>
+  <div class="sec-title">每人处理量（区间）</div>
   <div id="gsPerTable"></div>
 
-  <div class="sec-title">每人工作量（核算区间累计）</div>
+  <div class="sec-title">每人工作量（区间累计）</div>
   <div id="gsPerTotTable"></div>
 
   <div class="sec-title">趋势分析 ① 数量 &amp; 总处理量（折线图）</div>
@@ -312,39 +336,16 @@ td.nm,th.nm{text-align:left}
   <div class="sec-title">趋势分析 ② 理论耗时（折线图）</div>
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
   <div class="chart" id="gsHoursChart" style="height:340px"></div>
-</div>
 
-<!-- 视频调取 & 考勤 -->
-<div class="panel" id="panel-video">
-  <div class="date-bar">
-    <div class="date-field">
-      <span class="df-ico">🎬</span>
-      <div>
-        <div class="lbl">视频调取统计 &amp; 考勤（2026-08 ~ 2026-09）</div>
-        <div class="df-note">数据快照：9/14 &amp; 9/15 视频调取量（修正半额规则）+ 排班表「8月及以后」逐日出勤</div>
-      </div>
-    </div>
-    <div class="date-picker" style="margin-left:auto">
-      <button class="date-picker-btn" id="vpBtn">📅 <span id="vpVal">请选择</span></button>
-      <div class="date-picker-pop" id="vpPop">
-        <div class="dp-header"><button class="dp-nav" id="vpPrev">‹</button><div class="dp-title" id="vpTitle"></div><button class="dp-nav" id="vpNext">›</button></div>
-        <div class="dp-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
-        <div class="dp-days" id="vpDays"></div>
-      </div>
-    </div>
-  </div>
-  <div class="hint" style="margin:2px 0 14px">选择日期可<b>按日期联动</b>查看当日视频调取明细 &amp; 考勤（灰色日期为无视频数据，仍显示当日考勤）；亦与「每日工作量输出」页的日期筛选联动。</div>
-
-  <div class="sec-title">📅 当日视频调取明细 <span class="vp-tag info" id="vpDayLbl"></span></div>
+<!-- 视频调取 & 考勤（已合并进本面板，随上方区间筛选联动） -->
+<div class="m-video">
+  <div class="sec-title">🎬 视频调取明细（区间：<span id="vpRangeLbl">—</span>）</div>
   <div id="videoDayWrap"></div>
 
-  <div class="sec-title">📅 当日考勤（来源：排班表 / 8月及以后 · Z6U6uk）</div>
-  <div class="hint">出勤=「上班」(绿)、休息=「休息」(红)；赵豫思 9/9–9/11 为婚假(红)。用上方日期选择器选某天，下方仅显示当日考勤；也可点右侧筛选按钮快速跳到 8月 / 9月。</div>
-  <div class="vp-mtoggle">
-    <button class="vp-mbtn" data-m="08">筛选：8月</button>
-    <button class="vp-mbtn active" data-m="09">筛选：9月</button>
-  </div>
-  <div id="attTableWrap"></div>
+  <div class="sec-title">📅 考勤矩阵（来源：排班表 / 8月及以后 · Z6U6uk · 区间：<span id="attRangeLbl">—</span>）</div>
+  <div class="hint">出勤=「上班」(绿)、休息=「休息」(红)、婚假(红)。矩阵随上方「区间筛选」联动；每行一日，每列一人。下方汇总统计每人区间内出勤 / 休息天数。</div>
+  <div id="attTableWrap" class="att-scroll"></div>
+  <div id="attSummary" class="vp-attstrip att-sum"></div>
 
   <details class="vp-hist">
     <summary>📎 历史快照：9/14 vs 9/15 完整明细</summary>
@@ -379,6 +380,7 @@ td.nm,th.nm{text-align:left}
     </div>
   </details>
 </div>
+</div>
 
 <div class="foot" id="foot"></div>
 
@@ -402,7 +404,6 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   if(t.dataset.tab==='trend'){ renderTrend(); }
   if(t.dataset.tab==='warn'){ renderWarn(); }
   if(t.dataset.tab==='gongshi'){ renderGongshi(); }
-  if(t.dataset.tab==='video'){ renderVideo(); }
 });
 
 // ---------- 单日详情：嵌入最早报告模板（日历展开组件） ----------
@@ -576,8 +577,7 @@ const GS_DATES = Array.from(new Set([...Object.keys(G.dates), ...Object.keys(S.d
   const MSG_RATE = (G.baseline && G.baseline.msg_rate) ? G.baseline.msg_rate : 15.72;
   for(const _d in G.dates){ const _g=G.dates[_d]; if(_g && _g.msg_reply_per){ let _s=0; for(const _k in _g.msg_reply_per){ _s += (_g.msg_reply_per[_k].replied||0)*MSG_RATE; } _g.msg_reply_hours = +_s.toFixed(1); } }
   const FIVE = ["王妙星","张霞霞","马红霞","杨凡凡","赵豫思"];
-const gongshiPicker = createDatePicker({btn:'gsBtn',pop:'gsPop',title:'gsTitle',days:'gsDays',prev:'gsPrev',next:'gsNext',val:'gsVal',
-  initial:GS_LATEST, hasData:GS_DATES, onChange:()=>{ renderGongshi(); if(VIDEO_DATA[gongshiPicker.value]){ videoPicker.value=gongshiPicker.value; renderVideoDay(gongshiPicker.value); renderAtt(gongshiPicker.value); } }});
+// 区间筛选选择器（gsRngStartPicker / gsRngEndPicker）在文件末尾 ATT / VIDEO_DATA 常量定义之后创建，避免 const TDZ。
 // 某日三源合计（源缺数据按 0 计；两源皆无 → null 断线）
 function gsDayTotals(d){
   const g=G.dates[d], s=S.dates[d];
@@ -586,87 +586,90 @@ function gsDayTotals(d){
   const h=(g?g.tuihuo_hours:0)+(g?g.msg_reply_hours:0)+(s?s.hours:0);
   return {qty:q, hours:h};
 }
+function gsRangeDays(){ return GS_DATES.filter(d=>d>=gsRngStartPicker.value && d<=gsRngEndPicker.value); }
 function renderGongshi(){
-  const date = gongshiPicker.value || GS_LATEST;
-  const grec = G.dates[date] || null;   // 取退货 / 消息对接 当日
-  const srec = S.dates[date] || null;   // SW稽核 当日
-
-  // ① 核心指标（数量组 / 理论耗时组 + 总处理量 / 总理论耗时）
-  const tq=grec?grec.tuihuo_qty:null, mq=grec?grec.msg_reply_qty:null, sq=srec?srec.qty:null;
-  const th=grec?grec.tuihuo_hours:null, mh=grec?grec.msg_reply_hours:null, sh=srec?srec.hours:null;
-  document.getElementById('gsTqQty').textContent    = grec?fmt(tq):'—';
-  document.getElementById('gsMsgQty').textContent   = grec?fmt(mq):'—';
-  document.getElementById('gsSwQty').textContent    = srec?fmt(sq):'—';
-  document.getElementById('gsTotQty').textContent   = (grec||srec)?fmt((tq||0)+(mq||0)+(sq||0)):'—';
-  document.getElementById('gsTqHours').textContent  = grec?fmt(th):'—';
-  document.getElementById('gsMsgHours').textContent = grec?fmt(mh):'—';
-  document.getElementById('gsSwHours').textContent  = srec?fmt(sh):'—';
-  document.getElementById('gsTotHours').textContent = (grec||srec)?fmt(+(((th||0)+(mh||0)+(sh||0)).toFixed(1))):'—';
-  document.getElementById('gsCoreNote').textContent =
-    '数量口径：取退货=5人当日2026编码+图片（取退货群消息）；消息回复=外部群@工单已回复；SW稽核=工艺sw+5S+安全。'
-   +'理论耗时口径（标准工时取自「工艺工时摸底」子表）：取退货=数量×2.6分/件（7-9月前台退取货末次回复均值,n=324）；消息回复=数量×15.72分/次（7-9月看板响应时长加权均值）；SW稽核=各图SW.T+5%+60s逐条Σ（5S/安全各按600s）。';
+  const start=gsRngStartPicker.value, end=gsRngEndPicker.value;
+  const rngDays=gsRangeDays();
+  const hasRng = rngDays.length>0;
+  const setTxt=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
+  // ① 核心指标（区间累计）
+  let tq=0,mq=0,sq=0,th=0,mh=0,sh=0;
+  rngDays.forEach(d=>{
+    const g=G.dates[d], s=S.dates[d];
+    if(g){ tq+=g.tuihuo_qty||0; mq+=g.msg_reply_qty||0; th+=g.tuihuo_hours||0; mh+=g.msg_reply_hours||0; }
+    if(s){ sq+=s.qty||0; sh+=s.hours||0; }
+  });
+  setTxt('gsTqQty', hasRng?fmt(tq):'—');
+  setTxt('gsMsgQty', hasRng?fmt(mq):'—');
+  setTxt('gsSwQty', hasRng?fmt(sq):'—');
+  setTxt('gsTotQty', hasRng?fmt(tq+mq+sq):'—');
+  setTxt('gsTqHours', hasRng?fmt(th):'—');
+  setTxt('gsMsgHours', hasRng?fmt(mh):'—');
+  setTxt('gsSwHours', hasRng?fmt(sh):'—');
+  setTxt('gsTotHours', hasRng?fmt(+((th+mh+sh).toFixed(1))):'—');
+  setTxt('gsCoreNote', '数量口径：取退货=5人当日2026编码+图片（取退货群消息）；消息回复=外部群@工单已回复；SW稽核=工艺sw+5S+安全。'
+   +'理论耗时口径（标准工时取自「工艺工时摸底」子表）：取退货=数量×2.6分/件（7-9月前台退取货末次回复均值,n=324）；消息回复=数量×15.72分/次（7-9月看板响应时长加权均值）；SW稽核=各图SW.T+5%+60s逐条Σ（5S/安全各按600s）。');
 
   // ② 工艺工时对照表
   renderGongshiTable();
 
-  // 说明条
-  const parts=[];
-  if(grec){ parts.push('取退货 '+fmt(grec.tuihuo_qty)+' 件 / '+fmt(grec.tuihuo_hours)+' 分'); parts.push('消息回复 '+fmt(grec.msg_reply_qty)+' 次 / '+fmt(grec.msg_reply_hours)+' 分'); }
-  if(srec){ parts.push('SW稽核 '+fmt(srec.qty)+' 次 / '+fmt(srec.hours)+' 分'); }
-  document.getElementById('gongshiNote').textContent = date+'（'+G_LABEL(date)+'）'+(parts.length?(' · '+parts.join(' · ')):' · 无数据');
+  // 说明条（区间）
+  setTxt('gongshiNote', (start&&end)?(start+' ~ '+end+'（区间 '+rngDays.length+' 天有数据）'):'请选择区间');
 
-  // ③ 每人处理量（当日，合并一张表）
+  // ③ 每人处理量（区间累计）
   const emps = Array.from(new Set([...FIVE, ...(S.employees||[])]));
   let html='<table><tr><th class="nm">姓名</th>'
     +'<th>取退货数量<span class="thu">(件)</span></th><th>消息回复数量<span class="thu">(次)</span></th><th>SW稽核数量<span class="thu">(次)</span></th>'
     +'<th>消息回复理论时长<span class="thu">(分)</span></th><th>SW稽核理论耗时<span class="thu">(分)</span></th></tr>';
   for(const p of emps){
-    const tq2 = (grec&&grec.tuihuo_per&&grec.tuihuo_per[p])||0;
-    const mp = (grec&&grec.msg_reply_per&&grec.msg_reply_per[p])||{replied:0,avg:null};
-    const sw = (srec&&srec.per&&srec.per[p])||{qty:0,hours:0};
-    const msgTheo = (mp.replied||0)*MSG_RATE;
-    html+='<tr><td class="nm">'+p+'</td><td>'+fmt(tq2)+'</td><td>'+fmt(mp.replied||0)+'</td><td>'+fmt(sw.qty)+'</td><td>'+msgTheo.toFixed(1)+'</td><td>'+fmt(sw.hours)+'</td></tr>';
+    let tq2=0,mp2=0,sw2=0,swH2=0;
+    rngDays.forEach(d=>{ const g=G.dates[d], s=S.dates[d];
+      tq2 += (g&&g.tuihuo_per&&g.tuihuo_per[p])||0;
+      mp2 += (g&&g.msg_reply_per&&g.msg_reply_per[p])?g.msg_reply_per[p].replied||0:0;
+      sw2 += (s&&s.per&&s.per[p])?s.per[p].qty||0:0;
+      swH2 += (s&&s.per&&s.per[p])?s.per[p].hours||0:0;
+    });
+    const msgTheo = mp2*MSG_RATE;
+    html+='<tr><td class="nm">'+p+'</td><td>'+fmt(tq2)+'</td><td>'+fmt(mp2)+'</td><td>'+fmt(sw2)+'</td><td>'+msgTheo.toFixed(1)+'</td><td>'+fmt(swH2)+'</td></tr>';
   }
   html+='</table>';
   document.getElementById('gsPerTable').innerHTML=html;
 
-  // ④ 总处理量（核算区间累计）
+  // ④ 区间累计概览
   let cumQ=0, cumH=0;
-  for(const d of GS_DATES){ const t=gsDayTotals(d); if(t){ cumQ+=t.qty; cumH+=t.hours; } }
+  rngDays.forEach(d=>{ const t=gsDayTotals(d); if(t){ cumQ+=t.qty; cumH+=t.hours; } });
   cumH=+cumH.toFixed(1);
-  const nDays=GS_DATES.length||1;
-  document.getElementById('gsRangeTxt').textContent = GS_DATES.length ? (GS_DATES[0]+' ~ '+GS_LATEST) : '—';
-  document.getElementById('gsCumQty').textContent  = GS_DATES.length?fmt(cumQ):'—';
-  document.getElementById('gsCumHours').textContent= GS_DATES.length?fmt(cumH):'—';
-  document.getElementById('gsAvgQty').textContent  = GS_DATES.length?fmt(+(cumQ/nDays).toFixed(1)):'—';
-  document.getElementById('gsAvgHours').textContent= GS_DATES.length?fmt(+(cumH/nDays).toFixed(1)):'—';
+  const nDays=rngDays.length||1;
+  setTxt('gsRangeTxt', (start&&end)?(start+' ~ '+end):'—');
+  setTxt('gsCumQty', hasRng?fmt(cumQ):'—');
+  setTxt('gsCumHours', hasRng?fmt(cumH):'—');
+  setTxt('gsAvgQty', hasRng?fmt(+(cumQ/nDays).toFixed(1)):'—');
+  setTxt('gsAvgHours', hasRng?fmt(+(cumH/nDays).toFixed(1)):'—');
 
-  // ⑤ 每人工作量（核算区间累计）
+  // ⑤ 每人工作量（区间累计）
   let html2='<table><tr><th class="nm">姓名</th>'
     +'<th>取退货合计<span class="thu">(件)</span></th><th>消息回复合计<span class="thu">(次)</span></th>'
     +'<th>SW稽核合计<span class="thu">(次)</span></th><th>SW稽核合计理论耗时<span class="thu">(分)</span></th><th>个人总处理量<span class="thu">(件 / 次)</span></th></tr>';
   for(const p of emps){
     let a=0,b=0,c=0,ch=0;
-    for(const d of GS_DATES){
-      const g2=G.dates[d], s2=S.dates[d];
-      a += (g2&&g2.tuihuo_per&&g2.tuihuo_per[p])||0;
-      b += (g2&&g2.msg_reply_per&&g2.msg_reply_per[p])?g2.msg_reply_per[p].replied||0:0;
-      c += (s2&&s2.per&&s2.per[p])?s2.per[p].qty||0:0;
-      ch+= (s2&&s2.per&&s2.per[p])?s2.per[p].hours||0:0;
-    }
+    rngDays.forEach(d=>{ const g=G.dates[d], s=S.dates[d];
+      a += (g&&g.tuihuo_per&&g.tuihuo_per[p])||0;
+      b += (g&&g.msg_reply_per&&g.msg_reply_per[p])?g.msg_reply_per[p].replied||0:0;
+      c += (s&&s.per&&s.per[p])?s.per[p].qty||0:0;
+      ch+= (s&&s.per&&s.per[p])?s.per[p].hours||0:0;
+    });
     ch=+ch.toFixed(1);
     html2+='<tr><td class="nm">'+p+'</td><td>'+fmt(a)+'</td><td>'+fmt(b)+'</td><td>'+fmt(c)+'</td><td>'+fmt(ch)+'</td><td>'+fmt(a+b+c)+'</td></tr>';
   }
   html2+='</table>';
   document.getElementById('gsPerTotTable').innerHTML=html2;
 
-  // ⑥ 各理论耗时量对比（当日：柱状 + 占比环形）
+  // ⑥ 各理论耗时量对比（区间累计：柱状 + 占比环形）
   if(!gsCmpChart) gsCmpChart=echarts.init(document.getElementById('gsCmpChart'));
   const cmpNames=['取退货','消息回复','SW稽核'];
   const cmpColors=['#ea4335','#4285f4','#e67e22'];
   const cmpVals=[th||0, mh||0, sh||0];
-  const hasCmp=(grec||srec);
-  if(!hasCmp){ gsCmpChart.clear(); }
+  if(!hasRng){ gsCmpChart.clear(); }
   else{
     gsCmpChart.setOption({
       tooltip:{trigger:'item', valueFormatter:v=>fmt(v)+' 分'},
@@ -685,19 +688,17 @@ function renderGongshi(){
     }, true);
   }
 
-  // ⑦ 趋势分析：数量 & 总处理量 一张、理论耗时一张（折线）
+  // ⑦ 趋势分析：切片到所选区间
   if(!gsQtyChart)   gsQtyChart=echarts.init(document.getElementById('gsQtyChart'));
   if(!gsHoursChart) gsHoursChart=echarts.init(document.getElementById('gsHoursChart'));
-  // 该源当日无数据 → null（折线断开），避免误画成 0
   const gv=(d,k)=>{const r=G.dates[d];return r?(r[k]==null?0:r[k]):null;};
   const sv=(d,k)=>{const r=S.dates[d];return r?(r[k]==null?0:r[k]):null;};
   const tv=(d,k)=>{const t=gsDayTotals(d);return t?t[k]:null;};
-  const xlab = GS_DATES.map(G_LABEL);
+  const xlab = rngDays.map(G_LABEL);
   const mk=(name,color,data,bold)=>({name:name,type:'line',smooth:true,symbol:'circle',symbolSize:6,
     connectNulls:false,lineStyle:{width:bold?3.4:2.4,color:color},itemStyle:{color:color},data:data});
-  // 天数多时才开区间缩放滑块（当前核算区间较短）
-  const useZoom = GS_DATES.length>14;
-  const zoomStart = useZoom ? Math.round((1-30/GS_DATES.length)*100) : 0;
+  const useZoom = rngDays.length>14;
+  const zoomStart = useZoom ? Math.round((1-30/rngDays.length)*100) : 0;
   const baseOpt = {
     tooltip:{trigger:'axis', valueFormatter:v=>fmt(v)},
     legend:{top:6, type:'scroll', textStyle:{fontSize:12}},
@@ -709,23 +710,25 @@ function renderGongshi(){
   gsQtyChart.setOption(Object.assign({}, baseOpt, {
     yAxis:{type:'value', name:'数量(件 / 次)', nameTextStyle:{fontSize:11}},
     series:[
-      mk('总处理量','#0f9d58', GS_DATES.map(d=>tv(d,'qty')), true),
-      mk('取退货数量','#ea4335', GS_DATES.map(d=>gv(d,'tuihuo_qty'))),
-      mk('消息回复数量','#1aa3a3', GS_DATES.map(d=>gv(d,'msg_reply_qty'))),
-      mk('SW稽核数量','#8e44ad', GS_DATES.map(d=>sv(d,'qty')))
+      mk('总处理量','#0f9d58', rngDays.map(d=>tv(d,'qty')), true),
+      mk('取退货数量','#ea4335', rngDays.map(d=>gv(d,'tuihuo_qty'))),
+      mk('消息回复数量','#1aa3a3', rngDays.map(d=>gv(d,'msg_reply_qty'))),
+      mk('SW稽核数量','#8e44ad', rngDays.map(d=>sv(d,'qty')))
     ]
   }), true);
   gsHoursChart.setOption(Object.assign({}, baseOpt, {
     yAxis:{type:'value', name:'理论耗时(分)', nameTextStyle:{fontSize:11}},
     series:[
-      mk('总理论耗时','#0f9d58', GS_DATES.map(d=>tv(d,'hours')), true),
-      mk('取退货理论耗时','#fbbc04', GS_DATES.map(d=>gv(d,'tuihuo_hours'))),
-      mk('消息回复理论耗时','#4285f4', GS_DATES.map(d=>gv(d,'msg_reply_hours'))),
-      mk('SW稽核理论耗时','#e67e22', GS_DATES.map(d=>sv(d,'hours')))
+      mk('总理论耗时','#0f9d58', rngDays.map(d=>tv(d,'hours')), true),
+      mk('取退货理论耗时','#fbbc04', rngDays.map(d=>gv(d,'tuihuo_hours'))),
+      mk('消息回复理论耗时','#4285f4', rngDays.map(d=>gv(d,'msg_reply_hours'))),
+      mk('SW稽核理论耗时','#e67e22', rngDays.map(d=>sv(d,'hours')))
     ]
   }), true);
-  // 页面初始化时该面板可能处于隐藏态（容器 0 宽），切页签后强制重算尺寸
   gsCmpChart.resize(); gsQtyChart.resize(); gsHoursChart.resize();
+  // 视频调取明细 + 考勤矩阵 随区间联动
+  renderVideoRange(start,end);
+  renderAttRange(start,end);
 }
 
 // ---------- 视频调取 & 考勤 ----------
@@ -772,91 +775,75 @@ const VIDEO_DATA = {
     note:'9/15 张霞霞、王妙星均「上班」→ 两人都出勤，各一半（35/2=17.5，张多1 → 张18 / 王17）。'
   }
 };
-function renderAtt(selDate){
-  const wrap=document.getElementById('attTableWrap');
-  if(!wrap) return;
-  if(!selDate || !ATT.attendance[selDate]){ wrap.innerHTML='<div class="empty">请选择日期查看当日考勤</div>'; return; }
-  const P=ATT.people;
-  const wk=ATT_WK[new Date(selDate).getDay()];
-  let h='<table><tr><th>日期</th>'+P.map(p=>'<th>'+p+'</th>').join('')+'</tr>';
-  h+='<tr><td class="nm">'+selDate.slice(5)+' '+wk+'</td>';
-  P.forEach(p=>{
-    const s=(ATT.attendance[selDate][p]||'');
-    let cls='att-na',txt=s;
-    if(s==='出勤'){cls='att-on';txt='出';}
-    else if(s==='休息'){cls='att-off';txt='休';}
-    else if(s==='婚假'){cls='att-off';txt='婚';}
-    h+='<td class="'+cls+'">'+txt+'</td>';
-  });
-  h+='</tr></table>';
-  wrap.innerHTML=h;
-}
-const videoPicker = createDatePicker({btn:'vpBtn',pop:'vpPop',title:'vpTitle',days:'vpDays',prev:'vpPrev',next:'vpNext',val:'vpVal',
-  initial:'2026-09-15', hasData:Object.keys(VIDEO_DATA), onChange:v=>{ renderVideoDay(v); renderAtt(v); }});
-function renderVideoDay(date){
-  const lbl=document.getElementById('vpDayLbl');
+function renderVideoRange(start,end){
   const wrap=document.getElementById('videoDayWrap');
+  const lbl=document.getElementById('vpRangeLbl');
+  if(lbl) lbl.textContent=(start&&end)?(start+' ~ '+end):'—';
   if(!wrap) return;
-  if(!date){ wrap.innerHTML='<div class="empty">请选择日期查看当日视频调取明细</div>'; lbl.textContent=''; return; }
-  lbl.textContent=date.slice(5).replace('-','/');
-  // 当日考勤 strip（无论有无视频数据都显示）
-  let attStrip='';
-  if(ATT&&ATT.attendance[date]){
-    attStrip='<div class="vp-attstrip">';
-    ATT.people.forEach(p=>{
-      const s=ATT.attendance[date][p]||'未登记';
-      let cls='na',t=s;
-      if(s==='出勤'){cls='on';t='出';} else if(s==='休息'){cls='off';t='休';} else if(s==='婚假'){cls='off';t='婚';}
-      attStrip+='<div class="vp-attchip '+cls+'"><span class="nm">'+p+'</span><span class="st">'+t+'</span></div>';
+  const ds=Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).sort();
+  if(!ds.length){ wrap.innerHTML='<div class="empty">所选区间内暂无视频调取记录（视频数据仅覆盖 9/14、9/15）。</div>'; return; }
+  let out='';
+  ds.forEach(date=>{
+    const rec=VIDEO_DATA[date];
+    const p2v={}, p3v={};
+    FIVE.forEach(p=>{ p2v[p]=(rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0; p3v[p]=(rec.part3&&rec.part3[p]!=null)?rec.part3[p]:0; });
+    let pt='<table><tr><th>人员</th><th>Part2 归属</th><th>Part3 群视频</th><th>当日合计</th></tr>';
+    FIVE.forEach(p=>{ pt+='<tr><td class="nm">'+p+'</td><td>'+p2v[p]+'</td><td>'+p3v[p]+'</td><td><b>'+(p2v[p]+p3v[p])+'</b></td></tr>'; });
+    pt+='</table>';
+    out += '<div class="vp-dayblock">'
+        + '<div class="lbl">📅 '+date.slice(5).replace('-','/')+' 视频调取明细</div>'
+        + '<div class="lbl" style="margin:8px 0 4px">Part 1 ｜ wiki 物品编码 <span class="vp-tag warn">⚠ 暂无法归属个人</span></div>'
+        + '<table><tr><th>西安+流转专项 物品编码单元格</th><th>折合视频数</th><th>归属状态</th></tr>'
+        + '<tr><td>'+rec.part1.cells+'</td><td>'+rec.part1.videos+'</td><td style="text-align:left">'+rec.part1.owner+'</td></tr></table>'
+        + '<div class="lbl" style="margin:14px 0 4px">👤 每人当日合计（Part2 + Part3，Part 1 待归因）</div>'
+        + pt
+        + '<div class="vp-note">'+rec.note+'</div></div>';
+  });
+  wrap.innerHTML=out;
+}
+function renderAttRange(start,end){
+  const wrap=document.getElementById('attTableWrap');
+  const lbl=document.getElementById('attRangeLbl');
+  if(lbl) lbl.textContent=(start&&end)?(start+' ~ '+end):'—';
+  if(!wrap) return;
+  const days=Object.keys(ATT.attendance).filter(d=>d>=start&&d<=end).sort();
+  const sm=document.getElementById('attSummary');
+  if(!days.length){ wrap.innerHTML='<div class="empty">所选区间内无考勤数据</div>'; if(sm) sm.innerHTML=''; return; }
+  const P=ATT.people;
+  const sum={}; P.forEach(p=>sum[p]={on:0,off:0});
+  let h='<table><tr><th>日期</th><th>周</th>'+P.map(p=>'<th>'+p+'</th>').join('')+'</tr>';
+  days.forEach(d=>{
+    const wk=ATT_WK[new Date(d).getDay()];
+    h+='<tr><td class="nm">'+d.slice(5)+'</td><td>'+wk+'</td>';
+    P.forEach(p=>{
+      const s=(ATT.attendance[d][p]||'');
+      let cls='att-na',txt=s;
+      if(s==='出勤'){cls='att-on';txt='出';sum[p].on++;}
+      else if(s==='休息'){cls='att-off';txt='休';sum[p].off++;}
+      else if(s==='婚假'){cls='att-off';txt='婚';sum[p].off++;}
+      h+='<td class="'+cls+'">'+txt+'</td>';
     });
-    attStrip+='</div>';
+    h+='</tr>';
+  });
+  h+='</table>';
+  wrap.innerHTML=h;
+  if(sm){
+    let chips='';
+    P.forEach(p=>{ chips+='<div class="vp-attchip"><span class="nm">'+p+'</span><span class="st on">出 '+sum[p].on+'</span><span class="st off">休 '+sum[p].off+'</span></div>'; });
+    sm.innerHTML=chips;
   }
-  const rec=VIDEO_DATA[date];
-  if(!rec){
-    wrap.innerHTML=attStrip+'<div class="empty">该日暂无视频调取记录（视频数据仅覆盖 9/14、9/15）。上方为当日考勤。</div>';
-    return;
-  }
-  const p2v={}, p3v={};
-  FIVE.forEach(p=>{ p2v[p]=(rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0; p3v[p]=(rec.part3&&rec.part3[p]!=null)?rec.part3[p]:0; });
-  let pt='<table><tr><th>人员</th><th>Part2</th><th>Part3</th><th>当日合计</th></tr>';
-  FIVE.forEach(p=>{ pt+='<tr><td class="nm">'+p+'</td><td>'+p2v[p]+'</td><td>'+p3v[p]+'</td><td><b>'+(p2v[p]+p3v[p])+'</b></td></tr>'; });
-  pt+='</table>';
-  wrap.innerHTML = attStrip
-    + '<div class="lbl">Part 1 ｜ wiki 物品编码 <span class="vp-tag warn">⚠ 暂无法归属个人</span></div>'
-    + '<table><tr><th>西安+流转专项 物品编码单元格</th><th>折合视频数</th><th>归属状态</th></tr>'
-    + '<tr><td>'+rec.part1.cells+'</td><td>'+rec.part1.videos+'</td><td style="text-align:left">'+rec.part1.owner+'</td></tr></table>'
-    + '<div class="lbl" style="margin-top:14px">Part 3 ｜ “视频调取” 群视频</div>'
-    + '<table><tr><th>杨凡凡</th><th>马红霞</th><th>赵豫思</th></tr>'
-    + '<tr><td>'+(rec.part3?rec.part3['杨凡凡']||0:0)+'</td><td>'+(rec.part3?rec.part3['马红霞']||0:0)+'</td><td>'+(rec.part3?rec.part3['赵豫思']||0:0)+'</td></tr></table>'
-    + '<div class="lbl" style="margin-top:14px">👤 每人当日合计（Part2 + Part3）</div>'
-    + pt
-    + '<div class="vp-note">'+rec.note+'</div>';
 }
-function bestDayForMonth(m){
-  const vd=Object.keys(VIDEO_DATA).filter(d=>d.slice(5,7)===m).sort();
-  if(vd.length) return vd[vd.length-1];
-  const att=Object.keys(ATT.attendance).filter(d=>d.slice(5,7)===m).sort();
-  return att.length?att[att.length-1]:null;
-}
-function syncVideoDate(d){
-  if(VIDEO_DATA[d]){ videoPicker.value=d; renderVideoDay(d); renderAtt(d); }
-}
-document.querySelectorAll('.vp-mbtn').forEach(b=>{
-  b.onclick=()=>{
-    document.querySelectorAll('.vp-mbtn').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active');
-    const d=bestDayForMonth(b.dataset.m);
-    if(d){ videoPicker.value=d; renderVideoDay(d); renderAtt(d); }
-  };
-});
-function renderVideo(){ const d=videoPicker?videoPicker.value:null; renderVideoDay(d); renderAtt(d); }
 
-// ---------- init ----------
+// ---------- init（区间筛选选择器需在 ATT / VIDEO_DATA 常量定义之后创建，避免 const TDZ） ----------
+const gsAllDates = Array.from(new Set([...GS_DATES, ...Object.keys(VIDEO_DATA), ...Object.keys(ATT.attendance)])).sort();
+const gsRngStartPicker = createDatePicker({btn:'gsRngStartBtn',pop:'gsRngStartPop',title:'gsRngStartTitle',days:'gsRngStartDays',prev:'gsRngStartPrev',next:'gsRngStartNext',val:'gsRngStartVal',
+  initial:(Object.keys(ATT.attendance).sort()[0]||GS_DATES[0]||''), hasData:gsAllDates, onChange:()=>renderGongshi()});
+const gsRngEndPicker = createDatePicker({btn:'gsRngEndBtn',pop:'gsRngEndPop',title:'gsRngEndTitle',days:'gsRngEndDays',prev:'gsRngEndPrev',next:'gsRngEndNext',val:'gsRngEndVal',
+  initial:(Object.keys(ATT.attendance).sort().slice(-1)[0]||GS_LATEST||''), hasData:gsAllDates, onChange:()=>renderGongshi()});
 document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天（'+DAYS[0].date+' ~ '+DAYS[DAYS.length-1].date+'）';
 document.getElementById('foot').textContent='数据生成时间：'+D.meta.generated_at+' · 数据源：飞书群聊消息 + 飞书电子表格「抖音交付、稽核汇总」+ Base（抖音稽核 / 素养检查 / 预警未处理明细）';
 if(DAYS.length){ showDay(singlePicker.value); }
-if(GS_DATES.length){ renderGongshi(); }
-if(ATT&&ATT.attendance){ renderVideo(); }
+if(GS_DATES.length || (ATT&&ATT.attendance)){ renderGongshi(); }
 window.addEventListener('resize',()=>{if(trendChart)trendChart.resize();if(regionChart)regionChart.resize();if(gsCmpChart)gsCmpChart.resize();if(gsQtyChart)gsQtyChart.resize();if(gsHoursChart)gsHoursChart.resize();});
 </script>
 </body>
