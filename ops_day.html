@@ -618,6 +618,17 @@
   <span>已收录：<b id="odsMetaDays">—</b> 天</span>
   <span>最近同步：<b id="odsMetaSync">—</b></span>
 </div>
+<script>
+// 被主看板以 iframe 嵌入（页签2）时，隐藏「返回主看板」链接，避免 iframe 内套娃导航
+try{
+  if(window.self!==window.top){
+    var b=document.querySelector('.ods-top .t-back');
+    if(b) b.style.display='none';
+    var st=document.querySelector('.ods-top .t-sub');
+    if(st) st.textContent='每日自动同步 · 非静态数据 · 已嵌入主看板';
+  }
+}catch(e){}
+</script>
 <section class="page" id="page-ops-day">
   <div class="xian">
     <div class="panel"><div class="panel-title">筛选条件</div>
