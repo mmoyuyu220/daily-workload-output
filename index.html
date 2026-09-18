@@ -223,6 +223,7 @@ td.nm,th.nm{text-align:left}
     <tr><td class="nm">SW稽核</td><td id="gsSwQty">—</td><td id="gsSwHours">—</td></tr>
     <tr><td class="nm">视频调取</td><td id="gsVidQty">—</td><td class="calc">计算中</td></tr>
     <tr><td class="nm">流转专项视频</td><td id="gsLzvQty">—</td><td class="calc">计算中</td></tr>
+    <tr><td class="nm">异常邮件跟进</td><td id="gsMailQty">—</td><td id="gsMailHours">—</td></tr>
     <tr class="tot"><td class="nm">合计</td><td id="gsTotQty">—</td><td id="gsTotHours">—</td></tr>
   </table>
   <div class="hint" id="gsCoreNote"></div>
@@ -345,19 +346,24 @@ function renderGongshi(){
     const rec=VIDEO_DATA[d];
     lzv += (rec.part1&&rec.part1.cells!=null)?rec.part1.cells:0;
   });
+  // 异常邮件跟进（区间累计：运营中心=西安条数）；理论耗时 = 数量 × 标准工时 1 分/条（工艺工时摸底「异常邮件处理」）
+  let mailq=0;
+  Object.keys((MAIL_ANOMALY&&MAIL_ANOMALY.byDay)||{}).filter(d=>d>=start&&d<=end).forEach(d=>{ mailq += MAIL_ANOMALY.byDay[d]||0; });
   setTxt('gsRangeLbl2', (start&&end)?(start+' ~ '+end):'—');
   setTxt('gsTqQty', hasRng?fmt(tq)+' 件':'—');
   setTxt('gsMsgQty', hasRng?fmt(mq)+' 次':'—');
   setTxt('gsSwQty', hasRng?fmt(sq)+' 次':'—');
   setTxt('gsVidQty', hasRng?fmt(vq)+' 个':'—');
   setTxt('gsLzvQty', hasRng?fmt(lzv)+' 个':'—');
-  setTxt('gsTotQty', hasRng?fmt(tq+mq+sq+vq+lzv):'—');
+  setTxt('gsMailQty', (hasRng&&mailq>0)?fmt(mailq)+' 条':'—');
+  setTxt('gsMailHours', (hasRng&&mailq>0)?fmt(mailq*1)+' 分':'—');
+  setTxt('gsTotQty', hasRng?fmt(tq+mq+sq+vq+lzv+mailq):'—');
   setTxt('gsTqHours', hasRng?fmt(th)+' 分':'—');
   setTxt('gsMsgHours', hasRng?fmt(mh)+' 分':'—');
   setTxt('gsSwHours', hasRng?fmt(sh)+' 分':'—');
-  setTxt('gsTotHours', hasRng?fmt(+((th+mh+sh).toFixed(1)))+' 分':'—');
-  setTxt('gsCoreNote', '数量口径：取退货=5人当日2026编码+图片（取退货群消息）；消息回复=外部群@工单已回复；SW稽核=工艺sw+5S+安全；视频调取=标准作业审核表「稽核点=工艺sw」归属量（5S/安全不计入）；流转专项视频=西安流转专项 wiki 物品编码（Part1）实际数量，未归属个人、理论耗时计算中。'
-   +'理论耗时口径（标准工时取自「工艺工时摸底」子表）：取退货=数量×2.6分/件；消息回复=数量×15.72分/次；SW稽核=各图SW.T+5%+60s逐条Σ（5S/安全各按600s）。视频调取暂无标准工时，理论耗时计算中。');
+  setTxt('gsTotHours', hasRng?fmt(+((th+mh+sh+mailq).toFixed(1)))+' 分':'—');
+  setTxt('gsCoreNote', '数量口径：取退货=5人当日2026编码+图片（取退货群消息）；消息回复=外部群@工单已回复；SW稽核=工艺sw+5S+安全；视频调取=标准作业审核表「稽核点=工艺sw」归属量（5S/安全不计入）；流转专项视频=西安流转专项 wiki 物品编码（Part1）实际数量，未归属个人、理论耗时计算中；异常邮件跟进=「大数据邮件组-异常待处理明细」邮件附件中运营中心=优检西安小型检测中心的条数，暂无法归属个人。'
+   +'理论耗时口径（标准工时取自「工艺工时摸底」子表）：取退货=数量×2.6分/件；消息回复=数量×15.72分/次；SW稽核=各图SW.T+5%+60s逐条Σ（5S/安全各按600s）；异常邮件跟进=数量×1分/条（标准工时「异常邮件处理」=1）。视频调取暂无标准工时，理论耗时计算中。');
 
   // ② 工艺工时对照表
   renderGongshiTable();
@@ -548,30 +554,19 @@ function renderPart1(start,end){
   const cells = (p1.cells!=null && p1.cells!=='') ? Number(p1.cells) : 0;
   const videos = (p1.videos!=null && p1.videos!=='') ? Number(p1.videos) : 0;
   let h='<div class="lbl" style="margin:6px 0 4px">暂无法归属个人数量</div>';
-  // 项1：西安流转专项视频数量（wiki 物品编码 Part1，未归属池）
-  if(vd){
-    h+='<table><tr><th>西安流转专项视频数量</th><th>折合视频数</th><th>归属状态</th></tr>'
-      + '<tr><td>'+cells+'</td><td>'+videos+'</td><td style="text-align:left">计算中</td></tr></table>';
-  } else {
-    h+='<div class="empty" style="margin:4px 0">区间内暂无视频调取记录（视频数据仅覆盖 9/14、9/15，可调整区间筛选纳入）。</div>';
-  }
-  // 项2：异常邮件跟进（飞书邮箱「大数据邮件组-异常待处理明细」每日附件，运营中心=西安）
+  // 合并表：西安流转专项视频 + 异常邮件跟进（均暂无法归属个人，归属状态=计算中）
   const ma = MAIL_ANOMALY || {};
-  const mailCount = (ma.count!=null) ? ma.count : '—';
-  let mailRows = '';
-  if(ma.byDay && Object.keys(ma.byDay).length){
-    Object.keys(ma.byDay).sort().forEach(d=>{
-      const md = (d||'').slice(5).replace('-','/');
-      const mails = (ma.mails && ma.mails[d]!=null) ? (ma.mails[d]+' 封') : '—';
-      mailRows += '<tr><td>'+md+'</td><td><b>'+ma.byDay[d]+'</b></td><td>'+mails+'</td></tr>';
-    });
+  let mailq=0;
+  Object.keys(ma.byDay||{}).filter(d=>d>=start&&d<=end).forEach(d=>{ mailq += ma.byDay[d]||0; });
+  h+='<table><tr><th>项目</th><th>数量</th><th>折合视频数</th><th>归属状态</th></tr>';
+  if(vd){
+    h+='<tr><td>西安流转专项视频数量（视频日 '+vd.slice(5).replace('-','/')+'）</td><td>'+cells+'</td><td>'+videos+'</td><td>计算中</td></tr>';
+  } else {
+    h+='<tr><td>西安流转专项视频数量</td><td>—</td><td>—</td><td>计算中</td></tr>';
   }
-  h+='<table style="margin-top:8px">'
-    + '<tr><th rowspan="2">异常邮件跟进</th><th>数量（条）</th><th rowspan="2">邮件封数</th></tr>'
-    + '<tr><th>'+(ma.range||'—')+' 合计 '+mailCount+'</th></tr>'
-    + (mailRows || '<tr><td colspan="3" style="color:#98a2b3">按日明细待补</td></tr>')
-    + '</table>';
-  h+='<div class="hint" style="margin-top:6px">口径：飞书邮箱「大数据邮件组」主题「异常待处理明细」每日 6 封邮件的 xlsx 附件，统计<b>运营中心 = 优检西安小型检测中心</b>的条数；每日自动抓取。</div>';
+  h+='<tr><td>异常邮件跟进'+(ma.range?('（'+ma.range+'）'):'')+'</td><td>'+(mailq>0?mailq:'—')+'</td><td>—</td><td>计算中</td></tr>';
+  h+='</table>';
+  h+='<div class="hint" style="margin-top:6px">口径：① 西安流转专项视频=西安流转专项 wiki 物品编码（Part1）实际数量，取「查看当日」或之前最近视频日；② 异常邮件跟进=飞书邮箱「大数据邮件组」主题「异常待处理明细」每日 6 封邮件的 xlsx 附件，统计<b>运营中心 = 优检西安小型检测中心</b>条数（区间内合计），每日自动抓取；其理论耗时 = 数量 × 标准工时 1 分/条，已计入核心指标。两项均暂无法归属个人，归属状态计算中。</div>';
   wrap.innerHTML=h;
 }
 function renderAttRange(start,end){
