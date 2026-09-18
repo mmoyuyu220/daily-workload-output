@@ -243,10 +243,17 @@ td.nm,th.nm{text-align:left}
     <div id="attTableWrap" class="att-scroll"></div>
     <div id="attSummary" class="vp-attstrip att-sum"></div>
     <div id="attMonthStat" class="vp-attstrip att-sum"></div>
+    <div class="sec-title" style="margin-top:14px">出勤趋势分析（折线图）</div>
+    <div class="hint">所选区间内每日出勤人数（左轴）与出勤率＝当日出勤人数 ÷ 应出勤人数 5 人（右轴）。</div>
+    <div class="chart" id="attChart" style="height:300px"></div>
   </div>
 
   <div class="sec-title">每人工作量（区间累计）</div>
   <div id="gsPerTotTable"></div>
+
+  <div class="sec-title" style="margin-top:14px">每人工作量对比（图表）</div>
+  <div class="hint">区间累计：取退货 / 消息回复 / SW稽核 为区间合计；视频调取为所选视频日单日值（与上方表格口径一致，供对照）。</div>
+  <div class="chart" id="perChart" style="height:340px"></div>
 
   <div id="gsPart1Wrap"></div>
 
@@ -283,7 +290,7 @@ const fmt = n => (n==null?'—':n.toLocaleString('zh-CN'));
 // 仅保留「每日工作量输出」单一面板，无需 tab 切换
 
 
-let trendChart=null, regionChart=null, gsCmpChart=null, gsQtyChart=null, gsHoursChart=null;
+let trendChart=null, regionChart=null, gsCmpChart=null, gsQtyChart=null, gsHoursChart=null, attChart=null, perChart=null;
 window.gsCmpChartRef = null;
 
 // ---------- 每日工作量输出 模块（取退货 / 消息对接 / SW稽核 · 核算起始 2026-09-14 · T-1 更新） ----------
@@ -468,6 +475,9 @@ function renderGongshi(){
   // 西安流转专项视频数量 + 每人每天的出勤详情 随区间联动
   renderPart1(start,end);
   renderAttRange(start,end);
+  // ④ 出勤趋势折线图 / ⑤ 每人工作量对比图（随筛选联动）
+  renderAttChart(start,end);
+  renderPerChart(start,end);
 }
 
 // ---------- 视频调取 & 考勤 ----------
@@ -503,16 +513,28 @@ function renderGongshiTable(){
 // 视频调取明细（仅 9/14、9/15 有数据；其余日期走「无数据」空态但仍显示考勤）
 const VIDEO_DATA = {
   '2026-09-14':{
-    part1:{cells:20,videos:20,owner:'编辑人无法经 API 获取'},
+    part1:{cells:20,videos:20,owner:'西安流转专项 wiki（客诉、流转风险识别 · 3f5583）仓=西安&业务分类=流转专项 实际行数'},
     part2per:{王妙星:0,张霞霞:20,赵豫思:25,杨凡凡:0,马红霞:0},
     part3:{杨凡凡:0,马红霞:1,赵豫思:0,others:'张杰 19'},
-    note:'9/14 王妙星「休息」、张霞霞「上班」→ 张霞霞全额 20，王妙星 0。'
+    note:'9/14 王妙星「休息」、张霞霞「上班」→ 张霞霞全额 20，王妙星 0；西安流转专项=20（wiki 实际抓取，非写死）。'
   },
   '2026-09-15':{
-    part1:{cells:20,videos:20,owner:'编辑人无法经 API 获取'},
+    part1:{cells:20,videos:20,owner:'西安流转专项 wiki（客诉、流转风险识别 · 3f5583）仓=西安&业务分类=流转专项 实际行数'},
     part2per:{杨凡凡:10,张霞霞:18,王妙星:17,赵豫思:15,马红霞:0},
     part3:{杨凡凡:0,马红霞:0,赵豫思:0,others:'张杰 12 ／ 谭添 1 ／ 郑志刚 1'},
-    note:'9/15 张霞霞、王妙星均「上班」→ 各一半（张18/王17）；视频调取量按标准作业审核表「稽核点=工艺sw」重核，5S/安全不计入：杨凡凡 20→10、赵豫思 20→15（张霞霞 35 均为工艺sw 不变）。'
+    note:'9/15 张霞霞、王妙星均「上班」→ 各一半（张18/王17）；视频调取量按标准作业审核表「稽核点=工艺sw」重核，5S/安全不计入：杨凡凡 20→10、赵豫思 20→15（张霞霞 35 均为工艺sw 不变）；西安流转专项=20（wiki 实际抓取）。'
+  },
+  '2026-09-16':{
+    part1:{cells:20,videos:20,owner:'西安流转专项 wiki（客诉、流转风险识别 · 3f5583）仓=西安&业务分类=流转专项 实际行数'},
+    part2per:{王妙星:15,张霞霞:15,赵豫思:0,杨凡凡:10,马红霞:15},
+    part3:{杨凡凡:0,马红霞:0,赵豫思:0,others:''},
+    note:'9/16 张霞霞、王妙星均「出勤」→ 各一半（张15/王15）；杨凡凡 10、马红霞 15（工艺sw 附件×5）；赵豫思 休息 0；西安流转专项=20（wiki 实际抓取，原未登记→0，已更正）。'
+  },
+  '2026-09-17':{
+    part1:{cells:16,videos:16,owner:'西安流转专项 wiki（客诉、流转风险识别 · 3f5583）仓=西安&业务分类=流转专项 实际行数'},
+    part2per:{王妙星:15,张霞霞:0,赵豫思:0,杨凡凡:10,马红霞:10},
+    part3:{杨凡凡:0,马红霞:0,赵豫思:0,others:''},
+    note:'9/17 张霞霞「休息」、王妙星「出勤」→ 王妙星全额 15，张霞霞 0；杨凡凡 10、马红霞 10；赵豫思 休息 0；西安流转专项=16（wiki 实际抓取，非 20，原未登记→0，已更正）。'
   }
 };
 // 异常邮件跟进（飞书邮箱「大数据邮件组-异常待处理明细」每日附件，运营中心=西安）
@@ -664,6 +686,73 @@ function renderAttMonth(){
   wrap.innerHTML = h;
 }
 
+// ④ 出勤趋势折线图：所选区间内每日出勤人数 + 出勤率（随筛选联动）
+function renderAttChart(start,end){
+  const el=document.getElementById('attChart'); if(!el) return;
+  if(!attChart) attChart=echarts.init(el);
+  const days=Object.keys(ATT.attendance).filter(d=>d>=start&&d<=end).sort();
+  const P=ATT.people;
+  if(!days.length){ attChart.clear(); return; }
+  const onCnt=[], rate=[];
+  days.forEach(d=>{
+    const row=ATT.attendance[d]||{};
+    let on=0; P.forEach(p=>{ if((row[p]||'')==='出勤') on++; });
+    onCnt.push(on); rate.push(+(on/P.length*100).toFixed(1));
+  });
+  const xlab=days.map(d=>d.slice(5));
+  attChart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:{top:6, textStyle:{fontSize:12}},
+    grid:{left:46, right:54, top:50, bottom:38},
+    xAxis:{type:'category', data:xlab, boundaryGap:false, axisLabel:{hideOverlap:true}},
+    yAxis:[
+      {type:'value', name:'出勤人数', min:0, max:P.length, nameTextStyle:{fontSize:11}},
+      {type:'value', name:'出勤率%', min:0, max:100, position:'right', nameTextStyle:{fontSize:11}, axisLabel:{formatter:'{value}%'}, splitLine:{show:false}}
+    ],
+    series:[
+      {name:'出勤人数', type:'line', smooth:true, yAxisIndex:0, data:onCnt, symbol:'circle', symbolSize:6,
+       itemStyle:{color:'#0f9d58'}, lineStyle:{width:3}, label:{show:true, position:'top', fontSize:11}},
+      {name:'出勤率%', type:'line', smooth:true, yAxisIndex:1, data:rate, symbol:'circle', symbolSize:6,
+       itemStyle:{color:'#ea4335'}, lineStyle:{width:2.4, type:'dashed'}}
+    ]
+  }, true);
+}
+
+// ⑤ 每人工作量对比图：取退货 / 消息回复 / SW稽核（区间累计）+ 视频调取（所选视频日单日值）
+function renderPerChart(start,end){
+  const el=document.getElementById('perChart'); if(!el) return;
+  if(!perChart) perChart=echarts.init(el);
+  const rngDays=gsRangeDays();
+  const vidSelDay=gsResolveVidDay(start,end);
+  const vidDayMap={};
+  if(vidSelDay){ const rec=VIDEO_DATA[vidSelDay];
+    FIVE.forEach(p=>{ vidDayMap[p]=((rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0)+((rec.part3&&rec.part3[p]!=null)?rec.part3[p]:0); }); }
+  const P=Array.from(new Set([...FIVE, ...(S.employees||[])]));
+  const aArr=[],bArr=[],cArr=[],vArr=[];
+  P.forEach(p=>{
+    let a=0,b=0,c=0;
+    rngDays.forEach(d=>{ const g=G.dates[d], s=S.dates[d];
+      a+=(g&&g.tuihuo_per&&g.tuihuo_per[p])||0;
+      b+=(g&&g.msg_reply_per&&g.msg_reply_per[p])?g.msg_reply_per[p].replied||0:0;
+      c+=(s&&s.per&&s.per[p])?s.per[p].qty||0:0;
+    });
+    aArr.push(a); bArr.push(b); cArr.push(c); vArr.push(vidSelDay?(vidDayMap[p]||0):0);
+  });
+  perChart.setOption({
+    tooltip:{trigger:'axis', axisPointer:{type:'shadow'}},
+    legend:{top:6, textStyle:{fontSize:12}},
+    grid:{left:46, right:24, top:50, bottom:34},
+    xAxis:{type:'category', data:P, axisLabel:{fontSize:12}},
+    yAxis:{type:'value', name:'数量(件 / 次)', nameTextStyle:{fontSize:11}},
+    series:[
+      {name:'取退货合计', type:'bar', data:aArr, itemStyle:{color:'#ea4335'}, barMaxWidth:34},
+      {name:'消息回复合计', type:'bar', data:bArr, itemStyle:{color:'#1aa3a3'}, barMaxWidth:34},
+      {name:'SW稽核合计', type:'bar', data:cArr, itemStyle:{color:'#8e44ad'}, barMaxWidth:34},
+      {name:'视频调取当日合计', type:'bar', data:vArr, itemStyle:{color:'#4285f4'}, barMaxWidth:34}
+    ]
+  }, true);
+}
+
 // ---------- init（区间筛选选择器需在 ATT / VIDEO_DATA 常量定义之后创建，避免 const TDZ） ----------
 const gsAllDates = Array.from(new Set([...GS_DATES, ...Object.keys(VIDEO_DATA), ...Object.keys(ATT.attendance)])).sort();
 // 兼容既有渲染函数（原以 gsRngStartPicker.value / gsRngEndPicker.value 读取区间）
@@ -725,7 +814,7 @@ gsDayEl.addEventListener('change',()=>{ if(gsDayEl.value) renderGongshi(); });
 document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天（'+DAYS[0].date+' ~ '+DAYS[DAYS.length-1].date+'）';
 document.getElementById('foot').textContent='数据生成时间：'+D.meta.generated_at+' · 数据源：飞书群聊消息 + 飞书电子表格「抖音交付、稽核汇总」+ Base「标准作业审核表」（视频调取）/ 排班表（8月及以后 · 考勤）';
 if(GS_DATES.length || (ATT&&ATT.attendance)){ renderGongshi(); }
-window.addEventListener('resize',()=>{if(trendChart)trendChart.resize();if(regionChart)regionChart.resize();if(gsCmpChart)gsCmpChart.resize();if(gsQtyChart)gsQtyChart.resize();if(gsHoursChart)gsHoursChart.resize();});
+window.addEventListener('resize',()=>{if(trendChart)trendChart.resize();if(regionChart)regionChart.resize();if(gsCmpChart)gsCmpChart.resize();if(gsQtyChart)gsQtyChart.resize();if(gsHoursChart)gsHoursChart.resize();if(attChart)attChart.resize();if(perChart)perChart.resize();});
 </script>
 <script>
 // ===== 顶部页签：主看板 ⇄ 运营数据单日详情（一个链接内两个看板） =====
