@@ -695,13 +695,13 @@ try{
       '<div class="msg-card"><div class="card-title">'+intHeader+'</div><div class="hero">'+int_.sevenSent+'<span>条 / 7人发送</span></div>'+intRows.join('')+'</div></div>'+genColleagueTables(d);
   }
   function genOpsGrid(d){
-    var proc=d.ops.processing, wo=d.ops.workOrder, dy=d.ops.douyinAudit, pr=d.ops.pickupReturn||0;
-    var total=Object.values(proc).reduce(function(a,b){return a+b;},0)+wo.total+dy+pr;
+    var proc=d.ops.processing, wo=d.ops.workOrder, dy=d.ops.douyinAudit;
+    var total=Object.values(proc).reduce(function(a,b){return a+b;},0)+wo.total+dy;
     var items=[];
     Object.entries(proc).forEach(function(kv){ if(kv[0]==='pickupReturn') return; items.push([alias(kv[0]),kv[1],false]); });
     items.push([alias('工单处理量'),wo.total,false,'西安'+wo['西安']+' 太原'+wo['太原']+' 兰州'+wo['兰州']]);
     if(dy) items.push([alias('抖音每日仓内稽核'),dy,false]);
-    if(pr) items.push([alias('取退货量'),pr,false,'取退货群当日单号数']);
+    // 取退货量已移除：取退货仅保留主看板「核心指标表」的群聊编码口径（=41），源表口径不再展示
     items.push(['当日处理总量',total,true]);
     return items.map(function(it){ var name=it[0],val=it[1],isTotal=it[2],sub=it[3]||''; var subHtml=sub?'<div class="cell-sub">'+sub+'</div>':''; var cls=isTotal?'ops-cell total':'ops-cell'; return '<div class="'+cls+'"><div class="cell-num">'+val+'</div><div class="cell-name">'+name+'</div>'+subHtml+'</div>'; }).join('');
   }
@@ -711,12 +711,12 @@ try{
     return cities.map(function(c){ var name=c[0],val=c[1],color=c[2]; var p=pct(val,total); return '<div class="wo-line"><div class="wo-info"><span class="wo-city">'+name+'</span><span class="wo-pct">'+val+'单（'+p+'%）</span></div><div class="wo-track"><div class="wo-fill" style="width:'+p+'%;background:'+color+';"></div></div></div>'; }).join('');
   }
   function genBarChart(d){
-    var proc=d.ops.processing, wo=d.ops.workOrder, dy=d.ops.douyinAudit, pr=d.ops.pickupReturn||0;
+    var proc=d.ops.processing, wo=d.ops.workOrder, dy=d.ops.douyinAudit;
     var items=[];
     Object.entries(proc).forEach(function(kv){ if(kv[0]==='pickupReturn') return; items.push([alias(kv[0]),kv[1]]); });
     items.push([alias('工单处理量'),wo.total]);
     if(dy) items.push([alias('抖音每日仓内稽核'),dy]);
-    if(pr) items.push([alias('取退货量'),pr]);
+    // 取退货量已移除：取退货仅保留主看板「核心指标表」的群聊编码口径（=41），源表口径不再展示
     var mx=Math.max.apply(null,items.map(function(x){return x[1];}))||1;
     return items.map(function(it){ var name=it[0],val=it[1]; var color=val===mx?'#ff7d00':'#3370ff'; var h=Math.max(Math.round(val/mx*140),4); return '<div class="chart-col"><div class="chart-val">'+val+'</div><div class="chart-bar" style="height:'+h+'px;background:'+color+';"></div><div class="chart-lbl">'+name+'</div></div>'; }).join('');
   }
