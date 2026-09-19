@@ -220,7 +220,6 @@ td.nm,th.nm{text-align:left}
     <tr><td class="nm">异常邮件跟进</td><td id="gsMailQty">—</td><td id="gsMailHours">—</td></tr>
     <tr class="tot"><td class="nm">合计</td><td id="gsTotQty">—</td><td id="gsTotHours">—</td></tr>
   </table>
-  <div class="hint" id="gsCoreNote"></div>
 
   <div class="sec-title">工艺工时（标准工时对照表）</div>
   <div class="hint">每日明细中（一部分）的耗时按本表标准工时自动计算（耗时 = 处理量 × 标准工时）。来源：飞书「工艺工时摸底」子表（视频调取 / 流转专项视频 标准工时另取每日明细(西安)Q列「视频调取耗时÷量」均值），更新于 2026-09-18。</div>
@@ -238,7 +237,7 @@ td.nm,th.nm{text-align:left}
 
   <!-- 每人每天的出勤详情（随上方「筛选条件」联动；默认显示最近 3 天，多余天数自动隐藏） -->
   <div class="m-video">
-    <div class="sec-title">📅 每人每天的出勤详情（来源：排班表 / 8月及以后 · Z6U6uk · 区间：<span id="attRangeLbl">—</span>）</div>
+    <div class="sec-title">📅 各人出勤（区间：<span id="attRangeLbl">—</span>）</div>
     <div class="hint">出勤=「上班」(绿)、休息=「休息」(红)、婚假(红)。每行一日、每列一人；默认仅显示最近 3 天明细，其余天数自动隐藏。如需查看完整明细，请用上方「筛选条件」选择所需区间（如近7天）。下方汇总统计所选区间全量出勤 / 休息天数。</div>
     <div id="attTableWrap" class="att-scroll"></div>
     <div id="attSummary" class="vp-attstrip att-sum"></div>
@@ -357,8 +356,6 @@ function renderGongshi(){
   setTxt('gsVidHours', hasRng?fmt(vh)+' 分':'—');
   setTxt('gsLzvHours', hasRng?fmt(lh)+' 分':'—');
   setTxt('gsTotHours', hasRng?fmt(+((th+mh+sh+mailq+vh+lh).toFixed(1)))+' 分':'—');
-  setTxt('gsCoreNote', '数量口径：取退货=5人当日2026编码+图片（取退货群消息）；消息回复=外部群@工单已回复；SW稽核=工艺sw+5S+安全；视频调取=标准作业审核表「稽核点=工艺sw」归属量（5S/安全不计入）；流转专项视频=西安流转专项 wiki 物品编码（Part1）实际数量，未归属个人、理论耗时=数量×6.05分/个（同视频调取口径）；异常邮件跟进=「大数据邮件组-异常待处理明细」邮件附件中运营中心=优检西安小型检测中心的条数，暂无法归属个人。'
-   +'理论耗时口径（标准工时取自「工艺工时摸底」子表 / 每日明细Q列平均）：取退货=数量×4.5分/件；消息回复=数量×15.72分/次；SW稽核=各图SW.T+5%+60s逐条Σ（5S/安全各按600s）；异常邮件跟进=数量×1分/条（标准工时「异常邮件处理」=1）；视频调取=数量×6.05分/个（标准工时取每日明细(西安)Q列平均）；流转专项视频=数量×6.05分/个（同视频调取口径）。');
 
   // ② 工艺工时对照表
   renderGongshiTable();
@@ -495,7 +492,7 @@ const GS_GONGSHI = [
   {name:'消息对接', rate:'15.72', logic:'7-9月 看板响应时长加权均值', date:'2026-09-15'},
   {name:'视频调取', rate:'6.05', logic:'每日明细(西安) Q列(视频调取耗时)÷P列(视频调取量) 逐行商之均值', date:'2026-09-18'},
   {name:'流转专项视频', rate:'6.05', logic:'同视频调取（西安流转专项与视频调取同口径，取每日明细Q列平均）', date:'2026-09-18'},
-  {name:'SW稽核', rate:'', logic:'SW按每日实际审核图片(SW检查表附件)D板块SW.T+5%(变差)+60s计；每图环节/产品不同、工艺工时不同、不取均值（以图中为准）；5S/安全另按600s/次', date:'2026-09-16'},
+  {name:'SW稽核', rate:'', logic:'SW按每日实际审核图片(SW检查表附件)D板块SW.T+5%(变差)+3min计（180s/图）；每图环节/产品不同、工艺工时不同、不取均值（以图中为准）；5S/安全另按600s/次', date:'2026-09-18'},
 ];
 function renderGongshiTable(){
   const wrap=document.getElementById('gsGongshiTable');
