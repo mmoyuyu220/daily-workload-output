@@ -250,10 +250,6 @@ td.nm,th.nm{text-align:left}
   <div class="sec-title">每人工作量（区间累计）</div>
   <div id="gsPerTotTable"></div>
 
-  <div class="sec-title" style="margin-top:16px">每人每天 UPPH（出勤默认 8H）</div>
-  <div class="hint">UPPH = 每人每天处理量 ÷ 8（出勤时长暂统一按 8 小时计）。当日处理量 = 取退货 + 消息回复 + SW稽核 + 视频调取(含流转专项) + 异常邮件跟进。</div>
-  <div id="gsUpphTable"></div>
-
   <div class="sec-title" style="margin-top:14px">每人工作量对比（图表）</div>
   <div class="hint">区间累计：取退货 / 消息回复 / SW稽核 为区间合计；视频调取为所选视频日单日值（与上方表格口径一致，供对照）。</div>
   <div class="chart" id="perChart" style="height:340px"></div>
@@ -388,7 +384,7 @@ function renderGongshi(){
     +'<th>SW稽核合计<span class="thu">(次)</span></th><th>异常邮件跟进<span class="thu">(条)</span></th>'
     +'<th>消息回复理论时长<span class="thu">(分)</span></th>'
     +'<th>SW稽核理论耗时<span class="thu">(分)</span></th><th>视频调取当日合计<span class="thu">('+(vidSelDay?vidSelDay.slice(5).replace('-','/'):'—')+')</span></th>'
-    +'<th>异常邮件理论耗时<span class="thu">(分)</span></th><th>个人总处理量<span class="thu">(件 / 次)</span></th></tr>';
+    +'<th>异常邮件理论耗时<span class="thu">(分)</span></th><th>个人总处理量<span class="thu">(件 / 次)</span></th><th>UPPH<span class="thu">(区间日均·8H)</span></th></tr>';
   for(const p of emps){
     let a=0,b=0,c=0,swH2=0;
     rngDays.forEach(d=>{ const g=G.dates[d], s=S.dates[d];
@@ -404,18 +400,17 @@ function renderGongshi(){
     const vid = (vidSelDay && vidDayMap[p]!=null) ? vidDayMap[p] : null;
     const vidVal = (vid!=null) ? vid : 0;
     const perTot = a+b+c+vidVal+mailQ;
-    html2+='<tr><td class="nm">'+p+'</td><td>'+fmt(a)+'</td><td>'+fmt(b)+'</td><td>'+fmt(c)+'</td><td>'+fmt(mailQ)+'</td><td>'+msgTheo.toFixed(1)+'</td><td>'+fmt(swH2)+'</td><td>'+(vid!=null?fmt(vid):'—')+'</td><td>'+mailH.toFixed(1)+'</td><td>'+fmt(perTot)+'</td></tr>';
+    const attDays = rngDays.filter(d=> (((ATT.attendance&&ATT.attendance[d])||{})[p])==='出勤').length;
+    const upph = attDays>0 ? +(perTot/(attDays*8)).toFixed(2) : 0;
+    html2+='<tr><td class="nm">'+p+'</td><td>'+fmt(a)+'</td><td>'+fmt(b)+'</td><td>'+fmt(c)+'</td><td>'+fmt(mailQ)+'</td><td>'+msgTheo.toFixed(1)+'</td><td>'+fmt(swH2)+'</td><td>'+(vid!=null?fmt(vid):'—')+'</td><td>'+mailH.toFixed(1)+'</td><td>'+fmt(perTot)+'</td><td><b>'+upph.toFixed(2)+'</b></td></tr>';
   }
   html2+='</table>';
   if(vidSelDay){
-    html2+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值 + 西安流转专项视频数量按当日出勤分摊：王妙星/张霞霞 均出勤平分、仅一人出勤则全额）；个人总处理量（末列）= 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计 + 异常邮件跟进。异常邮件跟进按 赵豫思/杨凡凡/马红霞 当日出勤者平分（标准工时 1 分/条）。视频当量为单日值、其余为区间累计，分属不同口径，供对照查看；取值日随「筛选条件 · 查看当日」自动联动。</div>';
+    html2+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值 + 西安流转专项视频数量按当日出勤分摊：王妙星/张霞霞 均出勤平分、仅一人出勤则全额）；个人总处理量（末列）= 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计 + 异常邮件跟进。异常邮件跟进按 赵豫思/杨凡凡/马红霞 当日出勤者平分（标准工时 1 分/条）。视频当量为单日值、其余为区间累计，分属不同口径，供对照查看；取值日随「筛选条件 · 查看当日」自动联动。UPPH（末列）= 个人总处理量 ÷（区间出勤天数 × 8 小时，出勤时长暂统一按 8H）。</div>';
   } else {
-    html2+='<div class="hint" style="margin-top:6px">个人总处理量（末列）= 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计 + 异常邮件跟进。异常邮件跟进按 赵豫思/杨凡凡/马红霞 当日出勤者平分（标准工时 1 分/条）。</div>';
+    html2+='<div class="hint" style="margin-top:6px">个人总处理量（末列）= 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计 + 异常邮件跟进。异常邮件跟进按 赵豫思/杨凡凡/马红霞 当日出勤者平分（标准工时 1 分/条）。UPPH（末列）= 个人总处理量 ÷（区间出勤天数 × 8 小时，出勤时长暂统一按 8H）。</div>';
   }
   document.getElementById('gsPerTotTable').innerHTML=html2;
-
-  // ③-b 每人每天 UPPH（出勤默认 8H）
-  renderUpphTable(start,end,rngDays);
 
   // ④ 区间概览（日均）
   const cumQ = tq+mq+sq+vq;
@@ -529,41 +524,41 @@ function renderGongshiTable(){
 // 视频调取明细（仅 9/14、9/15 有数据；其余日期走「无数据」空态但仍显示考勤）
 const VIDEO_DATA = {
   '2026-09-14':{
-    part1:{cells:20,videos:20,owner:'西安流转专项 wiki（客诉、流转风险识别 · 3f5583）仓=西安&业务分类=流转专项 实际行数'},
+    part1:{cells:22,videos:22,owner:'西安流转专项 wiki（客诉、流转风险识别 · CMI5wxhZ3iRrO1koLzxczUIlnrg 子表3luqUF）仓=西安&业务分类=流转专项 实际行数'},
     part2per:{王妙星:0,张霞霞:20,赵豫思:25,杨凡凡:0,马红霞:0},
     part3:{杨凡凡:0,马红霞:1,赵豫思:0,others:'张杰 19'},
     note:'9/14 王妙星「休息」、张霞霞「上班」→ 张霞霞全额 20，王妙星 0；西安流转专项=20（wiki 实际抓取，非写死）。'
   },
   '2026-09-15':{
-    part1:{cells:20,videos:20,owner:'西安流转专项 wiki（客诉、流转风险识别 · 3f5583）仓=西安&业务分类=流转专项 实际行数'},
+    part1:{cells:21,videos:21,owner:'西安流转专项 wiki（客诉、流转风险识别 · CMI5wxhZ3iRrO1koLzxczUIlnrg 子表3luqUF）仓=西安&业务分类=流转专项 实际行数'},
     part2per:{杨凡凡:10,张霞霞:18,王妙星:17,赵豫思:15,马红霞:0},
     part3:{杨凡凡:0,马红霞:0,赵豫思:0,others:'张杰 12 ／ 谭添 1 ／ 郑志刚 1'},
     note:'9/15 张霞霞、王妙星均「上班」→ 各一半（张18/王17）；视频调取量按标准作业审核表「稽核点=工艺sw」重核，5S/安全不计入：杨凡凡 20→10、赵豫思 20→15（张霞霞 35 均为工艺sw 不变）；西安流转专项=20（wiki 实际抓取）。'
   },
   '2026-09-16':{
-    part1:{cells:20,videos:20,owner:'西安流转专项 wiki（客诉、流转风险识别 · 3f5583）仓=西安&业务分类=流转专项 实际行数'},
+    part1:{cells:20,videos:20,owner:'西安流转专项 wiki（客诉、流转风险识别 · CMI5wxhZ3iRrO1koLzxczUIlnrg 子表3luqUF）仓=西安&业务分类=流转专项 实际行数'},
     part2per:{王妙星:15,张霞霞:15,赵豫思:0,杨凡凡:10,马红霞:15},
     part3:{杨凡凡:0,马红霞:0,赵豫思:0,others:''},
     note:'9/16 张霞霞、王妙星均「出勤」→ 各一半（张15/王15）；杨凡凡 10、马红霞 15（工艺sw 附件×5）；赵豫思 休息 0；西安流转专项=20（wiki 实际抓取，原未登记→0，已更正）。'
   },
   '2026-09-17':{
-    part1:{cells:16,videos:16,owner:'西安流转专项 wiki（客诉、流转风险识别 · 3f5583）仓=西安&业务分类=流转专项 实际行数'},
+    part1:{cells:17,videos:17,owner:'西安流转专项 wiki（客诉、流转风险识别 · CMI5wxhZ3iRrO1koLzxczUIlnrg 子表3luqUF）仓=西安&业务分类=流转专项 实际行数'},
     part2per:{王妙星:15,张霞霞:0,赵豫思:0,杨凡凡:10,马红霞:10},
     part3:{杨凡凡:0,马红霞:0,赵豫思:0,others:''},
     note:'9/17 张霞霞「休息」、王妙星「出勤」→ 王妙星全额 15，张霞霞 0；杨凡凡 10、马红霞 10；赵豫思 休息 0；西安流转专项=16（wiki 实际抓取，非 20，原未登记→0，已更正）。'
   }
 ,
   '2026-09-18':{
-    part1:{cells:21,videos:21,owner:'西安流转专项 wiki（客诉、流转风险识别 · 3f5583）仓=西安&业务分类=流转专项 实际行数'},
+    part1:{cells:22,videos:22,owner:'西安流转专项 wiki（客诉、流转风险识别 · CMI5wxhZ3iRrO1koLzxczUIlnrg 子表3luqUF）仓=西安&业务分类=流转专项 实际行数'},
     part2per:{王妙星:17.5,张霞霞:17.5,马红霞:15,杨凡凡:10,赵豫思:15},
     part3:{杨凡凡:0,马红霞:0,赵豫思:0,others:''},
     note:'9/18 张霞霞、王妙星均「出勤」→ 各一半（张17.5/王17.5）；马红霞 15、杨凡凡 10、赵豫思 15（工艺sw 附件×5）；西安流转专项=21（wiki 实际抓取）。'
   },
   '2026-09-19':{
-    part1:{cells:21,videos:21,owner:'西安流转专项 wiki（客诉、流转风险识别 · 3f5583）仓=西安&业务分类=流转专项 实际行数'},
+    part1:{cells:21,videos:21,owner:'西安流转专项 wiki（客诉、流转风险识别 · CMI5wxhZ3iRrO1koLzxczUIlnrg 子表3luqUF）仓=西安&业务分类=流转专项 实际行数'},
     part2per:{王妙星:0,张霞霞:15,马红霞:0,杨凡凡:0,赵豫思:10},
     part3:{杨凡凡:0,马红霞:0,赵豫思:0,others:''},
-    note:'9/19 王妙星「休息」、张霞霞「出勤」→ 张霞霞全额 15；赵豫思 10（工艺sw 附件×5）；马红霞/杨凡凡 9/19 无工艺sw素养记录→0；西安流转专项=21（暂沿用 9/18 抓取值，源表 9/19 行待复核）。'
+    note:'9/19 王妙星「休息」、张霞霞「出勤」→ 张霞霞全额 15；赵豫思 10（工艺sw 附件×5）；马红霞/杨凡凡 9/19 无工艺sw素养记录→0；西安流转专项=21（wiki「客诉、流转风险识别」实际抓取，仓=西安&业务分类=流转专项）。'
   }
 };
 // 异常邮件跟进（飞书邮箱「大数据邮件组-异常待处理明细」每日附件，运营中心=西安）
@@ -606,34 +601,6 @@ function mailSplit(day){
   const out={}; FIVE.forEach(p=>out[p]=0);
   arr.forEach(p=>out[p]=per);
   return out;
-}
-// 每人每天 UPPH（出勤默认 8H）：UPPH = 当日处理量 ÷ 8
-// 当日处理量 = 取退货 + 消息回复 + SW稽核 + 视频调取(Part2+Part3) + 流转专项(按出勤分摊) + 异常邮件跟进(按出勤分摊)
-function renderUpphTable(start,end,rngDays){
-  const wrap=document.getElementById('gsUpphTable');
-  if(!wrap) return;
-  const days=rngDays.slice().sort();
-  const ATT_H=8; // 出勤时长暂统一按 8 小时
-  const MAIL_RATE=1; // 异常邮件跟进 标准工时 1 分/条（仅用于说明，UPPH 用件/次计）
-  let h='<div style="overflow-x:auto"><table><tr><th>日期</th><th class="nm">姓名</th>'
-        +'<th>当日处理量<span class="thu">(件/次)</span></th><th>出勤</th><th>出勤时长(h)</th><th>UPPH</th></tr>';
-  days.forEach(d=>{
-    const g=G.dates[d], s=S.dates[d], att=(ATT.attendance&&ATT.attendance[d])||{};
-    const lzvS=lzvSplit(d), mS=mailSplit(d), vidRec=VIDEO_DATA[d];
-    FIVE.forEach(p=>{
-      const tui=(g&&g.tuihuo_per&&g.tuihuo_per[p])||0;
-      const msg=(g&&g.msg_reply_per&&g.msg_reply_per[p])?g.msg_reply_per[p].replied||0:0;
-      const sw=(s&&s.per&&s.per[p])?s.per[p].qty||0:0;
-      const vid=(vidRec)?(((vidRec.part2per&&vidRec.part2per[p]!=null)?vidRec.part2per[p]:0)+((vidRec.part3&&vidRec.part3[p]!=null)?vidRec.part3[p]:0)):0;
-      const lzv=lzvS[p]||0, mail=mS[p]||0;
-      const qty=+(tui+msg+sw+vid+lzv+mail).toFixed(2);
-      const present=att[p]==='出勤';
-      const upph=present? +(qty/ATT_H).toFixed(2):0;
-      h+='<tr><td>'+G_LABEL(d)+'</td><td class="nm">'+p+'</td><td>'+qty+'</td><td>'+(present?'出勤':'未出勤')+'</td><td>'+(present?ATT_H:'—')+'</td><td><b>'+upph.toFixed(2)+'</b></td></tr>';
-    });
-  });
-  h+='</table></div>';
-  wrap.innerHTML=h;
 }
 // 暂无法归属个人数量（西安流转专项视频数量 + 异常邮件跟进）—— 位于「每人工作量」板块内、每人工作量表下方
 function renderPart1(start,end){
