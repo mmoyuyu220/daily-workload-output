@@ -366,13 +366,7 @@ function renderGongshi(){
   // ③ 每人工作量 —— 拆成「处理量」表（含 UPPH）+「处理的理论耗时」表（UPPH 跟随处理量表）
   // 视频调取「每人当日合计」（Part2+Part3 单日值 + 西安流转专项视频数量按出勤整数分摊）并入本表
   const vidSelDay = gsResolveVidDay(start,end);
-  const vidDayMap = {};
-  if(vidSelDay){
-    const rec=VIDEO_DATA[vidSelDay];
-    FIVE.forEach(p=>{ vidDayMap[p] = ((rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0) + ((rec.part3&&rec.part3[p]!=null)?rec.part3[p]:0); });
-    const lzvS = lzvSplit(vidSelDay);  // 西安流转专项视频数量（Part1）按当日出勤整数分摊：王/张 均出勤→平分、仅一人出勤→全额、均不出勤→0
-    FIVE.forEach(p=>{ vidDayMap[p] = (vidDayMap[p]!=null?vidDayMap[p]:0) + (lzvS[p]||0); });
-  }
+  const vidDayMap = vidSelDay ? vidDayMapBuild(vidSelDay) : {};
   // 异常邮件跟进（区间累计）：每日 byDay 在 赵豫思/杨凡凡/马红霞 中按当日出勤者整数平分（未出勤不参与、不摊给缺席者），保证无小数
   const MAIL_RATE = 1; // 异常邮件跟进 标准工时 1 分/条
   const mailPer = {}; FIVE.forEach(p=>mailPer[p]=0);
@@ -625,6 +619,32 @@ function mailSplit(day){
   const attended=['赵豫思','杨凡凡','马红霞'].filter(p=>att[p]==='出勤');
   return intSplit(q, attended);
 }
+// 视频调取「每人当日合计」= part2per + part3 + 西安流转专项视频数量(按出勤整数分摊 lzvSplit)
+// part2per 可能为小数（如两人平分得 17.5），导致每人视频量非整数；按「随机给当日出勤中的一人多加 1 凑成整数」消除小数
+function vidDayMapBuild(day){
+  const out={}; FIVE.forEach(p=>out[p]=0);
+  if(!day || !VIDEO_DATA[day]) return out;
+  const rec=VIDEO_DATA[day];
+  const lzv=lzvSplit(day);
+  const att=(ATT.attendance&&ATT.attendance[day])||{};
+  const raw={};
+  FIVE.forEach(p=>{
+    const p2=((rec.part2per&&rec.part2per[p]!=null)?Number(rec.part2per[p]):0);
+    const p3=((rec.part3&&rec.part3[p]!=null)?Number(rec.part3[p]):0);
+    raw[p]=p2+p3+(lzv[p]||0);
+  });
+  let rem=0;
+  FIVE.forEach(p=>{ const f=Math.floor(raw[p]+1e-9); out[p]=f; rem += (raw[p]-f); });
+  // rem 为各人小数累计（多为整数；偶发 0.5 取上限人数），余数 +1 随机分配给当日出勤者：优先补给本身带小数者，再随机补给其余出勤者
+  const n=Math.round(rem+1e-9);
+  if(n>0){
+    const fracP=FIVE.filter(p=>((raw[p]-Math.floor(raw[p]+1e-9))>1e-9) && att[p]==='出勤');
+    const pool=fracP.concat(FIVE.filter(p=>att[p]==='出勤' && fracP.indexOf(p)<0));
+    for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=pool[i]; pool[i]=pool[j]; pool[j]=t; } // Fisher-Yates 洗牌
+    for(let i=0;i<n;i++){ out[pool[i%pool.length]] += 1; }
+  }
+  return out;
+}
 // （原「西安流转专项视频数量 / 异常邮件跟进」独立汇总块已移除：两项已按出勤整数分摊并入上方每人工作量表的「处理量」与「处理的理论耗时」两块）
 function renderAttRange(start,end){
   const wrap=document.getElementById('attTableWrap');
@@ -770,9 +790,7 @@ function renderPerChart(start,end){
   if(!perChart) perChart=echarts.init(el);
   const rngDays=gsRangeDays();
   const vidSelDay=gsResolveVidDay(start,end);
-  const vidDayMap={};
-  if(vidSelDay){ const rec=VIDEO_DATA[vidSelDay];
-    FIVE.forEach(p=>{ vidDayMap[p]=((rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0)+((rec.part3&&rec.part3[p]!=null)?rec.part3[p]:0); }); }
+  const vidDayMap=vidSelDay?vidDayMapBuild(vidSelDay):{};
   const P=Array.from(new Set([...FIVE, ...(S.employees||[])]));
   const aArr=[],bArr=[],cArr=[],vArr=[],mArr=[];
   P.forEach(p=>{
