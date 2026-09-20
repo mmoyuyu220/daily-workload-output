@@ -638,8 +638,9 @@ function vidDayMapBuild(day){
   // rem 为各人小数累计（多为整数；偶发 0.5 取上限人数），余数 +1 随机分配给当日出勤者：优先补给本身带小数者，再随机补给其余出勤者
   const n=Math.round(rem+1e-9);
   if(n>0){
+    // 余数 +1 只补给「本身带小数且当日出勤」的人（fracP），避免把 +1 错加给无小数的出勤者造成错配/总数偏差
     const fracP=FIVE.filter(p=>((raw[p]-Math.floor(raw[p]+1e-9))>1e-9) && att[p]==='出勤');
-    const pool=fracP.concat(FIVE.filter(p=>att[p]==='出勤' && fracP.indexOf(p)<0));
+    const pool = fracP.length ? fracP : FIVE.filter(p=>att[p]==='出勤');
     for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=pool[i]; pool[i]=pool[j]; pool[j]=t; } // Fisher-Yates 洗牌
     for(let i=0;i<n;i++){ out[pool[i%pool.length]] += 1; }
   }
