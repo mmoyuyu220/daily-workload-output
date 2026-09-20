@@ -60,6 +60,7 @@ td.nm,th.nm{text-align:left}
 .core-tbl th{background:#f3f6fc;color:#12203a;font-weight:600}
 .core-tbl td.nm{text-align:left;font-weight:600;color:#2a3547}
 .core-tbl tr.tot td{background:#f2faf5;font-weight:700;color:#0f9d58}
+.core-tbl tr.upph-row td{background:#eef4ff;font-weight:700;color:#1a4fb4}
 .core-tbl .calc{color:#b26a00;background:#fff8ec;font-weight:600}
 .warn-tbl{margin-top:10px;overflow-x:auto}
 .warn-tbl table{width:100%;border-collapse:collapse;font-size:13px}
@@ -219,6 +220,7 @@ td.nm,th.nm{text-align:left}
     <tr><td class="nm">流转专项视频</td><td id="gsLzvQty">—</td><td id="gsLzvHours">—</td></tr>
     <tr><td class="nm">异常邮件跟进</td><td id="gsMailQty">—</td><td id="gsMailHours">—</td></tr>
     <tr class="tot"><td class="nm">合计</td><td id="gsTotQty">—</td><td id="gsTotHours">—</td></tr>
+    <tr class="upph-row"><td class="nm">日均UPPH<span class="thu">（区间综合·8H）</span></td><td id="gsAvgUpph">—</td><td>—</td></tr>
   </table>
 
   <div class="sec-title">工艺工时（标准工时对照表）</div>
@@ -253,8 +255,6 @@ td.nm,th.nm{text-align:left}
   <div class="sec-title" style="margin-top:14px">每人工作量对比（图表）</div>
   <div class="hint">区间累计：取退货 / 消息回复 / SW稽核 为区间合计；视频调取为所选视频日单日值（与上方表格口径一致，供对照）。</div>
   <div class="chart" id="perChart" style="height:340px"></div>
-
-  <div id="gsPart1Wrap"></div>
 
   <div class="sec-title">趋势分析 ① 数量 &amp; 总处理量（折线图）</div>
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
@@ -363,29 +363,22 @@ function renderGongshi(){
   // 说明条（区间）
   setTxt('gongshiNote', (start&&end)?(start+' ~ '+end+'（区间 '+rngDays.length+' 天有数据）'):'请选择区间');
 
-  // ③ 每人工作量（区间累计：取退货 + 消息回复 + SW + 视频调取(含流转专项) + 异常邮件跟进）
-  // 视频调取「每人当日合计」（Part2+Part3 单日值）并入本表；西安流转专项视频数量按出勤分摊至 王妙星/张霞霞 后并入视频调取数量
+  // ③ 每人工作量 —— 拆成「处理量」表（含 UPPH）+「处理的理论耗时」表（UPPH 跟随处理量表）
+  // 视频调取「每人当日合计」（Part2+Part3 单日值 + 西安流转专项视频数量按出勤整数分摊）并入本表
   const vidSelDay = gsResolveVidDay(start,end);
   const vidDayMap = {};
   if(vidSelDay){
     const rec=VIDEO_DATA[vidSelDay];
     FIVE.forEach(p=>{ vidDayMap[p] = ((rec.part2per&&rec.part2per[p]!=null)?rec.part2per[p]:0) + ((rec.part3&&rec.part3[p]!=null)?rec.part3[p]:0); });
-    // 流转专项视频数量（Part1）按当日出勤分摊：王/张 均出勤→平分；仅一人出勤→全额；均不出勤→0
-    const lzvS = lzvSplit(vidSelDay);
+    const lzvS = lzvSplit(vidSelDay);  // 西安流转专项视频数量（Part1）按当日出勤整数分摊：王/张 均出勤→平分、仅一人出勤→全额、均不出勤→0
     FIVE.forEach(p=>{ vidDayMap[p] = (vidDayMap[p]!=null?vidDayMap[p]:0) + (lzvS[p]||0); });
   }
-  // 异常邮件跟进（区间累计）：每日 byDay 在 赵豫思/杨凡凡/马红霞 中按当日出勤者平分（未出勤不参与、不摊给缺席者）
+  // 异常邮件跟进（区间累计）：每日 byDay 在 赵豫思/杨凡凡/马红霞 中按当日出勤者整数平分（未出勤不参与、不摊给缺席者），保证无小数
   const MAIL_RATE = 1; // 异常邮件跟进 标准工时 1 分/条
   const mailPer = {}; FIVE.forEach(p=>mailPer[p]=0);
   rngDays.forEach(d=>{ const m=mailSplit(d); FIVE.forEach(p=>{ mailPer[p]+=m[p]; }); });
   const emps = Array.from(new Set([...FIVE, ...(S.employees||[])]));
-  let html2='<table><tr><th class="nm">姓名</th>'
-    +'<th>取退货合计<span class="thu">(件)</span></th><th>消息回复合计<span class="thu">(次)</span></th>'
-    +'<th>SW稽核合计<span class="thu">(次)</span></th><th>异常邮件跟进<span class="thu">(条)</span></th>'
-    +'<th>消息回复理论时长<span class="thu">(分)</span></th>'
-    +'<th>SW稽核理论耗时<span class="thu">(分)</span></th><th>视频调取当日合计<span class="thu">('+(vidSelDay?vidSelDay.slice(5).replace('-','/'):'—')+')</span></th>'
-    +'<th>异常邮件理论耗时<span class="thu">(分)</span></th><th>个人总处理量<span class="thu">(件 / 次)</span></th><th>UPPH<span class="thu">(区间日均·8H)</span></th></tr>';
-  for(const p of emps){
+  const rows = emps.map(p=>{
     let a=0,b=0,c=0,swH2=0;
     rngDays.forEach(d=>{ const g=G.dates[d], s=S.dates[d];
       a += (g&&g.tuihuo_per&&g.tuihuo_per[p])||0;
@@ -393,7 +386,7 @@ function renderGongshi(){
       c += (s&&s.per&&s.per[p])?s.per[p].qty||0:0;
       swH2 += (s&&s.per&&s.per[p])?s.per[p].hours||0:0;
     });
-    const msgTheo = b*MSG_RATE;
+    const msgTheo = +(b*MSG_RATE).toFixed(1);
     swH2 = +swH2.toFixed(1);
     const mailQ = mailPer[p];
     const mailH = +(mailQ*MAIL_RATE).toFixed(1);
@@ -402,15 +395,38 @@ function renderGongshi(){
     const perTot = a+b+c+vidVal+mailQ;
     const attDays = rngDays.filter(d=> (((ATT.attendance&&ATT.attendance[d])||{})[p])==='出勤').length;
     const upph = attDays>0 ? +(perTot/(attDays*8)).toFixed(2) : 0;
-    html2+='<tr><td class="nm">'+p+'</td><td>'+fmt(a)+'</td><td>'+fmt(b)+'</td><td>'+fmt(c)+'</td><td>'+fmt(mailQ)+'</td><td>'+msgTheo.toFixed(1)+'</td><td>'+fmt(swH2)+'</td><td>'+(vid!=null?fmt(vid):'—')+'</td><td>'+mailH.toFixed(1)+'</td><td>'+fmt(perTot)+'</td><td><b>'+upph.toFixed(2)+'</b></td></tr>';
-  }
-  html2+='</table>';
+    return {p,a,b,c,mailQ,vid,msgTheo,swH2,mailH,perTot,attDays,upph};
+  });
+  // 综合日均UPPH = 区间总处理量 ÷ 区间总人时(出勤天数×8)
+  let totProc=0, totManH=0;
+  rows.forEach(r=>{ totProc+=r.perTot; totManH += r.attDays*8; });
+  const avgUpph = totManH>0 ? +(totProc/totManH).toFixed(2) : 0;
+  setTxt('gsAvgUpph', hasRng? avgUpph.toFixed(2)+' 件/时':'—');
+  // 表A：处理量（含 UPPH）
+  let htmlA='<table><tr><th class="nm">姓名</th>'
+    +'<th>取退货合计<span class="thu">(件)</span></th><th>消息回复合计<span class="thu">(次)</span></th>'
+    +'<th>SW稽核合计<span class="thu">(次)</span></th><th>异常邮件跟进<span class="thu">(条)</span></th>'
+    +'<th>视频调取当日合计<span class="thu">('+(vidSelDay?vidSelDay.slice(5).replace('-','/'):'—')+')</span></th>'
+    +'<th>个人总处理量<span class="thu">(件 / 次)</span></th><th>UPPH<span class="thu">(区间日均·8H)</span></th></tr>';
+  rows.forEach(r=>{
+    htmlA+='<tr><td class="nm">'+r.p+'</td><td>'+fmt(r.a)+'</td><td>'+fmt(r.b)+'</td><td>'+fmt(r.c)+'</td><td>'+fmt(r.mailQ)+'</td><td>'+(r.vid!=null?fmt(r.vid):'—')+'</td><td>'+fmt(r.perTot)+'</td><td><b>'+r.upph.toFixed(2)+'</b></td></tr>';
+  });
+  htmlA+='</table>';
   if(vidSelDay){
-    html2+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值 + 西安流转专项视频数量按当日出勤分摊：王妙星/张霞霞 均出勤平分、仅一人出勤则全额）；个人总处理量（末列）= 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计 + 异常邮件跟进。异常邮件跟进按 赵豫思/杨凡凡/马红霞 当日出勤者平分（标准工时 1 分/条）。视频当量为单日值、其余为区间累计，分属不同口径，供对照查看；取值日随「筛选条件 · 查看当日」自动联动。UPPH（末列）= 个人总处理量 ÷（区间出勤天数 × 8 小时，出勤时长暂统一按 8H）。</div>';
+    htmlA+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值 + 西安流转专项视频数量按当日出勤整数分摊：王妙星/张霞霞 均出勤平分、仅一人出勤则全额）；个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计 + 异常邮件跟进。视频当量为单日值、其余为区间累计，分属不同口径；取值日随「筛选条件 · 查看当日」自动联动。UPPH = 个人总处理量 ÷（区间出勤天数 × 8 小时）。</div>';
   } else {
-    html2+='<div class="hint" style="margin-top:6px">个人总处理量（末列）= 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计 + 异常邮件跟进。异常邮件跟进按 赵豫思/杨凡凡/马红霞 当日出勤者平分（标准工时 1 分/条）。UPPH（末列）= 个人总处理量 ÷（区间出勤天数 × 8 小时，出勤时长暂统一按 8H）。</div>';
+    htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计 + 异常邮件跟进。UPPH = 个人总处理量 ÷（区间出勤天数 × 8 小时）。</div>';
   }
-  document.getElementById('gsPerTotTable').innerHTML=html2;
+  // 表B：处理的理论耗时（区间累计）
+  let htmlB='<div class="lbl" style="margin:12px 0 4px">处理的理论耗时（区间累计）</div><table><tr><th class="nm">姓名</th>'
+    +'<th>消息回复理论时长<span class="thu">(分)</span></th>'
+    +'<th>SW稽核理论耗时<span class="thu">(分)</span></th>'
+    +'<th>异常邮件理论耗时<span class="thu">(分)</span></th></tr>';
+  rows.forEach(r=>{
+    htmlB+='<tr><td class="nm">'+r.p+'</td><td>'+r.msgTheo.toFixed(1)+'</td><td>'+fmt(r.swH2)+'</td><td>'+r.mailH.toFixed(1)+'</td></tr>';
+  });
+  htmlB+='</table><div class="hint" style="margin-top:6px">理论耗时 = 处理量 × 标准工时（消息回复 15.72 分/次、SW稽核见「工艺工时」对照表、异常邮件跟进 1 分/条）。</div>';
+  document.getElementById('gsPerTotTable').innerHTML = htmlA + htmlB;
 
   // ④ 区间概览（日均）
   const cumQ = tq+mq+sq+vq;
@@ -483,8 +499,7 @@ function renderGongshi(){
     ]
   }), true);
   gsCmpChart.resize(); gsQtyChart.resize(); gsHoursChart.resize();
-  // 西安流转专项视频数量 + 每人每天的出勤详情 随区间联动
-  renderPart1(start,end);
+  // 每人每天的出勤详情 随区间联动
   renderAttRange(start,end);
   // ④ 出勤趋势折线图 / ⑤ 每人工作量对比图（随筛选联动）
   renderAttChart(start,end);
@@ -579,54 +594,38 @@ function gsResolveVidDay(start,end){
   const cand=vds.filter(d=>d<=pick);
   return cand.length ? cand[cand.length-1] : vds[0];
 }
-// 西安流转专项视频数量（Part1.cells）按当日出勤分摊至 王妙星 / 张霞霞：
-// 两人均出勤 → 平分；仅一人出勤 → 该人全额；均不出勤 → 0
+// 整数分摊：把 total 按 attended 名单整数分配（floor 后余数随机给其中若干人），未出勤者 0；保证无小数
+function intSplit(total, attended){
+  const out={}; FIVE.forEach(p=>out[p]=0);
+  total=Math.round(total);
+  if(total<=0 || !attended.length) return out;
+  const per=Math.floor(total/attended.length);
+  let rem=total - per*attended.length;
+  attended.forEach(p=>out[p]=per);
+  const idx=attended.slice();
+  for(let i=idx.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=idx[i]; idx[i]=idx[j]; idx[j]=t; } // Fisher-Yates 洗牌
+  for(let i=0;i<rem;i++){ out[idx[i]] += 1; }
+  return out;
+}
+// 西安流转专项视频数量（Part1.cells）按当日出勤整数分摊至 王妙星 / 张霞霞：
+// 两人均出勤 → 平分（余数随机给其中一人）；仅一人出勤 → 该人全额；均不出勤 → 0
 function lzvSplit(day){
   const rec=VIDEO_DATA[day];
   const cells=(rec&&rec.part1&&rec.part1.cells!=null)?Number(rec.part1.cells):0;
   const att=(ATT.attendance&&ATT.attendance[day])||{};
-  const w=att['王妙星']==='出勤', z=att['张霞霞']==='出勤';
-  let wv=0,zv=0;
-  if(w&&z){ wv=cells/2; zv=cells/2; }
-  else if(w){ wv=cells; }
-  else if(z){ zv=cells; }
-  return {王妙星:wv, 张霞霞:zv};
+  const attended=[];
+  if(att['王妙星']==='出勤') attended.push('王妙星');
+  if(att['张霞霞']==='出勤') attended.push('张霞霞');
+  return intSplit(cells, attended);
 }
-// 异常邮件跟进（byDay[day]）按当日出勤在 赵豫思 / 杨凡凡 / 马红霞 中平分（未出勤者不参与、也不摊给缺席者）
+// 异常邮件跟进（byDay[day]）按当日出勤在 赵豫思 / 杨凡凡 / 马红霞 中整数平分（未出勤者不参与、也不摊给缺席者），保证无小数
 function mailSplit(day){
   const q=(MAIL_ANOMALY&&MAIL_ANOMALY.byDay&&MAIL_ANOMALY.byDay[day])||0;
   const att=(ATT.attendance&&ATT.attendance[day])||{};
-  const arr=['赵豫思','杨凡凡','马红霞'].filter(p=>att[p]==='出勤');
-  const per=arr.length? q/arr.length : 0;
-  const out={}; FIVE.forEach(p=>out[p]=0);
-  arr.forEach(p=>out[p]=per);
-  return out;
+  const attended=['赵豫思','杨凡凡','马红霞'].filter(p=>att[p]==='出勤');
+  return intSplit(q, attended);
 }
-// 暂无法归属个人数量（西安流转专项视频数量 + 异常邮件跟进）—— 位于「每人工作量」板块内、每人工作量表下方
-function renderPart1(start,end){
-  const wrap=document.getElementById('gsPart1Wrap');
-  if(!wrap) return;
-  const vd=gsResolveVidDay(start,end);
-  const p1 = vd ? ((VIDEO_DATA[vd]||{}).part1||{}) : {};
-  // 折算（折合视频数）为空 / 未提供时一律默认为 0（不再依赖标准作业审核表折算公式）
-  const cells = (p1.cells!=null && p1.cells!=='') ? Number(p1.cells) : 0;
-  const videos = (p1.videos!=null && p1.videos!=='') ? Number(p1.videos) : 0;
-  let h='<div class="lbl" style="margin:6px 0 4px">专项数量（按出勤分摊至个人）</div>';
-  // 合并表：西安流转专项视频（→ 王妙星/张霞霞）+ 异常邮件跟进（→ 赵豫思/杨凡凡/马红霞），均按当日出勤分摊
-  const ma = MAIL_ANOMALY || {};
-  let mailq=0;
-  Object.keys(ma.byDay||{}).filter(d=>d>=start&&d<=end).forEach(d=>{ mailq += ma.byDay[d]||0; });
-  h+='<table><tr><th>项目</th><th>数量</th><th>归属状态</th></tr>';
-  if(vd){
-    h+='<tr><td>西安流转专项视频数量（视频日 '+vd.slice(5).replace('-','/')+'）</td><td>'+cells+'</td><td class="att-calc">按出勤分摊 王妙星/张霞霞</td></tr>';
-  } else {
-    h+='<tr><td>西安流转专项视频数量</td><td>—</td><td class="att-calc">按出勤分摊 王妙星/张霞霞</td></tr>';
-  }
-  h+='<tr><td>异常邮件跟进'+(ma.range?('（'+ma.range+'）'):'')+'</td><td>'+(mailq>0?mailq:'—')+'</td><td class="att-calc">按出勤分摊 赵豫思/杨凡凡/马红霞</td></tr>';
-  h+='</table>';
-  h+='<div class="hint" style="margin-top:6px">口径：① 西安流转专项视频=西安流转专项 wiki 物品编码（Part1）实际数量，取「查看当日」或之前最近视频日；按当日出勤分摊至 王妙星/张霞霞（均出勤平分、仅一人出勤则全额）。② 异常邮件跟进=飞书邮箱「大数据邮件组」主题「异常待处理明细」每日 6 封邮件的 xlsx 附件，统计<b>运营中心 = 优检西安小型检测中心</b>条数（区间内合计），每日自动抓取；按当日出勤在 赵豫思/杨凡凡/马红霞 中平分（标准工时 1 分/条）。两项已分摊至个人，详见上方每人工作量表的 UPPH 列（个人总处理量 ÷ 区间出勤天数 × 8H）。</div>';
-  wrap.innerHTML=h;
-}
+// （已取消「专项数量」模块：西安流转专项视频数量 / 异常邮件跟进 已分摊并入上方每人工作量表「处理量」与「处理的理论耗时」两块，无需单列）
 function renderAttRange(start,end){
   const wrap=document.getElementById('attTableWrap');
   const lbl=document.getElementById('attRangeLbl');
