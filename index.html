@@ -201,7 +201,6 @@ td.nm,th.nm{text-align:left}
     <div class="fp-controls">
       <div class="fp-field"><label>开始日期</label><input type="date" id="gsStartInput"></div>
       <div class="fp-field"><label>结束日期</label><input type="date" id="gsEndInput"></div>
-      <div class="fp-field"><label>查看当日</label><input type="date" id="gsDayInput"></div>
       <div class="fp-btnrow"><button type="button" class="sec" id="gsTodayBtn">今天</button><button type="button" class="sec" id="gsYestBtn">昨天</button></div>
       <div class="fp-btnrow"><button type="button" class="pri" id="gsApplyBtn">应用筛选</button><button type="button" class="sec" id="gsResetBtn">重置为全量</button></div>
     </div>
@@ -809,7 +808,6 @@ const gsAllDates = Array.from(new Set([...GS_DATES, ...Object.keys(VIDEO_DATA), 
 // 兼容既有渲染函数（原以 gsRngStartPicker.value / gsRngEndPicker.value 读取区间）
 const gsStartEl=document.getElementById('gsStartInput');
 const gsEndEl  =document.getElementById('gsEndInput');
-const gsDayEl  =document.getElementById('gsDayInput');
 const gsAllMin=gsAllDates[0]||'', gsAllMax=gsAllDates[gsAllDates.length-1]||'';
 // 最新「有工作量数据」的日期（T-1 口径；考勤表含未来排班，故不取 ATT 最大值）
 const gsDataMax=(()=>{ const a=[...GS_DATES,...Object.keys(VIDEO_DATA)].sort(); return a.length?a[a.length-1]:(gsAllMax||''); })();
@@ -819,12 +817,10 @@ const gsRngEndPicker  ={get value(){return gsEndEl.value;}};
 let gsAttUserFiltered=false;
 gsStartEl.value=gsAllMin;
 gsEndEl.value=gsAllMax;
-gsDayEl.value=gsDataMax||gsAllMax;      // 查看当日默认 = 最新数据日（T-1）
 function gsApplyFilter(){
   let st=gsStartEl.value||gsAllMin, en=gsEndEl.value||gsAllMax;
   if(st>en){ const t=st; st=en; en=t; }
   gsStartEl.value=st; gsEndEl.value=en;
-  if(gsDayEl.value && (gsDayEl.value<st||gsDayEl.value>en)) gsDayEl.value=en;
   renderGongshi();
 }
 function gsHighlightQuick(range){
@@ -841,14 +837,14 @@ document.getElementById('gsApplyBtn').onclick=()=>{
   gsAttUserFiltered=true; gsApplyFilter();   // 手动应用区间 → 完整呈现考勤明细
 };
 document.getElementById('gsResetBtn').onclick=()=>{
-  gsStartEl.value=gsAllMin; gsEndEl.value=gsAllMax; gsDayEl.value=gsDataMax||gsAllMax;
+  gsStartEl.value=gsAllMin; gsEndEl.value=gsAllMax;
   gsAttUserFiltered=false; gsHighlightQuick('all'); renderGongshi();  // 重置=恢复默认（仅最近3天）
 };
-// 今天 / 昨天：切换「查看当日」（T-1 口径的数据日，考勤表含未来排班故不取 ATT 最大值）
-document.getElementById('gsTodayBtn').onclick=()=>{ gsDayEl.value=gsDataMax||gsAllMax; renderGongshi(); };
+// 今天 / 昨天：视频已改为区间累计，原「查看当日」单日标记已废除；现把区间直接定位到 T-1 / T-2 数据日（单日视图）
+document.getElementById('gsTodayBtn').onclick=()=>{ gsAttUserFiltered=true; gsStartEl.value=gsDataMax||gsAllMax; gsEndEl.value=gsDataMax||gsAllMax; gsApplyFilter(); };
 document.getElementById('gsYestBtn').onclick=()=>{
   const i=gsAllDates.lastIndexOf(gsDataMax||gsAllMax);
-  gsDayEl.value=(i>0?gsAllDates[i-1]:(gsDataMax||gsAllMax)); renderGongshi();
+  const y=(i>0?gsAllDates[i-1]:(gsDataMax||gsAllMax)); gsAttUserFiltered=true; gsStartEl.value=y; gsEndEl.value=y; gsApplyFilter();
 };
 document.querySelectorAll('.fp-quick button').forEach(b=>{
   b.onclick=()=>{
@@ -864,7 +860,6 @@ document.querySelectorAll('.fp-quick button').forEach(b=>{
   el.addEventListener('keydown',ev=>{ if(ev.key==='Enter') gsApplyFilter(); });
   el.addEventListener('change',()=>{ gsApplyFilter(); });   // 改日期（含原生日期选择器选取）即时联动，无需点「应用筛选」
 });
-gsDayEl.addEventListener('change',()=>{ if(gsDayEl.value) renderGongshi(); });
 document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天（'+DAYS[0].date+' ~ '+DAYS[DAYS.length-1].date+'）';
 document.getElementById('foot').textContent='数据生成时间：'+D.meta.generated_at+' · 数据源：飞书群聊消息 + 飞书电子表格「抖音交付、稽核汇总」+ Base「标准作业审核表」（视频调取）/ 排班表（8月及以后 · 考勤）';
 if(GS_DATES.length || (ATT&&ATT.attendance)){ renderGongshi(); }
