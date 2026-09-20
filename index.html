@@ -207,7 +207,7 @@ td.nm,th.nm{text-align:left}
     </div>
     <div class="fp-quick"><span>区间快速选择：</span><button type="button" data-range="all" class="active">全部</button><button type="button" data-range="7">近7天</button><button type="button" data-range="3">近3天</button></div>
     <div class="fp-note" id="gongshiNote"></div>
-    <div class="fp-note">区间口径：取退货 / 消息对接 / SW稽核 / 视频调取 / 考勤 · 数据更新逻辑 T-1（核算起始 2026-09-14）；核心「视频调取」= part2per + 群视频(Part3) + 西安流转专项视频（按出勤分摊至王妙星/张霞霞），与每人表「视频调取当日合计」口径完全一致；「查看当日」= 数据日（默认最新数据日 T-1），取该日或之前最近一个视频日（视频数据覆盖 9/14 ~ 9/19；其中「群视频 Part3」来自飞书群「视频调取」实际抓取，9/18、9/19 仅有群视频、无标准作业审核表折算）。</div>
+    <div class="fp-note">区间口径：取退货 / 消息对接 / SW稽核 / 视频调取 / 考勤 · 数据更新逻辑 T-1（核算起始 2026-09-14）；核心「视频调取量」与每人表「视频调取量」均为区间内各视频日（part2per + 群视频 Part3 + 西安流转专项视频按出勤分摊至王妙星/张霞霞）按人累计，口径完全一致、随区间筛选联动；视频数据覆盖 9/14 ~ 9/19（其中「群视频 Part3」来自飞书群「视频调取」实际抓取，9/18、9/19 仅有群视频、无标准作业审核表折算）。</div>
   </div>
 
   <div class="sec-title">核心指标（区间：<span id="gsRangeLbl2">—</span>）</div>
@@ -252,7 +252,7 @@ td.nm,th.nm{text-align:left}
   <div id="gsPerTotTable"></div>
 
   <div class="sec-title" style="margin-top:14px">每人工作量对比（图表）</div>
-  <div class="hint">区间累计：取退货 / 消息回复 / SW稽核 为区间合计；视频调取为所选视频日单日值（= part2per+群视频+流转专项，与每人表「视频调取当日合计」口径一致，供对照）。</div>
+  <div class="hint">区间累计：取退货 / 消息回复 / SW稽核 / 视频调取量 / 异常邮件跟进 均为所选区间合计（视频调取量 = 区间内各视频日 Part2+群视频 Part3+西安流转专项视频按人累计，与表格、核心指标口径一致，随区间筛选联动）。</div>
   <div class="chart" id="perChart" style="height:340px"></div>
 
   <div class="sec-title">趋势分析 ① 数量 &amp; 总处理量（折线图）</div>
@@ -326,7 +326,7 @@ function renderGongshi(){
     if(s){ sq+=s.qty||0; sh+=s.hours||0; }
   });
   // 视频调取总数量：区间内各视频日「每人当日合计」(part2per + 群视频part3 + 西安流转专项视频按出勤整数分摊至王妙星/张霞霞) 按 FIVE 求和
-  // —— 与每人表「视频调取当日合计」口径完全一致（均为 part2per+群视频+流转专项；差异仅粒度：此处为区间累计、彼为单日快照）
+  // —— 与每人表「视频调取量」口径完全一致（均为 part2per+群视频+流转专项，区间各视频日按人累计）
   Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).forEach(d=>{
     const m = vidDayMapBuild(d);
     FIVE.forEach(p=>{ vq += m[p]; });
@@ -358,9 +358,11 @@ function renderGongshi(){
   setTxt('gsPerRangeLbl', (start&&end)?(start+' ~ '+end):'—');   // 每人工作量板块同步显示当前区间，明确联动
 
   // ③ 每人工作量 —— 拆成「处理量」表（含 UPPH）+「处理的理论耗时」表（UPPH 跟随处理量表）
-  // 视频调取「每人当日合计」（Part2+Part3 单日值 + 西安流转专项视频数量按出勤整数分摊）并入本表
-  const vidSelDay = gsResolveVidDay(start,end);
-  const vidDayMap = vidSelDay ? vidDayMapBuild(vidSelDay) : {};
+  // 视频调取「每人区间累计」（Part2+Part3+西安流转专项视频按出勤整数分摊），区间各视频日求和 → 与核心指标「视频调取」口径完全一致、随区间筛选联动
+  const vidPer = {}; FIVE.forEach(p=>vidPer[p]=0);
+  Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).forEach(d=>{
+    const m=vidDayMapBuild(d); FIVE.forEach(p=>{ vidPer[p]+=(m[p]||0); });
+  });
   // 异常邮件跟进（区间累计）：每日 byDay 在 赵豫思/杨凡凡/马红霞 中按当日出勤者整数平分（未出勤不参与、不摊给缺席者），保证无小数
   const MAIL_RATE = 1; // 异常邮件跟进 标准工时 1 分/条
   const mailPer = {}; FIVE.forEach(p=>mailPer[p]=0);
@@ -378,8 +380,8 @@ function renderGongshi(){
     swH2 = +swH2.toFixed(1);
     const mailQ = mailPer[p];
     const mailH = +(mailQ*MAIL_RATE).toFixed(1);
-    const vid = (vidSelDay && vidDayMap[p]!=null) ? vidDayMap[p] : null;
-    const vidVal = (vid!=null) ? vid : 0;
+    const vid = vidPer[p];   // 区间累计（整数）
+    const vidVal = vid;
     const perTot = a+b+c+vidVal+mailQ;
     const attDays = rngDays.filter(d=> (((ATT.attendance&&ATT.attendance[d])||{})[p])==='出勤').length;
     const upph = attDays>0 ? +(perTot/(attDays*8)).toFixed(2) : 0;
@@ -394,17 +396,13 @@ function renderGongshi(){
   let htmlA='<table><tr><th class="nm">姓名</th>'
     +'<th>取退货合计<span class="thu">(件)</span></th><th>消息回复合计<span class="thu">(次)</span></th>'
     +'<th>SW稽核合计<span class="thu">(次)</span></th><th>异常邮件跟进<span class="thu">(条)</span></th>'
-    +'<th>视频调取当日合计<span class="thu">('+(vidSelDay?vidSelDay.slice(5).replace('-','/'):'—')+')</span></th>'
+    +'<th>视频调取量<span class="thu">(区间累计·个)</span></th>'
     +'<th>个人总处理量<span class="thu">(件 / 次)</span></th><th>UPPH<span class="thu">(区间日均·8H)</span></th></tr>';
   rows.forEach(r=>{
-    htmlA+='<tr><td class="nm">'+r.p+'</td><td>'+fmt(r.a)+'</td><td>'+fmt(r.b)+'</td><td>'+fmt(r.c)+'</td><td>'+fmt(r.mailQ)+'</td><td>'+(r.vid!=null?fmt(r.vid):'—')+'</td><td>'+fmt(r.perTot)+'</td><td><b>'+r.upph.toFixed(2)+'</b></td></tr>';
+    htmlA+='<tr><td class="nm">'+r.p+'</td><td>'+fmt(r.a)+'</td><td>'+fmt(r.b)+'</td><td>'+fmt(r.c)+'</td><td>'+fmt(r.mailQ)+'</td><td>'+fmt(r.vid)+'</td><td>'+fmt(r.perTot)+'</td><td><b>'+r.upph.toFixed(2)+'</b></td></tr>';
   });
   htmlA+='</table>';
-  if(vidSelDay){
-    htmlA+='<div class="hint" style="margin-top:6px">视频调取当日合计列取值自所选视频日 '+vidSelDay+'（Part2+Part3 单日值 + 西安流转专项视频数量按当日出勤整数分摊：王妙星/张霞霞 均出勤平分、仅一人出勤则全额）；个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计 + 异常邮件跟进。视频当量为单日值、其余为区间累计，分属不同口径；取值日随「筛选条件 · 查看当日」自动联动。UPPH = 个人总处理量 ÷（区间出勤天数 × 8 小时）。</div>';
-  } else {
-    htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取当日合计 + 异常邮件跟进。UPPH = 个人总处理量 ÷（区间出勤天数 × 8 小时）。</div>';
-  }
+  htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取量 + 异常邮件跟进；视频调取量为区间内各视频日（Part2 标准作业审核表 + 群视频 Part3 + 西安流转专项视频按当日出勤整数分摊）按人累计，与核心指标「视频调取」口径完全一致、随区间筛选联动。UPPH = 个人总处理量 ÷（区间出勤天数 × 8 小时）。</div>';
   // 表B：处理的理论耗时（区间累计）
   let htmlB='<div class="lbl" style="margin:12px 0 4px">处理的理论耗时（区间累计）</div><table><tr><th class="nm">姓名</th>'
     +'<th>消息回复理论时长<span class="thu">(分)</span></th>'
@@ -573,15 +571,6 @@ const MAIL_ANOMALY = {
   mails: {'2026-09-15': 6, '2026-09-16': 6, '2026-09-14': 6, '2026-09-17': 6, '2026-09-18': 6, '2026-09-19': 6},   // 当日邮件封数
   note: '飞书邮箱「大数据邮件组 <bi.data@atrenew.com>」主题「异常待处理明细」，每日 6 封、附件 xlsx；口径=运营中心「优检西安小型检测中心」条数'
 };
-// 视频日解析（唯一入口）：取「筛选条件 · 查看当日」(数据日) 当日或之前最近的一个视频日；
-// 该日之前无视频日时退化为区间内最早的一个视频日（避免把未来日错选进来）。
-function gsResolveVidDay(start,end){
-  const vds=Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).sort();
-  if(!vds.length) return '';
-  const pick=(gsDayEl && gsDayEl.value) ? gsDayEl.value : end;
-  const cand=vds.filter(d=>d<=pick);
-  return cand.length ? cand[cand.length-1] : vds[0];
-}
 // 整数分摊：把 total 按 attended 名单整数分配（floor 后余数随机给其中若干人），未出勤者 0；保证无小数
 function intSplit(total, attended){
   const out={}; FIVE.forEach(p=>out[p]=0);
@@ -779,13 +768,14 @@ function renderAttChart(start,end){
   }, true);
 }
 
-// ⑤ 每人工作量对比图：取退货 / 消息回复 / SW稽核（区间累计）+ 视频调取（所选视频日单日值）
+// ⑤ 每人工作量对比图：取退货 / 消息回复 / SW稽核 / 视频调取 / 异常邮件（均为区间累计，随筛选联动）
 function renderPerChart(start,end){
   const el=document.getElementById('perChart'); if(!el) return;
   if(!perChart) perChart=echarts.init(el);
   const rngDays=gsRangeDays();
-  const vidSelDay=gsResolveVidDay(start,end);
-  const vidDayMap=vidSelDay?vidDayMapBuild(vidSelDay):{};
+  // 视频调取：区间内各视频日按人累计（与表格/核心指标口径一致、随区间联动）
+  const vidPer={}; FIVE.forEach(p=>vidPer[p]=0);
+  Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).forEach(d=>{ const m=vidDayMapBuild(d); FIVE.forEach(p=>{ vidPer[p]+=(m[p]||0); }); });
   const P=Array.from(new Set([...FIVE, ...(S.employees||[])]));
   const aArr=[],bArr=[],cArr=[],vArr=[],mArr=[];
   P.forEach(p=>{
@@ -796,7 +786,7 @@ function renderPerChart(start,end){
       c+=(s&&s.per&&s.per[p])?s.per[p].qty||0:0;
     });
     let m=0; rngDays.forEach(d=>{ const ms=mailSplit(d); m+=(ms[p]||0); });
-    aArr.push(a); bArr.push(b); cArr.push(c); vArr.push(vidSelDay?(vidDayMap[p]||0):0); mArr.push(m);
+    aArr.push(a); bArr.push(b); cArr.push(c); vArr.push(vidPer[p]||0); mArr.push(m);
   });
   perChart.setOption({
     tooltip:{trigger:'axis', axisPointer:{type:'shadow'}},
@@ -808,7 +798,7 @@ function renderPerChart(start,end){
       {name:'取退货合计', type:'bar', data:aArr, itemStyle:{color:'#ea4335'}, barMaxWidth:34},
       {name:'消息回复合计', type:'bar', data:bArr, itemStyle:{color:'#1aa3a3'}, barMaxWidth:34},
       {name:'SW稽核合计', type:'bar', data:cArr, itemStyle:{color:'#8e44ad'}, barMaxWidth:34},
-      {name:'视频调取当日合计', type:'bar', data:vArr, itemStyle:{color:'#4285f4'}, barMaxWidth:34},
+      {name:'视频调取量', type:'bar', data:vArr, itemStyle:{color:'#4285f4'}, barMaxWidth:34},
       {name:'异常邮件跟进', type:'bar', data:mArr, itemStyle:{color:'#fbbc04'}, barMaxWidth:34}
     ]
   }, true);
