@@ -625,7 +625,7 @@ function mailSplit(day){
   const attended=['赵豫思','杨凡凡','马红霞'].filter(p=>att[p]==='出勤');
   return intSplit(q, attended);
 }
-// （已取消「专项数量」模块：西安流转专项视频数量 / 异常邮件跟进 已分摊并入上方每人工作量表「处理量」与「处理的理论耗时」两块，无需单列）
+// （原「西安流转专项视频数量 / 异常邮件跟进」独立汇总块已移除：两项已按出勤整数分摊并入上方每人工作量表的「处理量」与「处理的理论耗时」两块）
 function renderAttRange(start,end){
   const wrap=document.getElementById('attTableWrap');
   const lbl=document.getElementById('attRangeLbl');
