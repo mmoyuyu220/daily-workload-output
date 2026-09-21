@@ -94,6 +94,13 @@ td.nm,th.nm{text-align:left}
 .fp-quick button.active{background:#eef3fe;border-color:var(--blue);color:var(--blue);font-weight:700}
 .fp-note{font-size:12px;color:var(--sub);margin-top:8px}
 
+/* ===== 区间汇总卡片（筛选条件下方 · 随筛选联动） ===== */
+.gs-sum{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 16px}
+.gs-sum .gs-card{flex:1 1 168px;min-width:164px;background:#eef2f8;border:1px solid var(--line);border-radius:14px;padding:15px 20px 17px;box-shadow:0 1px 4px rgba(20,40,80,.05)}
+.gs-sum .gs-lb{font-size:13px;color:#5b6b85;font-weight:600;margin-bottom:7px}
+.gs-sum .gs-vl{font-size:28px;font-weight:700;color:#16223a;line-height:1.05;display:flex;align-items:baseline;gap:5px}
+.gs-sum .gs-vl .gs-un{font-size:13px;font-weight:600;color:#8a93a3}
+
 /* ===== 美化：单日详情日期栏（日历展开组件） ===== */
 .date-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
 .date-field{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#f6f9ff,#eef3fe);border:1px solid var(--line);border-radius:14px;padding:14px 18px;box-shadow:0 1px 3px rgba(44,92,197,.06)}
@@ -207,6 +214,14 @@ td.nm,th.nm{text-align:left}
     <div class="fp-quick"><span>区间快速选择：</span><button type="button" data-range="all" class="active">全部</button><button type="button" data-range="7">近7天</button><button type="button" data-range="3">近3天</button></div>
     <div class="fp-note" id="gongshiNote"></div>
     <div class="fp-note">区间口径：取退货 / 消息对接 / SW稽核 / 视频调取 / 考勤 · 数据更新逻辑 T-1（核算起始 2026-09-14）；核心「视频调取量」与每人表「视频调取量」均为区间内各视频日（part2per + 群视频 Part3 + 西安流转专项视频按出勤分摊至王妙星/张霞霞）按人累计，口径完全一致、随区间筛选联动；视频数据覆盖 9/14 ~ 9/19（其中「群视频 Part3」来自飞书群「视频调取」实际抓取，9/18、9/19 仅有群视频、无标准作业审核表折算）。</div>
+  </div>
+
+  <!-- 区间汇总卡片（随上方「筛选条件」联动：每日处理量 / 日均UPPH / 理论耗时 / 日均出勤人数） -->
+  <div class="gs-sum">
+    <div class="gs-card"><div class="gs-lb">每日处理量</div><div class="gs-vl"><span id="gsSumQtyPerDay">—</span><span class="gs-un">件 / 次 · 天</span></div></div>
+    <div class="gs-card"><div class="gs-lb">日均UPPH</div><div class="gs-vl"><span id="gsSumUpph">—</span><span class="gs-un">件 / 时</span></div></div>
+    <div class="gs-card"><div class="gs-lb">理论耗时</div><div class="gs-vl"><span id="gsSumHours">—</span><span class="gs-un">分</span></div></div>
+    <div class="gs-card"><div class="gs-lb">出勤人数</div><div class="gs-vl"><span id="gsSumAtt">—</span><span class="gs-un">人 / 天</span></div></div>
   </div>
 
   <div class="sec-title">核心指标（区间：<span id="gsRangeLbl2">—</span>）</div>
@@ -413,14 +428,24 @@ function renderGongshi(){
   htmlB+='</table><div class="hint" style="margin-top:6px">理论耗时 = 处理量 × 标准工时（消息回复 15.72 分/次、SW稽核见「工艺工时」对照表、异常邮件跟进 1 分/条）。</div>';
   document.getElementById('gsPerTotTable').innerHTML = htmlA + htmlB;
 
-  // ④ 区间概览（日均）
-  const cumQ = tq+mq+sq+vq;
-  const cumH = +(th+mh+sh).toFixed(1);
+  // ④ 区间概览（日均）—— 口径统一为「核心指标 · 合计」（含异常邮件跟进、视频调取），与顶部汇总卡片一致
+  const cumQ = tq+mq+sq+vq+mailq;
+  const cumH = +((th+mh+sh+mailq+vh).toFixed(1));
   const nDays=rngDays.length||1;
   setTxt('gsRangeTxt2', (start&&end)?(start+' ~ '+end):'—');
   setTxt('gsDaysCnt', hasRng?rngDays.length:'—');
   setTxt('gsAvgQty', hasRng?fmt(+(cumQ/nDays).toFixed(1)):'—');
   setTxt('gsAvgHours', hasRng?fmt(+(cumH/nDays).toFixed(1)):'—');
+
+  // ④.1 顶部汇总卡片（每日处理量 / 日均UPPH / 理论耗时(区间合计) / 日均出勤人数）—— 随筛选联动
+  const ATT_PEOPLE = (ATT&&ATT.people)||[];
+  let attManDays = 0;   // 区间出勤人日 = 各日出勤人数(<== 与出勤趋势图同源：ATT.people 中当日='出勤')之和
+  rngDays.forEach(d=>{ const row=(ATT&&ATT.attendance&&ATT.attendance[d])||{};
+    attManDays += ATT_PEOPLE.filter(p=>(row[p]||'')==='出勤').length; });
+  setTxt('gsSumQtyPerDay', hasRng?fmt(+(cumQ/nDays).toFixed(1)):'—');
+  setTxt('gsSumUpph', hasRng?avgUpph.toFixed(2):'—');
+  setTxt('gsSumHours', hasRng?fmt(cumH):'—');
+  setTxt('gsSumAtt', hasRng?+(attManDays/nDays).toFixed(1):'—');
 
   // ⑥ 各理论耗时量对比（区间累计：柱状 + 占比环形）
   if(!gsCmpChart) gsCmpChart=echarts.init(document.getElementById('gsCmpChart'));
