@@ -96,9 +96,9 @@ td.nm,th.nm{text-align:left}
 
 /* ===== 区间汇总卡片（筛选条件下方 · 随筛选联动） ===== */
 .gs-sum{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 16px}
-.gs-sum .gs-card{flex:1 1 168px;min-width:164px;background:#eef2f8;border:1px solid var(--line);border-radius:14px;padding:15px 20px 17px;box-shadow:0 1px 4px rgba(20,40,80,.05)}
+.gs-sum .gs-card{flex:1 1 168px;min-width:164px;background:#f2faf5;border:1px solid #cfe9db;border-radius:14px;padding:15px 20px 17px;box-shadow:0 1px 4px rgba(20,40,80,.05)}
 .gs-sum .gs-lb{font-size:13px;color:#5b6b85;font-weight:600;margin-bottom:7px}
-.gs-sum .gs-vl{font-size:28px;font-weight:700;color:#16223a;line-height:1.05;display:flex;align-items:baseline;gap:5px}
+.gs-sum .gs-vl{font-size:28px;font-weight:700;color:#0f9d58;line-height:1.05;display:flex;align-items:baseline;gap:5px}
 .gs-sum .gs-vl .gs-un{font-size:13px;font-weight:600;color:#8a93a3}
 
 /* ===== 美化：单日详情日期栏（日历展开组件） ===== */
@@ -218,6 +218,7 @@ td.nm,th.nm{text-align:left}
 
   <!-- 区间汇总卡片（随上方「筛选条件」联动：每日处理量 / 日均UPPH / 理论耗时 / 日均出勤人数） -->
   <div class="gs-sum">
+    <div class="gs-card"><div class="gs-lb">区间天数</div><div class="gs-vl"><span id="gsDaysCnt">—</span><span class="gs-un">天（有数据）</span></div></div>
     <div class="gs-card"><div class="gs-lb">每日处理量</div><div class="gs-vl"><span id="gsSumQtyPerDay">—</span><span class="gs-un">件 / 次 · 天</span></div></div>
     <div class="gs-card"><div class="gs-lb">日均UPPH</div><div class="gs-vl"><span id="gsSumUpph">—</span><span class="gs-un">件 / 时</span></div></div>
     <div class="gs-card"><div class="gs-lb">理论耗时</div><div class="gs-vl"><span id="gsSumHours">—</span><span class="gs-un">分</span></div></div>
@@ -245,7 +246,6 @@ td.nm,th.nm{text-align:left}
 
   <div class="sec-title">区间概览（<span id="gsRangeTxt2">—</span>）</div>
   <div class="cls compact">
-    <div class="clsc tot"><div class="cn" id="gsDaysCnt">—</div><div class="cl">区间天数 <span>天（有数据）</span></div></div>
     <div class="clsc tot"><div class="cn" id="gsAvgQty">—</div><div class="cl">日均处理量 <span>件 / 次 · 天</span></div></div>
     <div class="clsc tot"><div class="cn" id="gsAvgHours">—</div><div class="cl">日均理论耗时 <span>分 · 天</span></div></div>
   </div>
