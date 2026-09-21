@@ -12,12 +12,12 @@
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink)}
-.topbar{background:linear-gradient(120deg,#0a7d43,#0f9d58 55%,#3ab878);color:#fff;padding:18px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(15,157,88,.25)}
+.topbar{background:linear-gradient(120deg,#5e4300,#b8860b 55%,#e6b800);color:#fff;padding:18px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(184,134,11,.25)}
 .topbar .logo{font-size:22px;font-weight:800;letter-spacing:.5px;white-space:nowrap}
 .topbar .tag{position:relative;z-index:1;font-size:12px;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:20px}
 .tabs{display:flex;gap:4px;margin:18px 28px 0}
 .tab{padding:10px 20px;border-radius:10px 10px 0 0;background:#dfe6f2;color:var(--sub);cursor:pointer;font-weight:700;font-size:14px;user-select:none}
-.tab.active{background:#fff;color:#0f9d58}
+.tab.active{background:#fff;color:#b8860b}
 .panel{display:none;background:#fff;margin:0 28px 30px;padding:24px 26px;border-radius:0 12px 12px 12px;box-shadow:0 1px 4px rgba(20,40,80,.06);min-height:200px}
 .panel.active{display:block}
 .lbl{font-size:13px;color:var(--sub);margin-bottom:6px;font-weight:600}
@@ -45,8 +45,8 @@ td.nm,th.nm{text-align:left}
 /* 核心指标：数量 / 理论耗时 分组 */
 .clsc.hrs .cn{color:#4285f4}
 .clsc.rate .cn{color:#12203a}
-.clsc.tot .cn{color:#0f9d58}
-.clsc.tot{background:#f2faf5;border-color:#cfe9db}
+.clsc.tot .cn{color:#b8860b}
+.clsc.tot{background:#fdf6e3;border-color:#ecd9a0}
 .grp{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#344563;margin:16px 0 0}
 .grp .ic{font-size:14px;line-height:1}
 .grp .u{font-weight:400;color:#98a2b3;font-size:12px}
@@ -59,7 +59,7 @@ td.nm,th.nm{text-align:left}
 .core-tbl th,.core-tbl td{border:1px solid var(--line);padding:10px 12px;text-align:center}
 .core-tbl th{background:#f3f6fc;color:#12203a;font-weight:600}
 .core-tbl td.nm{text-align:left;font-weight:600;color:#2a3547}
-.core-tbl tr.tot td{background:#f2faf5;font-weight:700;color:#0f9d58}
+.core-tbl tr.tot td{background:#fdf6e3;font-weight:700;color:#b8860b}
 .core-tbl tr.upph-row td{background:#eef4ff;font-weight:700;color:#1a4fb4}
 .core-tbl .calc{color:#b26a00;background:#fff8ec;font-weight:600}
 .warn-tbl{margin-top:10px;overflow-x:auto}
@@ -72,33 +72,33 @@ td.nm,th.nm{text-align:left}
 /* ===== 筛选条件面板（对齐「每日效率」页筛选面板样式） ===== */
 .fp{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;box-shadow:0 1px 4px rgba(20,40,80,.06);margin-bottom:16px}
 .fp-title{position:relative;padding-left:14px;font-size:15.5px;font-weight:700;color:#16223a;margin:0 0 16px}
-.fp-title::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:4px;height:16px;border-radius:3px;background:linear-gradient(180deg,#0f9d58,#3ab878)}
+.fp-title::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:4px;height:16px;border-radius:3px;background:linear-gradient(180deg,#b8860b,#e6b800)}
 .fp-controls{display:flex;flex-wrap:wrap;gap:16px 18px;align-items:flex-end}
 .fp-field{display:flex;flex-direction:column;gap:6px}
 .fp-field label{font-size:12px;color:var(--sub);font-weight:600}
 .fp-field input[type=date]{height:42px;min-width:152px;padding:0 13px;border:1px solid #dbe2ec;border-radius:10px;font-size:14px;color:#111827;background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
-.fp-field input[type=date]:focus{border-color:#0f9d58;box-shadow:0 0 0 3px rgba(15,157,88,.16)}
+.fp-field input[type=date]:focus{border-color:#b8860b;box-shadow:0 0 0 3px rgba(184,134,11,.16)}
 .fp-btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .fp-btnrow button{border:0;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;height:42px;padding:0 19px;font-family:inherit;transition:all .16s}
-.fp-btnrow button.pri{background:linear-gradient(135deg,#0f9d58,#3ab878);color:#fff;box-shadow:0 3px 10px rgba(15,157,88,.30)}
-.fp-btnrow button.pri:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(15,157,88,.40)}
-.fp-btnrow button.sec{background:#e8f6ee;color:#0f7a45;border:1px solid #cfe9db}
+.fp-btnrow button.pri{background:linear-gradient(135deg,#9a7000,#b8860b);color:#fff;box-shadow:0 3px 10px rgba(184,134,11,.30)}
+.fp-btnrow button.pri:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(184,134,11,.40)}
+.fp-btnrow button.sec{background:#f8eccb;color:#9a7000;border:1px solid #ecd9a0}
 .fp-btnrow button.sec:hover{background:#d8f0e2;color:#0a6b3c}
 .fp-btnrow button:active{transform:scale(.97)}
 .fp-btnrow button.flash{animation:btnFlash .5s ease-out}
-@keyframes btnFlash{0%{box-shadow:0 0 0 0 rgba(15,157,88,.55);}100%{box-shadow:0 0 0 12px rgba(15,157,88,0);}}
+@keyframes btnFlash{0%{box-shadow:0 0 0 0 rgba(184,134,11,.55);}100%{box-shadow:0 0 0 12px rgba(184,134,11,0);}}
 .fp-quick{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:15px;padding-top:15px;border-top:1px dashed #e6eaf0}
 .fp-quick span{font-size:12px;color:#9aa4b6}
-.fp-quick button{height:33px;padding:0 15px;border-radius:999px;background:#fff;border:1px solid #cfe9db;color:#3a7d5c;font-size:13px;font-family:inherit;cursor:pointer;transition:.15s}
-.fp-quick button:hover{border-color:#0f9d58;color:#0f9d58}
-.fp-quick button.active{background:#e8f6ee;border-color:#0f9d58;color:#0f9d58;font-weight:700}
+.fp-quick button{height:33px;padding:0 15px;border-radius:999px;background:#fff;border:1px solid #ecd9a0;color:#3a7d5c;font-size:13px;font-family:inherit;cursor:pointer;transition:.15s}
+.fp-quick button:hover{border-color:#b8860b;color:#b8860b}
+.fp-quick button.active{background:#f8eccb;border-color:#b8860b;color:#b8860b;font-weight:700}
 .fp-note{font-size:12px;color:var(--sub);margin-top:8px}
 
 /* ===== 区间汇总卡片（筛选条件下方 · 随筛选联动） ===== */
 .gs-sum{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 16px}
-.gs-sum .gs-card{flex:1 1 168px;min-width:164px;background:#f2faf5;border:1px solid #cfe9db;border-radius:14px;padding:15px 20px 17px;box-shadow:0 1px 4px rgba(20,40,80,.05)}
+.gs-sum .gs-card{flex:1 1 168px;min-width:164px;background:#fdf6e3;border:1px solid #ecd9a0;border-radius:14px;padding:15px 20px 17px;box-shadow:0 1px 4px rgba(20,40,80,.05)}
 .gs-sum .gs-lb{font-size:13px;color:#5b6b85;font-weight:600;margin-bottom:7px}
-.gs-sum .gs-vl{font-size:28px;font-weight:700;color:#0f9d58;line-height:1.05;display:flex;align-items:baseline;gap:5px}
+.gs-sum .gs-vl{font-size:28px;font-weight:700;color:#b8860b;line-height:1.05;display:flex;align-items:baseline;gap:5px}
 .gs-sum .gs-vl .gs-un{font-size:13px;font-weight:600;color:#8a93a3}
 
 /* ===== 美化：单日详情日期栏（日历展开组件） ===== */
@@ -111,28 +111,28 @@ td.nm,th.nm{text-align:left}
 /* 日历选择器 */
 .date-picker{position:relative;display:inline-block}
 .date-picker-btn{font-size:14px;padding:10px 16px;border:1px solid #c9d6f0;border-radius:10px;background:#fff;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:border-color .15s,box-shadow .15s}
-.date-picker-btn:hover{border-color:#0f9d58}
-.date-picker-btn.active,.date-picker-btn:focus{outline:none;border-color:#0f9d58;box-shadow:0 0 0 3px rgba(15,157,88,.18)}
+.date-picker-btn:hover{border-color:#b8860b}
+.date-picker-btn.active,.date-picker-btn:focus{outline:none;border-color:#b8860b;box-shadow:0 0 0 3px rgba(184,134,11,.18)}
 .date-picker-btn::after{content:"▼";font-size:10px;color:var(--sub);margin-left:4px}
-.date-picker-btn span{color:#0f9d58;font-weight:700}
+.date-picker-btn span{color:#b8860b;font-weight:700}
 .date-picker-pop{position:absolute;top:calc(100% + 8px);left:0;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 30px rgba(20,40,80,.15);padding:16px;width:286px;z-index:100;display:none}
 .date-picker-pop.open{display:block}
 .dp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .dp-title{font-size:16px;font-weight:800;color:var(--ink)}
-.dp-nav{width:28px;height:28px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#0f9d58;cursor:pointer;font-size:12px;transition:background .15s}
+.dp-nav{width:28px;height:28px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#b8860b;cursor:pointer;font-size:12px;transition:background .15s}
 .dp-nav:hover{background:#f3f6fc}
 .dp-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--sub);margin-bottom:8px}
 .dp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
 .dp-day{display:flex;align-items:center;justify-content:center;height:32px;border-radius:8px;font-size:13px;cursor:pointer;transition:background .15s,color .15s}
-.dp-day:not(.other):not(.disabled):hover{background:#e8f6ee}
+.dp-day:not(.other):not(.disabled):hover{background:#f8eccb}
 .dp-day.other,.dp-day.disabled{color:#c4cbd6;cursor:not-allowed}
-.dp-day.has-data{border:1.5px solid #a8dcc0;color:#0f9d58;font-weight:700;background:#fff}
-.dp-day.selected{background:#0f9d58;color:#fff;font-weight:700;border:1.5px solid #0f9d58}
+.dp-day.has-data{border:1.5px solid #dec485;color:#b8860b;font-weight:700;background:#fff}
+.dp-day.selected{background:#b8860b;color:#fff;font-weight:700;border:1.5px solid #b8860b}
 .dp-legend{display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--sub)}
 .dp-legend span{display:inline-flex;align-items:center;gap:6px}
 .dp-dot{width:12px;height:12px;border-radius:3px}
-.dp-dot.has-data{border:1.5px solid #a8dcc0;background:#fff}
-.dp-dot.selected{background:#0f9d58}
+.dp-dot.has-data{border:1.5px solid #dec485;background:#fff}
+.dp-dot.selected{background:#b8860b}
 
 /* ===== 美化：趋势分析日期区间 ===== */
 .date-inline{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
@@ -155,7 +155,7 @@ td.nm,th.nm{text-align:left}
   .m-video .vp-mbtn:hover{border-color:var(--blue)}
   .m-video .vp-mbtn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
   .m-video .vp-dayblock .lbl{font-weight:600;color:#344563;margin-bottom:6px}
-  .m-video td.att-on{color:#0f9d58;font-weight:700;background:#f2faf5}
+  .m-video td.att-on{color:#b8860b;font-weight:700;background:#fdf6e3}
   .m-video td.att-off{color:#d1342f;font-weight:600;background:#fdf2f2}
   .m-video td.att-na{color:#98a2b3}
   /* 归属状态「计算中」配色（区别于出勤绿/休息红） */
@@ -484,7 +484,7 @@ function renderGongshi(){
   gsQtyChart.setOption(Object.assign({}, baseOpt, {
     yAxis:{type:'value', name:'数量(件 / 次)', nameTextStyle:{fontSize:11}},
     series:[
-      mk('总处理量','#0f9d58', rngDays.map(d=>tv(d,'qty')), true),
+      mk('总处理量','#b8860b', rngDays.map(d=>tv(d,'qty')), true),
       mk('取退货数量','#ea4335', rngDays.map(d=>gv(d,'tuihuo_qty'))),
       mk('消息回复数量','#1aa3a3', rngDays.map(d=>gv(d,'msg_reply_qty'))),
       mk('SW稽核数量','#8e44ad', rngDays.map(d=>sv(d,'qty')))
@@ -493,7 +493,7 @@ function renderGongshi(){
   gsHoursChart.setOption(Object.assign({}, baseOpt, {
     yAxis:{type:'value', name:'理论耗时(分)', nameTextStyle:{fontSize:11}},
     series:[
-      mk('总理论耗时','#0f9d58', rngDays.map(d=>tv(d,'hours')), true),
+      mk('总理论耗时','#b8860b', rngDays.map(d=>tv(d,'hours')), true),
       mk('取退货理论耗时','#fbbc04', rngDays.map(d=>gv(d,'tuihuo_hours'))),
       mk('消息回复理论耗时','#4285f4', rngDays.map(d=>gv(d,'msg_reply_hours'))),
       mk('SW稽核理论耗时','#e67e22', rngDays.map(d=>sv(d,'hours')))
@@ -1005,7 +1005,7 @@ function renderAttChart(start,end){
     ],
     series:[
       {name:'出勤人数', type:'line', smooth:true, yAxisIndex:0, data:onCnt, symbol:'circle', symbolSize:6,
-       itemStyle:{color:'#0f9d58'}, lineStyle:{width:3}, label:{show:true, position:'top', fontSize:11}},
+       itemStyle:{color:'#b8860b'}, lineStyle:{width:3}, label:{show:true, position:'top', fontSize:11}},
       {name:'出勤率%', type:'line', smooth:true, yAxisIndex:1, data:rate, symbol:'circle', symbolSize:6,
        itemStyle:{color:'#ea4335'}, lineStyle:{width:2.4, type:'dashed'}}
     ]
