@@ -193,13 +193,6 @@ td.nm,th.nm{text-align:left}
   <div class="tag">每日工作量输出</div>
 </div>
 
-<!-- 顶部页签：一个链接内切换两个看板 -->
-<div class="tabs" id="boardTabs">
-  <div class="tab active" data-board="main">每日工作量输出</div>
-  <div class="tab" data-board="ops">运营数据单日详情</div>
-</div>
-
-
 <!-- 每日工作量输出 模块（取退货 / 消息对接 / SW稽核 · 核算起始 2026-09-14 · T-1 更新） -->
 <div class="panel active" id="panel-gongshi">
   <!-- 筛选条件（对齐「每日效率」页筛选面板样式） -->
@@ -272,11 +265,6 @@ td.nm,th.nm{text-align:left}
   <div class="chart" id="gsHoursChart" style="height:340px"></div>
 
 
-</div>
-
-<!-- 运营数据单日详情 看板（页签2 · iframe 懒加载，独立页 ops_day.html 同源嵌入） -->
-<div class="panel" id="panel-ops">
-  <iframe id="opsFrame" title="运营数据单日详情" style="width:100%;border:0;display:block;height:1600px"></iframe>
 </div>
 
 <div class="foot" id="foot"></div>
@@ -1115,42 +1103,6 @@ document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天�
 document.getElementById('foot').textContent='数据生成时间：'+D.meta.generated_at+' · 数据源：飞书群聊消息 + 飞书电子表格「抖音交付、稽核汇总」+ Base「标准作业审核表」（视频调取）/ 排班表（8月及以后 · 考勤）';
 if(GS_DATES.length || (ATT&&ATT.attendance)){ renderGongshi(); }
 window.addEventListener('resize',()=>{if(trendChart)trendChart.resize();if(regionChart)regionChart.resize();if(gsCmpChart)gsCmpChart.resize();if(gsQtyChart)gsQtyChart.resize();if(gsHoursChart)gsHoursChart.resize();if(attChart)attChart.resize();if(perChart)perChart.resize();});
-</script>
-<script>
-// ===== 顶部页签：主看板 ⇄ 运营数据单日详情（一个链接内两个看板） =====
-(function(){
-  var tabs=document.querySelectorAll('#boardTabs .tab');
-  var pm=document.getElementById('panel-gongshi'), po=document.getElementById('panel-ops');
-  var frame=document.getElementById('opsFrame'), loaded=false;
-  function syncH(){
-    try{
-      var d=frame.contentDocument;
-      if(d&&d.body&&frame.style.display!=='none'){
-        var h=d.body.scrollHeight;
-        if(h>200) frame.style.height=(h+24)+'px';
-      }
-    }catch(e){}
-  }
-  function activate(key){
-    var ops=(key==='ops');
-    tabs.forEach(function(t){ t.classList.toggle('active', t.dataset.board===(ops?'ops':'main')); });
-    po.classList.toggle('active', ops);
-    pm.classList.toggle('active', !ops);
-    if(ops&&!loaded){ frame.src='ops_day.html'; loaded=true; }
-    if(ops){ setTimeout(syncH,150); setTimeout(syncH,700); setTimeout(syncH,1800); }
-    try{ history.replaceState(null,'',ops?'#ops':'#main'); }catch(e){}
-    if(!ops) window.scrollTo(0,0);
-  }
-  tabs.forEach(function(t){ t.onclick=function(){ activate(t.dataset.board); }; });
-  frame.addEventListener('load', function(){ setTimeout(syncH,100); setTimeout(syncH,600); setTimeout(syncH,2000); });
-  window.addEventListener('resize', syncH);
-  setInterval(syncH, 1500);
-  window.addEventListener('hashchange', function(){
-    if(location.hash==='#ops') activate('ops');
-    else if(location.hash==='#main') activate('main');
-  });
-  if(location.hash==='#ops'){ activate('ops'); }
-})();
 </script>
 </body>
 </html>
