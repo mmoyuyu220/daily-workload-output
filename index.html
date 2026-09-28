@@ -92,11 +92,12 @@ td.nm,th.nm{text-align:left}
 .fp-quick button{height:33px;padding:0 15px;border-radius:999px;background:#fff;border:1px solid #cfe0f7;color:#2a4f9e;font-size:13px;font-family:inherit;cursor:pointer;transition:.15s}
 .fp-quick button:hover{border-color:#2c5cc5;color:#2c5cc5}
 .fp-quick button.active{background:#e2ecfb;border-color:#2c5cc5;color:#2c5cc5;font-weight:700}
-.fp-wh{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
-.fp-wh span{font-size:12px;color:#9aa4b6}
-.fp-wh button{height:33px;padding:0 15px;border-radius:999px;background:#fff;border:1px solid #cfe0f7;color:#2a4f9e;font-size:13px;font-family:inherit;cursor:pointer;transition:.15s}
-.fp-wh button:hover{border-color:#2c5cc5;color:#2c5cc5}
-.fp-wh button.active{background:#e2ecfb;border-color:#2c5cc5;color:#2c5cc5;font-weight:700}
+/* 仓筛选：与日期字段同款（42px 高 / 同边框·圆角）的分段按钮组 */
+.fp-wh{display:flex;gap:4px;align-items:center;height:42px;padding:4px;border:1px solid #dbe2ec;border-radius:10px;background:#fff;transition:border-color .15s,box-shadow .15s}
+.fp-wh:hover{border-color:#c3d0e4}
+.fp-wh button{height:32px;min-width:58px;padding:0 14px;border:0;border-radius:7px;background:transparent;color:#2a4f9e;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .15s}
+.fp-wh button:hover{background:#eef4fd;color:#2c5cc5}
+.fp-wh button.active{background:linear-gradient(135deg,#2c5cc5,#5b8def);color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(44,92,197,.28)}
 .wh-tag{display:inline-block;font-size:11px;color:#7a86a0;margin-left:4px;padding:1px 6px;border:1px solid #dbe2ec;border-radius:999px;vertical-align:middle}
 .fp-note{font-size:12px;color:var(--sub);margin-top:8px}
 
@@ -205,13 +206,13 @@ td.nm,th.nm{text-align:left}
   <div class="fp">
     <div class="fp-title">筛选条件</div>
     <div class="fp-controls">
+      <div class="fp-field"><label>仓</label><div class="fp-wh"><button type="button" data-wh="all" class="active">全部</button><button type="button" data-wh="西安">西安</button><button type="button" data-wh="沈阳">沈阳</button></div></div>
       <div class="fp-field"><label>开始日期</label><input type="date" id="gsStartInput"></div>
       <div class="fp-field"><label>结束日期</label><input type="date" id="gsEndInput"></div>
       <div class="fp-btnrow"><button type="button" class="sec" id="gsTodayBtn">今天</button><button type="button" class="sec" id="gsYestBtn">昨天</button></div>
       <div class="fp-btnrow"><button type="button" class="pri" id="gsApplyBtn">应用筛选</button><button type="button" class="sec" id="gsResetBtn">重置为全量</button></div>
     </div>
     <div class="fp-quick"><span>区间快速选择：</span><button type="button" data-range="all" class="active">全部</button><button type="button" data-range="7">近7天</button><button type="button" data-range="3">近3天</button></div>
-    <div class="fp-wh"><span>仓筛选：</span><button type="button" data-wh="all" class="active">全部</button><button type="button" data-wh="西安">西安</button><button type="button" data-wh="沈阳">沈阳</button></div>
     <div class="fp-note" id="gongshiNote"></div>
     <div class="fp-note">区间口径：取退货 / 消息对接 / SW稽核 / 视频调取 / 考勤 · 数据更新逻辑 T-1（核算起始 2026-09-14）；核心「视频调取量」与每人表「视频调取量」均为区间内各视频日（part2per + 群视频 Part3 + 西安流转专项视频按出勤分摊至王妙星/张霞霞）按人累计，口径完全一致、随区间筛选联动；视频数据覆盖 9/14 ~ 9/19（其中「群视频 Part3」来自飞书群「视频调取」实际抓取，9/18、9/19 仅有群视频、无标准作业审核表折算）。</div>
   </div>
@@ -252,7 +253,7 @@ td.nm,th.nm{text-align:left}
     <div id="attSummary" class="vp-attstrip att-sum"></div>
     <div id="attMonthStat" class="vp-attstrip att-sum"></div>
     <div class="sec-title" style="margin-top:14px">出勤趋势分析（折线图）</div>
-    <div class="hint">所选区间内每日出勤人数（左轴）与出勤率＝当日出勤人数 ÷ 应出勤人数 5 人（右轴）。</div>
+    <div class="hint">所选区间内每日出勤人数（左轴）与出勤率＝当日出勤人数 ÷ 所选仓应出勤人数（仓筛选=全部时为全部 8 人，选西安/沈阳时为对应仓人数）（右轴）。</div>
     <div class="chart" id="attChart" style="height:300px"></div>
   </div>
 
@@ -341,6 +342,24 @@ function renderGongshi(){
   // 异常邮件跟进（区间累计：运营中心=西安条数）；理论耗时 = 数量 × 标准工时 1 分/条（工艺工时摸底「异常邮件处理」）
   let mailq=0;
   Object.keys((MAIL_ANOMALY&&MAIL_ANOMALY.byDay)||{}).filter(d=>d>=start&&d<=end).forEach(d=>{ mailq += MAIL_ANOMALY.byDay[d]||0; });
+  // 仓联动（核心指标随「仓筛选」折算）：全部=原值；沈阳=当日沈阳按人明细合计；西安=全部−沈阳。
+  // 沈阳当前无源数据（按人均 0）→ 选「沈阳」时核心指标为 0，选「西安」与「全部」数值一致，口径不跳变。
+  let shAgg={tq:0,mq:0,sq:0,th:0,mh:0,shh:0};
+  rngDays.forEach(d=>{
+    const g=G.dates[d], s=S.dates[d];
+    if(g){
+      SHENYANG.forEach(p=>{ shAgg.tq+=(g.tuihuo_per&&g.tuihuo_per[p])||0;
+        const _mr=(g.msg_reply_per&&g.msg_reply_per[p])?(g.msg_reply_per[p].replied||0):0;
+        shAgg.mq+=_mr; shAgg.mh+=_mr*MSG_RATE; });
+      if((g.tuihuo_qty||0)>0){ const _r=(g.tuihuo_hours||0)/g.tuihuo_qty;
+        SHENYANG.forEach(p=>{ shAgg.th+=((g.tuihuo_per&&g.tuihuo_per[p])||0)*_r; }); }
+    }
+    if(s){ SHENYANG.forEach(p=>{ const _o=(s.per&&s.per[p])||{}; shAgg.sq+=_o.qty||0; shAgg.shh+=_o.hours||0; }); }
+  });
+  const _whAdj=(base,shv)=> gsWhFilter==='all'? base : (gsWhFilter==='沈阳'? shv : base-shv);
+  tq=_whAdj(tq,shAgg.tq); mq=_whAdj(mq,shAgg.mq); sq=_whAdj(sq,shAgg.sq);
+  th=_whAdj(th,shAgg.th); mh=_whAdj(mh,shAgg.mh); sh=_whAdj(sh,shAgg.shh);
+  if(gsWhFilter==='沈阳'){ vq=0; mailq=0; }   // 视频调取 / 异常邮件跟进 仅分摊至西安人员 → 沈阳恒 0
   setTxt('gsRangeLbl2', (start&&end)?(start+' ~ '+end):'—');
   setTxt('gsTqQty', hasRng?fmt(tq)+' 件':'—');
   setTxt('gsMsgQty', hasRng?fmt(mq)+' 次':'—');
@@ -465,9 +484,26 @@ function renderGongshi(){
   // ⑦ 趋势分析：切片到所选区间
   if(!gsQtyChart)   gsQtyChart=echarts.init(document.getElementById('gsQtyChart'));
   if(!gsHoursChart) gsHoursChart=echarts.init(document.getElementById('gsHoursChart'));
-  const gv=(d,k)=>{const r=G.dates[d];return r?(r[k]==null?0:r[k]):null;};
-  const sv=(d,k)=>{const r=S.dates[d];return r?(r[k]==null?0:r[k]):null;};
-  const tv=(d,k)=>{const t=gsDayTotals(d);return t?t[k]:null;};
+  const _shComp=d=>{
+    const g=G.dates[d], s=S.dates[d];
+    const o={tq:0,mq:0,sq:0,th:0,mh:0,shh:0};
+    if(g){ SHENYANG.forEach(p=>{ o.tq+=(g.tuihuo_per&&g.tuihuo_per[p])||0;
+        const _mr=(g.msg_reply_per&&g.msg_reply_per[p])?(g.msg_reply_per[p].replied||0):0; o.mq+=_mr; o.mh+=_mr*MSG_RATE; });
+      if((g.tuihuo_qty||0)>0){ const _r=(g.tuihuo_hours||0)/g.tuihuo_qty; SHENYANG.forEach(p=>{ o.th+=((g.tuihuo_per&&g.tuihuo_per[p])||0)*_r; }); } }
+    if(s){ SHENYANG.forEach(p=>{ const _o2=(s.per&&s.per[p])||{}; o.sq+=_o2.qty||0; o.shh+=_o2.hours||0; }); }
+    return o;
+  };
+  const _adj=(base,shv)=> gsWhFilter==='all'? base : (gsWhFilter==='沈阳'? shv : base-shv);
+  const gv=(d,k)=>{const r=G.dates[d]; if(!r) return null; const base=(r[k]==null?0:r[k]);
+    if(gsWhFilter==='all') return base; const c=_shComp(d);
+    const _m={tuihuo_qty:'tq',msg_reply_qty:'mq',tuihuo_hours:'th',msg_reply_hours:'mh'};
+    return _adj(base, c[_m[k]]||0);};
+  const sv=(d,k)=>{const r=S.dates[d]; if(!r) return null; const base=(r[k]==null?0:r[k]);
+    if(gsWhFilter==='all') return base; const c=_shComp(d);
+    return _adj(base, k==='qty'? c.sq : c.shh);};
+  const tv=(d,k)=>{const t=gsDayTotals(d); if(!t) return null;
+    if(gsWhFilter==='all') return t[k]; const c=_shComp(d);
+    return _adj(t[k], k==='qty'? (c.tq+c.mq+c.sq) : (c.th+c.mh+c.shh));};
   const xlab = rngDays.map(G_LABEL);
   const mk=(name,color,data,bold)=>({name:name,type:'line',smooth:true,symbol:'circle',symbolSize:6,
     connectNulls:false,lineStyle:{width:bold?3.4:2.4,color:color},itemStyle:{color:color},data:data});
@@ -891,6 +927,11 @@ function gsApplyFilter(){
 function gsHighlightQuick(range){
   document.querySelectorAll('.fp-quick button').forEach(b=>b.classList.toggle('active', b.dataset.range===range));
 }
+// 仓筛选高亮（全部 / 西安 / 沈阳）
+function gsHighlightWh(wh){
+  gsWhFilter = wh;
+  document.querySelectorAll('.fp-wh button').forEach(b=>b.classList.toggle('active', b.dataset.wh===gsWhFilter));
+}
 function gsRangeStartFor(days){
   if(!days) return gsAllMin;
   const i=gsAllDates.lastIndexOf(gsDataMax||gsAllMax);
@@ -903,6 +944,7 @@ document.getElementById('gsApplyBtn').onclick=()=>{
 };
 document.getElementById('gsResetBtn').onclick=()=>{
   gsStartEl.value=gsAllMin; gsEndEl.value=gsAllMax;
+  gsHighlightWh('all');   // 重置=筛选条件整体复位（区间 + 仓）
   gsAttUserFiltered=false; gsHighlightQuick('all'); renderGongshi();  // 重置=恢复默认（仅最近3天）
 };
 // 今天 / 昨天：视频已改为区间累计，原「查看当日」单日标记已废除；现把区间直接定位到 T-1 / T-2 数据日（单日视图）
@@ -921,11 +963,11 @@ document.querySelectorAll('.fp-quick button').forEach(b=>{
     gsApplyFilter();
   };
 });
-// 仓筛选（全部 / 西安 / 沈阳）：仅影响按人展示，重渲染即可；不改变区间与考勤明细折叠状态
+// 仓筛选（全部 / 西安 / 沈阳）：与「开始/结束日期」同属一套筛选条件，点击即联动重渲染；
+// 仅按仓过滤人员维度，不改变日期区间与考勤明细折叠状态（与「应用筛选」互不覆盖）
 document.querySelectorAll('.fp-wh button').forEach(b=>{
   b.onclick=()=>{
-    gsWhFilter=b.dataset.wh;
-    document.querySelectorAll('.fp-wh button').forEach(x=>x.classList.toggle('active', x.dataset.wh===gsWhFilter));
+    gsHighlightWh(b.dataset.wh);
     renderGongshi();
   };
 });
