@@ -419,9 +419,15 @@ function renderGongshi(){
     const vid = vidPer[p];   // 区间累计（整数）
     const vidVal = vid;
     const perTot = a+b+c+vidVal+mailQ;
+    // 取退货 / 视频调取 理论耗时（标准工时：取退货 4.5 分/件、视频调取 6.05 分/个）
+    const TUH = (G.baseline && G.baseline.tuihuo_rate) ? G.baseline.tuihuo_rate : 4.5;
+    const VID_RATE = 6.05;
+    const tuihuoTheo = +(a*TUH).toFixed(1);
+    const vidTheo = +(vid*VID_RATE).toFixed(1);
+    const totTheo = +(msgTheo + swH2 + mailH + tuihuoTheo + vidTheo).toFixed(1);
     const attDays = rngDays.filter(d=> (((ATT.attendance&&ATT.attendance[d])||{})[p])==='出勤').length;
     const upph = attDays>0 ? +(perTot/(attDays*8)).toFixed(2) : 0;
-    return {p,a,b,c,mailQ,vid,msgTheo,swH2,mailH,perTot,attDays,upph};
+    return {p,a,b,c,mailQ,vid,msgTheo,swH2,mailH,tuihuoTheo,vidTheo,totTheo,perTot,attDays,upph};
   });
   // 综合日均UPPH = 区间总处理量 ÷ 区间总人时(出勤天数×8)
   let totProc=0, totManH=0;
@@ -441,13 +447,22 @@ function renderGongshi(){
   htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取量 + 异常邮件跟进；视频调取量为区间内各视频日（Part2 标准作业审核表 + 群视频 Part3 + 西安流转专项视频按当日出勤整数分摊）按人累计，与核心指标「视频调取」口径完全一致、随区间筛选联动。UPPH = 个人总处理量 ÷（区间出勤天数 × 8 小时）。</div>';
   // 表B：处理的理论耗时（区间累计）
   let htmlB='<div class="lbl" style="margin:12px 0 4px">处理的理论耗时（区间累计）</div><table><tr><th class="nm">姓名</th><th>仓</th>'
+    +'<th>取退货理论耗时<span class="thu">(分)</span></th>'
     +'<th>消息回复理论时长<span class="thu">(分)</span></th>'
     +'<th>SW稽核理论耗时<span class="thu">(分)</span></th>'
-    +'<th>异常邮件理论耗时<span class="thu">(分)</span></th></tr>';
+    +'<th>异常邮件理论耗时<span class="thu">(分)</span></th>'
+    +'<th>视频调取理论耗时<span class="thu">(分)</span></th>'
+    +'<th>个人总处理量理论耗时<span class="thu">(分)</span></th></tr>';
   rows.forEach(r=>{
-    htmlB+='<tr><td class="nm">'+r.p+'</td><td>'+WAREHOUSE[r.p]+'</td><td>'+r.msgTheo.toFixed(1)+'</td><td>'+fmt(r.swH2)+'</td><td>'+r.mailH.toFixed(1)+'</td></tr>';
+    htmlB+='<tr><td class="nm">'+r.p+'</td><td>'+WAREHOUSE[r.p]+'</td>'
+      +'<td>'+r.tuihuoTheo.toFixed(1)+'</td>'
+      +'<td>'+r.msgTheo.toFixed(1)+'</td>'
+      +'<td>'+fmt(r.swH2)+'</td>'
+      +'<td>'+r.mailH.toFixed(1)+'</td>'
+      +'<td>'+r.vidTheo.toFixed(1)+'</td>'
+      +'<td><b>'+r.totTheo.toFixed(1)+'</b></td></tr>';
   });
-  htmlB+='</table><div class="hint" style="margin-top:6px">理论耗时 = 处理量 × 标准工时（消息回复 15.72 分/次、SW稽核见「工艺工时」对照表、异常邮件跟进 1 分/条）。</div>';
+  htmlB+='</table><div class="hint" style="margin-top:6px">理论耗时 = 处理量 × 标准工时（取退货 4.5 分/件、消息回复 15.72 分/次、SW稽核见「工艺工时」对照表、异常邮件跟进 1 分/条、视频调取 6.05 分/个）；个人总处理量理论耗时 = 以上五项理论耗时之和。</div>';
   document.getElementById('gsPerTotTable').innerHTML = htmlA + htmlB;
 
   // ④ 区间汇总口径（含异常邮件跟进、视频调取，与顶部汇总卡片一致）
