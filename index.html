@@ -35,6 +35,9 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
 th,td{border:1px solid var(--line);padding:8px 10px;text-align:center}
 th{background:#f3f6fc;color:#12203a}
 th .thu{display:block;font-weight:400;color:#98a2b3;font-size:11px;margin-top:1px}
+/* 重点列（UPPH / 个人总处理量理论耗时）：标题与数字用主题蓝强调 */
+th.c-blue{color:#2c5cc5}
+td.c-blue,td.c-blue b{color:#2c5cc5}
 td.nm,th.nm{text-align:left}
 .foot{color:var(--sub);font-size:12px;margin-top:18px;text-align:center}
 .empty{color:var(--sub);padding:40px;text-align:center;background:#fafbfc;border:1px dashed #d7dce4;border-radius:10px}
@@ -439,9 +442,9 @@ function renderGongshi(){
     +'<th>取退货合计<span class="thu">(件)</span></th><th>消息回复合计<span class="thu">(次)</span></th>'
     +'<th>SW稽核合计<span class="thu">(次)</span></th><th>异常邮件跟进<span class="thu">(条)</span></th>'
     +'<th>视频调取量<span class="thu">(区间累计·个)</span></th>'
-    +'<th>个人总处理量<span class="thu">(件 / 次)</span></th><th>UPPH<span class="thu">(区间日均·8H)</span></th></tr>';
+    +'<th>个人总处理量<span class="thu">(件 / 次)</span></th><th class="c-blue">UPPH<span class="thu">(区间日均·8H)</span></th></tr>';
   rows.forEach(r=>{
-    htmlA+='<tr><td class="nm">'+r.p+'</td><td>'+WAREHOUSE[r.p]+'</td><td>'+fmt(r.a)+'</td><td>'+fmt(r.b)+'</td><td>'+fmt(r.c)+'</td><td>'+fmt(r.mailQ)+'</td><td>'+fmt(r.vid)+'</td><td>'+fmt(r.perTot)+'</td><td><b>'+r.upph.toFixed(2)+'</b></td></tr>';
+    htmlA+='<tr><td class="nm">'+r.p+'</td><td>'+WAREHOUSE[r.p]+'</td><td>'+fmt(r.a)+'</td><td>'+fmt(r.b)+'</td><td>'+fmt(r.c)+'</td><td>'+fmt(r.mailQ)+'</td><td>'+fmt(r.vid)+'</td><td>'+fmt(r.perTot)+'</td><td class="c-blue"><b>'+r.upph.toFixed(2)+'</b></td></tr>';
   });
   htmlA+='</table>';
   htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取量 + 异常邮件跟进；视频调取量为区间内各视频日（Part2 标准作业审核表 + 群视频 Part3 + 西安流转专项视频按当日出勤整数分摊）按人累计，与核心指标「视频调取」口径完全一致、随区间筛选联动。UPPH = 个人总处理量 ÷（区间出勤天数 × 8 小时）。</div>';
@@ -452,7 +455,7 @@ function renderGongshi(){
     +'<th>SW稽核理论耗时<span class="thu">(分)</span></th>'
     +'<th>异常邮件理论耗时<span class="thu">(分)</span></th>'
     +'<th>视频调取理论耗时<span class="thu">(分)</span></th>'
-    +'<th>个人总处理量理论耗时<span class="thu">(分)</span></th></tr>';
+    +'<th class="c-blue">个人总处理量理论耗时<span class="thu">(分)</span></th></tr>';
   rows.forEach(r=>{
     htmlB+='<tr><td class="nm">'+r.p+'</td><td>'+WAREHOUSE[r.p]+'</td>'
       +'<td>'+r.tuihuoTheo.toFixed(1)+'</td>'
@@ -460,7 +463,7 @@ function renderGongshi(){
       +'<td>'+fmt(r.swH2)+'</td>'
       +'<td>'+r.mailH.toFixed(1)+'</td>'
       +'<td>'+r.vidTheo.toFixed(1)+'</td>'
-      +'<td><b>'+r.totTheo.toFixed(1)+'</b></td></tr>';
+      +'<td class="c-blue"><b>'+r.totTheo.toFixed(1)+'</b></td></tr>';
   });
   htmlB+='</table><div class="hint" style="margin-top:6px">理论耗时 = 处理量 × 标准工时（取退货 4.5 分/件、消息回复 15.72 分/次、SW稽核见「工艺工时」对照表、异常邮件跟进 1 分/条、视频调取 6.05 分/个）；个人总处理量理论耗时 = 以上五项理论耗时之和。</div>';
   document.getElementById('gsPerTotTable').innerHTML = htmlA + htmlB;
