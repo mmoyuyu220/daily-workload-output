@@ -117,6 +117,19 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
 .fp-wh button{height:32px;min-width:58px;padding:0 14px;border:0;border-radius:7px;background:transparent;color:#2a4f9e;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .15s}
 .fp-wh button:hover{background:#eef4fd;color:#2c5cc5}
 .fp-wh button.active{background:linear-gradient(135deg,#2c5cc5,#5b8def);color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(44,92,197,.28)}
+/* 仓联动筛选（顶部筛选面板）：与「开始/结束日期」输入完全同款的收起态，仓名默认隐藏，点击展开多选 */
+.fp-whsel{position:relative;height:42px;min-width:172px;padding:0 34px 0 13px;border:1px solid #dbe2ec;border-radius:10px;background:#fff;display:flex;align-items:center;cursor:pointer;user-select:none;outline:none;transition:border-color .15s,box-shadow .15s}
+.fp-whsel:hover{border-color:#c3d0e4}
+.fp-whsel:focus, .fp-whsel.open{border-color:#2c5cc5;box-shadow:0 0 0 3px rgba(44,92,197,.16)}
+.fp-whsel-val{font-size:14px;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.fp-whsel-arrow{position:absolute;right:14px;top:50%;width:8px;height:8px;margin-top:-6px;border-right:1.6px solid #98a2b3;border-bottom:1.6px solid #98a2b3;transform:rotate(45deg);transition:transform .18s,margin-top .18s}
+.fp-whsel.open .fp-whsel-arrow{margin-top:-2px;transform:rotate(225deg)}
+.fp-whsel-panel{display:none;position:absolute;left:0;top:calc(100% + 7px);min-width:186px;padding:8px;background:#fff;border:1px solid #dbe2ec;border-radius:10px;box-shadow:0 10px 26px rgba(20,35,70,.15);z-index:80}
+.fp-whsel.open .fp-whsel-panel{display:block}
+.fp-whsel-opt{display:flex;align-items:center;gap:9px;height:34px;padding:0 10px;border-radius:7px;font-size:14px;color:#2a4f9e;cursor:pointer;white-space:nowrap}
+.fp-whsel-opt:hover{background:#eef4fd;color:#2c5cc5}
+.fp-whsel-opt.all{height:37px;font-weight:700;margin-bottom:5px;border-bottom:1px dashed #e6eaf0;border-radius:7px 7px 4px 4px}
+.fp-whsel-opt input[type=checkbox]{width:15px;height:15px;margin:0;accent-color:#2c5cc5;cursor:pointer}
 .wh-tag{display:inline-block;font-size:11px;color:#7a86a0;margin-left:4px;padding:1px 6px;border:1px solid #dbe2ec;border-radius:999px;vertical-align:middle}
 .fp-note{font-size:12px;color:var(--sub);margin-top:8px}
 
@@ -236,15 +249,19 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
     <div class="fp-controls">
       <div class="fp-field"><label>开始日期</label><input type="date" id="gsStartInput"></div>
       <div class="fp-field"><label>结束日期</label><input type="date" id="gsEndInput"></div>
-      <!-- 总览「仓联动筛选」：与总览区底部的仓筛选条双向同步，仅总览 tab 显示 -->
+      <!-- 总览「仓联动筛选」：与总览区底部的仓筛选条双向同步，仅总览 tab 显示；仓名默认收起，点击展开勾选 -->
       <div class="fp-field" id="ovWhField" style="display:none">
         <label>仓联动筛选（总览）</label>
-        <div class="fp-wh" id="ovWhBar">
-          <button type="button" data-c="all">全部四仓</button>
-          <button type="button" data-c="西安">西安</button>
-          <button type="button" data-c="沈阳">沈阳</button>
-          <button type="button" data-c="成都">成都</button>
-          <button type="button" data-c="天津">天津</button>
+        <div class="fp-whsel" id="ovWhSel" tabindex="0">
+          <div class="fp-whsel-val" id="ovWhSelVal">全部四仓</div>
+          <span class="fp-whsel-arrow"></span>
+          <div class="fp-whsel-panel" id="ovWhPanel">
+            <div class="fp-whsel-opt all" data-c="all">全部四仓</div>
+            <label class="fp-whsel-opt"><input type="checkbox" data-c="西安"><span>西安</span></label>
+            <label class="fp-whsel-opt"><input type="checkbox" data-c="沈阳"><span>沈阳</span></label>
+            <label class="fp-whsel-opt"><input type="checkbox" data-c="成都"><span>成都</span></label>
+            <label class="fp-whsel-opt"><input type="checkbox" data-c="天津"><span>天津</span></label>
+          </div>
         </div>
       </div>
       <div class="fp-btnrow"><button type="button" class="sec" id="gsTodayBtn">今天</button><button type="button" class="sec" id="gsYestBtn">昨天</button></div>
@@ -1697,15 +1714,23 @@ function renderOverview(){
     .forEach(id=>{ const el=document.getElementById(id); if(el && el.clientWidth>0){ const ins=echarts.getInstanceByDom(el); if(ins) ins.resize(); } });
 }
 // 总览「仓联动筛选」：按仓名称多选 → 整体联动总表 / 消息回复 / 流转失误三大区块
-// 控件两处：顶部「筛选条件」面板 #ovWhBar（仅总览 tab 显示）+ 总览区 #ovCityBar，双向同步
+// 控件两处：顶部「筛选条件」面板 #ovWhSel（下拉多选，仅总览 tab 显示）+ 总览区 #ovCityBar，双向同步
 (function(){
-  const bars=[document.getElementById('ovWhBar'), document.getElementById('ovCityBar')].filter(Boolean);
-  if(!bars.length) return;
-  const groups=bars.map(bar=>({bar:bar, btns:Array.prototype.slice.call(bar.querySelectorAll('[data-c]'))}));
+  const panelBar=document.getElementById('ovCityBar');
+  const sel=document.getElementById('ovWhSel'), val=document.getElementById('ovWhSelVal'), panel=document.getElementById('ovWhPanel');
+  const secBtns = panelBar ? Array.prototype.slice.call(panelBar.querySelectorAll('[data-c]')) : [];
+  const boxes   = sel ? Array.prototype.slice.call(sel.querySelectorAll('input[type=checkbox][data-c]')) : [];
+  const allOpt  = sel ? sel.querySelector('[data-c="all"]') : null;
+  if(!secBtns.length && !boxes.length) return;
+  function closeSel(){ if(sel) sel.classList.remove('open'); }
+  function label(){ return (OV_SEL.length===OV_CITIES.length) ? '全部四仓' : OV_SEL.join('、'); }
   function sync(){
     const all=OV_SEL.length===OV_CITIES.length;
-    groups.forEach(g=>g.btns.forEach(b=>{ const c=b.dataset.c;
-      b.classList.toggle('active', c==='all' ? all : (all || OV_SEL.indexOf(c)>=0)); }));
+    secBtns.forEach(b=>{ const c=b.dataset.c;                       // 总览区筛选条：保持原多选按钮高亮
+      b.classList.toggle('active', c==='all' ? all : (all || OV_SEL.indexOf(c)>=0)); });
+    boxes.forEach(b=>{ b.checked = all || OV_SEL.indexOf(b.dataset.c)>=0; });   // 顶部下拉：勾选态
+    if(val) val.textContent = label();                              // 收起态只显示摘要
+    if(sel) sel.title = '已选：'+label();
   }
   function clickCity(c){
     if(c==='all'){ OV_SEL=OV_CITIES.slice(); }
@@ -1717,8 +1742,19 @@ function renderOverview(){
     }
     sync(); renderOverview();
   }
-  groups.forEach(g=>g.btns.forEach(b=>{ b.onclick=()=>clickCity(b.dataset.c); }));
+  secBtns.forEach(b=>{ b.onclick=()=>clickCity(b.dataset.c); });
+  if(sel){
+    // 展开 / 收起：点击控件（含摘要文字、箭头）切换；点页面其它位置自动收起（面板内点击不收起）
+    const headToggle=(e)=>{ if(e) e.stopPropagation(); sel.classList.toggle('open'); };
+    sel.onclick=headToggle;
+    sel.onkeydown=(e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); headToggle(e); } };
+    if(panel) panel.onclick=(e)=>e.stopPropagation();
+    document.addEventListener('click', closeSel);
+  }
+  if(allOpt) allOpt.onclick=(e)=>{ e.stopPropagation(); clickCity('all'); closeSel(); };
+  boxes.forEach(b=>{ b.onchange=(e)=>{ e.stopPropagation(); clickCity(b.dataset.c); }; });
   window.ovSyncCityBar=sync;          // 供 tab 切换 / 重置等场合刷新选中态
+  window.ovCloseCitySel=closeSel;
   window.ovResetCity=()=>{ OV_SEL=OV_CITIES.slice(); sync(); };
   sync();
 })();
@@ -1731,6 +1767,7 @@ function gsHighlightWh(wh){
   if(ov) ov.style.display = gsIsOverview ? '' : 'none';
   const ovField=document.getElementById('ovWhField');        // 顶部「筛选条件」面板里的仓联动筛选：仅总览 tab 可见
   if(ovField) ovField.style.display = gsIsOverview ? '' : 'none';
+  if(!gsIsOverview && window.ovCloseCitySel) ovCloseCitySel();   // 离开总览时收起下拉面板
   if(window.ovSyncCityBar) ovSyncCityBar();
   regOnCityChange();     // 流转失误「按日期」模式下，切仓自动落到该仓最近的登记日
 }
