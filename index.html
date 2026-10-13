@@ -267,7 +267,7 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
       <div class="fp-btnrow"><button type="button" class="sec" id="gsTodayBtn">今天</button><button type="button" class="sec" id="gsYestBtn">昨天</button></div>
       <div class="fp-btnrow"><button type="button" class="pri" id="gsApplyBtn">应用筛选</button><button type="button" class="sec" id="gsResetBtn">重置为全量</button></div>
     </div>
-    <div class="fp-quick"><span>区间快速选择：</span><button type="button" data-range="all" class="active">全部</button><button type="button" data-range="7">近7天</button><button type="button" data-range="3">近3天</button></div>
+    <div class="fp-quick"><span>区间快速选择：</span><button type="button" data-range="all">全部</button><button type="button" data-range="7">近7天</button><button type="button" data-range="3" class="active">近3天</button></div>
     <div class="fp-note" id="gongshiNote"></div>
     <div class="fp-note">区间口径：取退货 / 消息对接 / SW稽核 / 视频调取 / 考勤 · 数据更新逻辑 T-1（核算起始 2026-09-14）；核心「视频调取量」与每人表「视频调取量」均为区间内各视频日（part2per + 群视频 Part3 + 西安流转专项视频按出勤分摊至王妙星/张霞霞）按人累计，口径完全一致、随区间筛选联动；视频数据覆盖 9/14 ~ 9/19（其中「群视频 Part3」来自飞书群「视频调取」实际抓取，9/18、9/19 仅有群视频、无标准作业审核表折算）。</div>
   </div>
@@ -281,24 +281,30 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
     <div class="gs-card"><div class="gs-lb">出勤人数</div><div class="gs-vl"><span id="gsSumAtt">—</span><span class="gs-un">人 / 天</span></div></div>
   </div>
 
+  <div id="secCore">
   <div class="sec-title">核心指标<span id="gsRangeLbl2" style="display:none"></span></div>
   <table class="core-tbl">
     <tr><th class="nm">指标</th><th>数量</th><th>理论耗时</th></tr>
-    <tr><td class="nm">取退货</td><td id="gsTqQty">—</td><td id="gsTqHours">—</td></tr>
-    <tr><td class="nm">消息回复</td><td id="gsMsgQty">—</td><td id="gsMsgHours">—</td></tr>
-    <tr><td class="nm">SW稽核</td><td id="gsSwQty">—</td><td id="gsSwHours">—</td></tr>
-    <tr><td class="nm">视频调取<span class="thu">（含群视频·流转专项）</span></td><td id="gsVidQty">—</td><td id="gsVidHours">—</td></tr>
-    <tr><td class="nm">异常邮件跟进</td><td id="gsMailQty">—</td><td id="gsMailHours">—</td></tr>
-    <tr class="tot"><td class="nm">合计</td><td id="gsTotQty">—</td><td id="gsTotHours">—</td></tr>
-    <tr class="upph-row"><td class="nm">日均UPPH<span class="thu">（区间综合·8H）</span></td><td id="gsAvgUpph">—</td><td>—</td></tr>
+    <tr id="gsRowTq"><td class="nm">取退货</td><td id="gsTqQty">—</td><td id="gsTqHours">—</td></tr>
+    <tr id="gsRowMsg"><td class="nm">消息回复</td><td id="gsMsgQty">—</td><td id="gsMsgHours">—</td></tr>
+    <tr id="gsRowSw"><td class="nm">SW稽核</td><td id="gsSwQty">—</td><td id="gsSwHours">—</td></tr>
+    <tr id="gsRowVid"><td class="nm">视频调取<span class="thu">（含群视频·流转专项）</span></td><td id="gsVidQty">—</td><td id="gsVidHours">—</td></tr>
+    <tr id="gsRowMail"><td class="nm">异常邮件跟进</td><td id="gsMailQty">—</td><td id="gsMailHours">—</td></tr>
+    <tr class="tot" id="gsRowTot"><td class="nm">合计</td><td id="gsTotQty">—</td><td id="gsTotHours">—</td></tr>
+    <tr class="upph-row" id="gsRowUpph"><td class="nm">日均UPPH<span class="thu">（区间综合·8H）</span></td><td id="gsAvgUpph">—</td><td>—</td></tr>
   </table>
+  </div>
 
+  <div id="secGongshi">
   <div class="sec-title">工艺工时</div>
   <div class="hint">每日明细中（一部分）的耗时按本表标准工时自动计算（耗时 = 处理量 × 标准工时）。来源：飞书「工艺工时摸底」子表（视频调取 / 流转专项视频 标准工时另取每日明细(西安)Q列「视频调取耗时÷量」均值），更新于 2026-09-18。</div>
   <div id="gsGongshiTable"></div>
+  </div>
 
+  <div id="secCmp">
   <div class="sec-title">各理论耗时量对比</div>
   <div class="chart" id="gsCmpChart" style="height:300px"></div>
+  </div>
 
   <!-- 每人每天的出勤详情（随上方「筛选条件」联动；默认显示最近 3 天，多余天数自动隐藏） -->
   <div class="m-video">
@@ -465,6 +471,17 @@ function gsDayTotals(d){
 function gsRangeDays(){ return GS_DATES.filter(d=>d>=gsRngStartPicker.value && d<=gsRngEndPicker.value); }
 function renderGongshi(){
   const start=gsRngStartPicker.value, end=gsRngEndPicker.value;
+  // —— 板块显隐联动 ——
+  // ① 总览 tab：隐藏「核心指标」「工艺工时」两板块（其余板块照常）
+  // ② 所选仓不含西安（沈阳 / 成都 / 天津 单仓，或总览只选这些仓）：核心指标仅留「消息回复 + 合计」、
+  //    隐藏「各理论耗时量对比」（取退货 / SW 均无源数据，对比无意义）
+  const _hasXA = gsCitySet().indexOf('西安')>=0;
+  const _sec=(id,show)=>{ const e=document.getElementById(id); if(e) e.style.display = show?'':'none'; };
+  _sec('secCore', !gsIsOverview);
+  _sec('secGongshi', !gsIsOverview);
+  _sec('secCmp', _hasXA);
+  ['gsRowTq','gsRowSw','gsRowVid','gsRowMail','gsRowUpph'].forEach(id=>_sec(id,_hasXA));
+  ['gsRowMsg','gsRowTot'].forEach(id=>_sec(id,true));
   const rngDays=gsRangeDays();
   const hasRng = rngDays.length>0;
   const setTxt=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
@@ -757,9 +774,7 @@ function renderGongshiTable(){
   OTH.forEach(c=>{
     const rate = MSG_RATES[c]||MSG_RATE;
     h+='<tr><td class="nm">消息回复（客诉对接）</td><td>'+c+'</td><td class="rate">'+rate+'</td>'
-      +'<td>由'+c+' 人员 2026 年 7–9 月群消息（C2B客服&供应链能力中心异常对接群(新)、B2B出货组、供应链能力中心&顾问&异常协作群、C2B供应链能力中心客诉对接）回复平均时长测定（按实际回复人统计，非被@人）</td><td>2026-10-13</td></tr>'
-      +'<tr><td class="nm">取退货</td><td>'+c+'</td><td class="na">—</td><td><span class="na">'+c+'暂无源数据</span></td><td><span class="na">—</span></td></tr>'
-      +'<tr><td class="nm">SW稽核</td><td>'+c+'</td><td class="na">—</td><td><span class="na">'+c+'暂无源数据</span></td><td><span class="na">—</span></td></tr>';
+      +'<td>由'+c+' 人员 2026 年 7–9 月群消息（C2B客服&供应链能力中心异常对接群(新)、B2B出货组、供应链能力中心&顾问&异常协作群、C2B供应链能力中心客诉对接）回复平均时长测定（按实际回复人统计，非被@人）</td><td>2026-10-13</td></tr>';
   });
   wrap.innerHTML=h+'</table>';
 }
@@ -1069,28 +1084,28 @@ function renderAttRange(start,end){
       +'<td><b>'+offA.reduce((x,y)=>x+y,0)+'</b></td><td><b>'+othA.reduce((x,y)=>x+y,0)+'</b></td><td>'
       +(tot?((onA.reduce((x,y)=>x+y,0)/(P.length*tot))*100).toFixed(1)+'%':'—')+'</td></tr>';
     t+='</table>';
-    t+='<div id="attSumChart" style="width:100%;flex:0 0 100%;height:'+Math.max(260, Math.min(P.length*26+90, 700))+'px;margin-top:8px"></div>';
     t+='<div class="hint" style="margin-top:6px">出勤 / 休息天数按所选区间全量统计（不受上方明细默认折叠影响）；出勤率 = 出勤天数 ÷ 区间天数；「其它 / 未登记」= 非出勤非休息的日期（含暂无排班源数据的成都 / 天津）。</div>';
+    // 文字分析（替代原堆叠图，按仓筛选与区间联动）
+    const sOn=onA.reduce((x,y)=>x+y,0), sOff=offA.reduce((x,y)=>x+y,0), sOth=othA.reduce((x,y)=>x+y,0);
+    const allRate=(P.length&&tot)?(sOn/(P.length*tot)*100):0;
+    const full=P.filter((p,i)=>onA[i]===tot), zero=P.filter((p,i)=>onA[i]===0), noSrc=P.filter((p,i)=>othA[i]===tot);
+    const restTop=P.map((p,i)=>[p,offA[i]]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    const rateTop=P.map((p,i)=>[p,(tot?onA[i]/tot*100:0)]).sort((a,b)=>b[1]-a[1]);
+    const _nm=a=>a.length?(a.slice(0,8).join('、')+(a.length>8?(' 等 '+a.length+' 人'):'')):'无';
+    t+='<div class="ov-text" style="width:100%;flex:0 0 100%;margin-top:10px"><span class="ov-h">出勤结构分析</span>'
+      +'<ul style="margin:6px 0 0 18px;padding:0">'
+      +'<li>区间 <b>'+tot+'</b> 天 × 在册 <b>'+P.length+'</b> 人 = 应出勤 <b>'+(P.length*tot)+'</b> 人日，实际出勤 <b>'+sOn+'</b> 人日、休息 <b>'+sOff+'</b> 人日、其它 / 未登记 <b>'+sOth+'</b> 人日，<b>整体出勤率 '+allRate.toFixed(1)+'%</b>。</li>'
+      +'<li>全勤（区间内无休息 / 未登记）：<b>'+_nm(full)+'</b>'+(full.length?('（'+full.length+' 人，占 '+((full.length/P.length)*100).toFixed(1)+'%）'):'')+'。</li>'
+      +(restTop.length?('<li>休息天数最多：'+restTop.map(x=>'<b>'+x[0]+' '+x[1]+' 天</b>').join('、')+'，需关注排班均衡与人力缺口。</li>'):'<li>区间内无人员休息记录。</li>')
+      +(zero.length?('<li>区间内 <b>零出勤</b>：'+_nm(zero)+'，请核实是否为长期休假 / 离职未减员或排班源缺失。</li>'):'')
+      +(noSrc.length?('<li>暂无排班源数据（整区间未登记）：<b>'+_nm(noSrc)+'</b>，待补源后自动并入统计。</li>'):'')
+      +'<li>出勤率分层：'+['≥95%','90–95%','80–90%','<80%'].map(function(lb){
+          const lo={'≥95%':95,'90–95%':90,'80–90%':80,'<80%':0}[lb], hi={'≥95%':101,'90–95%':95,'80–90%':90,'<80%':80}[lb];
+          const n=rateTop.filter(x=>x[1]>=lo&&x[1]<hi).length; return lb+' <b>'+n+'</b> 人'; }).join(' · ')
+        +'；最低为 <b>'+(rateTop.length?(rateTop[rateTop.length-1][0]+' '+rateTop[rateTop.length-1][1].toFixed(1)+'%'):'—')+'</b>。</li>'
+      +'<li>结论：'+(allRate>=95?'区间出勤整体良好，无集中性缺勤风险。':(allRate>=85?'区间出勤基本稳定，个别人员休息偏多，建议关注人效排布。':'区间出勤偏低，建议核查排班覆盖与休假安排，避免影响取退货 / 消息回复等时效指标。'))+'</li>'
+      +'</ul></div>';
     sm.innerHTML=t;
-    try{   // 图：每人出勤 / 休息 / 其它 堆叠条形（横向，随仓筛选与区间联动）
-      const el=document.getElementById('attSumChart');
-      if(el && el.clientWidth>0 && window.echarts){
-        const ins=echarts.getInstanceByDom(el)||echarts.init(el);
-        ins.setOption({
-          grid:{left:6,right:26,top:38,bottom:6,containLabel:true},
-          tooltip:{trigger:'axis',axisPointer:{type:'shadow'},valueFormatter:v=>v+' 天'},
-          legend:{data:['出勤','休息','其它 / 未登记'],top:2,textStyle:{fontSize:11}},
-          xAxis:{type:'value',name:'天数',nameTextStyle:{fontSize:11}},
-          yAxis:{type:'category',data:cats,inverse:true,axisLabel:{fontSize:11}},
-          series:[
-            {name:'出勤',type:'bar',stack:'att',barWidth:'60%',itemStyle:{color:'#2c5cc5'},data:onA},
-            {name:'休息',type:'bar',stack:'att',itemStyle:{color:'#e08a8a'},data:offA},
-            {name:'其它 / 未登记',type:'bar',stack:'att',itemStyle:{color:'#dfe4ec',borderRadius:[0,4,4,0]},data:othA}
-          ]
-        },true);
-        ins.resize();
-      }
-    }catch(e){}
   }
   renderAttMonth();   // 当月应出勤天数 / 按人出勤计算（随筛选刷新）
 }
@@ -1228,8 +1243,9 @@ const gsRngStartPicker={get value(){return gsStartEl.value;}};
 const gsRngEndPicker  ={get value(){return gsEndEl.value;}};
 // 考勤明细折叠开关：false=默认仅显示最近 3 天（多余隐藏）；true=按所选区间完整呈现（用户手动筛选后）
 let gsAttUserFiltered=false;
-gsStartEl.value=gsAllMin;
-gsEndEl.value=gsAllMax;
+// 默认区间 = 最近 3 个数据日（多余天数全部隐藏）；用户可用「区间快速选择 / 应用筛选」放大
+gsEndEl.value=gsDataMax||gsAllMax;
+gsStartEl.value=gsRangeStartFor(3);
 function gsApplyFilter(){
   let st=gsStartEl.value||gsAllMin, en=gsEndEl.value||gsAllMax;
   if(st>en){ const t=st; st=en; en=t; }
@@ -1723,6 +1739,7 @@ function renderOverview(){
       if(!R.days.length){ w.innerHTML='<div class="hint">'+regModeLabel()+' 无流转失误登记数据。</div>'; return; }
       const rows=R.days.slice().reverse(); const LIM=80;
       let h='<div class="lbl" style="margin-top:12px">各仓每日登记明细（日期倒序'+(rows.length>LIM?('，显示最近 '+LIM+' 天'):'')+'）</div>';
+      h+='<div id="ovRegDailyChart" style="width:100%;height:300px;margin:8px 0 10px"></div>';
       h+='<table><tr><th class="nm">日期</th>'+SEL.map(c=>'<th>'+c+'<span class="thu">条 / 次</span></th>').join('')+'<th>合计条数</th><th>合计失误量</th></tr>';
       rows.slice(0,LIM).forEach(d=>{
         let sr=0, sc=0;
@@ -1730,8 +1747,32 @@ function renderOverview(){
           return '<td>'+(a?('<b>'+a+'</b> / '+b):'<span style="color:#9aa0a6">—</span>')+'</td>'; }).join('');
         h+='<tr><td class="nm">'+d+'</td>'+tds+'<td><b>'+sr+'</b></td><td><b>'+sc+'</b></td></tr>';
       });
-      h+='</table>'+'<div class="hint">每仓单元格为「登记条数 / 失误量（次）」；合计为当日'+OV_TOT2+'汇总。</div>';
+      h+='</table>'+'<div class="hint">每仓单元格为「登记条数 / 失误量（次）」；合计为当日'+OV_TOT2+'汇总。</div>'
+        +'<div class="hint" style="margin-top:4px"><b style="color:#c0392b">备注：西安流转专项关机视频不包含其中。</b></div>';
       w.innerHTML=h;
+      // 分析图：各仓每日失误量折线 + 合计登记条数柱（随所选仓与区间联动）
+      try{
+        const el=document.getElementById('ovRegDailyChart');
+        if(el && window.echarts){
+          const ins=echarts.getInstanceByDom(el)||echarts.init(el);
+          const ds=R.days.slice();                                   // 日期正序
+          const ser=SEL.map(c=>({name:c+' 失误量', type:'line', smooth:true, symbol:'circle', symbolSize:5,
+            itemStyle:{color:OV_COLOR[c]}, lineStyle:{width:2.2},
+            data:ds.map(d=>R.city[c].byDay['_c'+d]||0)}));
+          ser.push({name:'合计登记条数', type:'bar', barWidth:'42%', itemStyle:{color:'#dbe4f5',borderRadius:[3,3,0,0]},
+            data:ds.map(d=>SEL.reduce((a,c)=>a+(R.city[c].byDay[d]||0),0))});
+          ins.setOption({
+            tooltip:{trigger:'axis', axisPointer:{type:'shadow'}},
+            legend:{top:2, type:'scroll', textStyle:{fontSize:11}},
+            grid:{left:52, right:22, top:40, bottom:(ds.length>14?62:34)},
+            xAxis:{type:'category', data:ds.map(d=>d.slice(5)), axisLabel:{fontSize:11, hideOverlap:true}},
+            yAxis:{type:'value', name:'次 / 条', nameTextStyle:{fontSize:11}},
+            series:ser,
+            dataZoom: ds.length>14 ? [{type:'slider', height:16, bottom:16, start:Math.max(0,100-Math.round(1400/ds.length)), end:100}] : []
+          }, true);
+          ins.resize();
+        }
+      }catch(e){}
     })();
     // 文字分析 + 改善建议
     const t=[];
@@ -1768,7 +1809,7 @@ function renderOverview(){
     }
     document.getElementById('ovRegText').innerHTML=t.join('');
   })();
-  ['ovMsgQtyChart','ovMsgPieChart','ovMsgPersonChart','ovMsgRateChart','ovRegDayChart','ovRegPieChart','ovRegTypeChart','ovRegProbChart']
+  ['ovMsgQtyChart','ovMsgPieChart','ovMsgPersonChart','ovMsgRateChart','ovRegDayChart','ovRegPieChart','ovRegTypeChart','ovRegProbChart','ovRegDailyChart']
     .forEach(id=>{ const el=document.getElementById(id); if(el && el.clientWidth>0){ const ins=echarts.getInstanceByDom(el); if(ins) ins.resize(); } });
 }
 // 总览「仓联动筛选」：按仓名称多选 → 整体联动总表 / 消息回复 / 流转失误三大区块
@@ -1842,10 +1883,10 @@ document.getElementById('gsApplyBtn').onclick=()=>{
   gsAttUserFiltered=true; gsApplyFilter();   // 手动应用区间 → 完整呈现考勤明细
 };
 document.getElementById('gsResetBtn').onclick=()=>{
-  gsStartEl.value=gsAllMin; gsEndEl.value=gsAllMax;
+  gsEndEl.value=gsDataMax||gsAllMax; gsStartEl.value=gsRangeStartFor(3);   // 重置=恢复默认（最近 3 个数据日）
   if(window.ovResetCity) ovResetCity();          // 重置=筛选条件整体复位（区间 + 总览仓筛选）
   gsHighlightWh('西安');
-  gsAttUserFiltered=false; gsHighlightQuick('all'); renderGongshi();  // 重置=恢复默认（仅最近3天）
+  gsAttUserFiltered=false; gsHighlightQuick('3'); renderGongshi();
 };
 // 今天 / 昨天：视频已改为区间累计，原「查看当日」单日标记已废除；现把区间直接定位到 T-1 / T-2 数据日（单日视图）
 document.getElementById('gsTodayBtn').onclick=()=>{ gsAttUserFiltered=true; gsStartEl.value=gsDataMax||gsAllMax; gsEndEl.value=gsDataMax||gsAllMax; gsApplyFilter(); };
@@ -1903,7 +1944,7 @@ document.getElementById('foot').textContent='数据生成时间：'+D.meta.gener
 if(GS_DATES.length || (ATT&&ATT.attendance)){ renderGongshi(); }
 window.addEventListener('resize',()=>{if(trendChart)trendChart.resize();if(regionChart)regionChart.resize();if(gsCmpChart)gsCmpChart.resize();if(gsQtyChart)gsQtyChart.resize();if(gsHoursChart)gsHoursChart.resize();if(attChart)attChart.resize();if(perChart)perChart.resize();
   [ovMsgQtyChart,ovMsgPieChart,ovMsgPersonChart,ovMsgRateChart,ovRegDayChart,ovRegPieChart,ovRegTypeChart,ovRegProbChart].forEach(c=>{ if(c) c.resize(); });
-  try{ const el=document.getElementById('attSumChart'); if(el && el.clientWidth>0){ const ins=echarts.getInstanceByDom(el); if(ins) ins.resize(); } }catch(e){}});
+});
 </script>
 </body>
 </html>
