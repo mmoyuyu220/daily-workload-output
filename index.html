@@ -556,35 +556,46 @@ function renderGongshi(){
   rows.forEach(r=>{ totProc+=r.perTot; totManH += r.attDays*8; });
   const avgUpph = totManH>0 ? +(totProc/totManH).toFixed(2) : 0;
   setTxt('gsAvgUpph', hasRng? avgUpph.toFixed(2)+' 件/时':'—');
+  // ---- 表A / 表B 列定义：某分项列在当前「所选仓 + 所选区间」下全员均为 0 → 整列自动隐藏（表头与单元格同步） ----
+  const _zeroCol = k => rows.every(r=>{ const v=r[k]; return !v || (+v)===0; });
+  const COLS_A=[
+    {k:'a',     h:'取退货合计<span class="thu">(件)</span>',            f:r=>fmt(r.a),         n:'取退货'},
+    {k:'b',     h:'消息回复合计<span class="thu">(次)</span>',          f:r=>fmt(r.b),         n:'消息回复'},
+    {k:'c',     h:'SW稽核合计<span class="thu">(次)</span>',            f:r=>fmt(r.c),         n:'SW稽核'},
+    {k:'mailQ', h:'异常邮件跟进<span class="thu">(条)</span>',          f:r=>fmt(r.mailQ),     n:'异常邮件跟进'},
+    {k:'vid',   h:'视频调取量<span class="thu">(区间累计·个)</span>',    f:r=>fmt(r.vid),       n:'视频调取量'}
+  ];
+  const COLS_B=[
+    {k:'tuihuoTheo', h:'取退货理论耗时<span class="thu">(分)</span>',   f:r=>r.tuihuoTheo.toFixed(1), n:'取退货 4.5 分/件'},
+    {k:'msgTheo',    h:'消息回复理论时长<span class="thu">(分)</span>', f:r=>r.msgTheo.toFixed(1),    n:'消息回复（按本仓标准工时）'},
+    {k:'swH2',       h:'SW稽核理论耗时<span class="thu">(分)</span>',   f:r=>fmt(r.swH2),             n:'SW稽核（见「工艺工时」对照表）'},
+    {k:'mailH',      h:'异常邮件理论耗时<span class="thu">(分)</span>', f:r=>r.mailH.toFixed(1),      n:'异常邮件跟进 1 分/条'},
+    {k:'vidTheo',    h:'视频调取理论耗时<span class="thu">(分)</span>', f:r=>r.vidTheo.toFixed(1),    n:'视频调取 6.05 分/个'}
+  ];
+  const ca=COLS_A.filter(c=>!_zeroCol(c.k)), cb=COLS_B.filter(c=>!_zeroCol(c.k));
+  const hidA=COLS_A.filter(c=>_zeroCol(c.k)).map(c=>c.n), hidB=COLS_B.filter(c=>_zeroCol(c.k)).map(c=>c.n);
+  const hidNote=(w,n)=> n.length ? ('（'+w+'在当前所选仓 / 区间内全部为 0，已自动隐藏该列：'+n.join('、')+'）') : '';
   // 表A：处理量（含 UPPH）
   let htmlA='<table><tr><th class="nm">姓名</th><th>仓</th>'
-    +'<th>取退货合计<span class="thu">(件)</span></th><th>消息回复合计<span class="thu">(次)</span></th>'
-    +'<th>SW稽核合计<span class="thu">(次)</span></th><th>异常邮件跟进<span class="thu">(条)</span></th>'
-    +'<th>视频调取量<span class="thu">(区间累计·个)</span></th>'
+    + ca.map(c=>'<th>'+c.h+'</th>').join('')
     +'<th>个人总处理量<span class="thu">(件 / 次)</span></th><th class="c-blue">UPPH<span class="thu">(区间日均·8H)</span></th></tr>';
   rows.forEach(r=>{
-    htmlA+='<tr><td class="nm">'+r.p+'</td><td>'+WAREHOUSE[r.p]+'</td><td>'+fmt(r.a)+'</td><td>'+fmt(r.b)+'</td><td>'+fmt(r.c)+'</td><td>'+fmt(r.mailQ)+'</td><td>'+fmt(r.vid)+'</td><td>'+fmt(r.perTot)+'</td><td class="c-blue"><b>'+r.upph.toFixed(2)+'</b></td></tr>';
+    htmlA+='<tr><td class="nm">'+r.p+'</td><td>'+WAREHOUSE[r.p]+'</td>'
+      + ca.map(c=>'<td>'+c.f(r)+'</td>').join('')
+      +'<td>'+fmt(r.perTot)+'</td><td class="c-blue"><b>'+r.upph.toFixed(2)+'</b></td></tr>';
   });
   htmlA+='</table>';
-  htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取量 + 异常邮件跟进；视频调取量为区间内各视频日（Part2 标准作业审核表 + 群视频 Part3 + 西安流转专项视频按当日出勤整数分摊）按人累计，与核心指标「视频调取」口径完全一致、随区间筛选联动。UPPH = 个人总处理量 ÷（区间出勤天数 × 8 小时）。</div>';
+  htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取量 + 异常邮件跟进；视频调取量为区间内各视频日（Part2 标准作业审核表 + 群视频 Part3 + 西安流转专项视频按当日出勤整数分摊）按人累计，与核心指标「视频调取」口径完全一致、随区间筛选联动。UPPH = 个人总处理量 ÷（区间出勤天数 × 8 小时）。'+hidNote('分项量',hidA)+'</div>';
   // 表B：处理的理论耗时（区间累计）
   let htmlB='<div class="lbl" style="margin:12px 0 4px">处理的理论耗时</div><table><tr><th class="nm">姓名</th><th>仓</th>'
-    +'<th>取退货理论耗时<span class="thu">(分)</span></th>'
-    +'<th>消息回复理论时长<span class="thu">(分)</span></th>'
-    +'<th>SW稽核理论耗时<span class="thu">(分)</span></th>'
-    +'<th>异常邮件理论耗时<span class="thu">(分)</span></th>'
-    +'<th>视频调取理论耗时<span class="thu">(分)</span></th>'
+    + cb.map(c=>'<th>'+c.h+'</th>').join('')
     +'<th class="c-blue">个人总处理量理论耗时<span class="thu">(分)</span></th></tr>';
   rows.forEach(r=>{
     htmlB+='<tr><td class="nm">'+r.p+'</td><td>'+WAREHOUSE[r.p]+'</td>'
-      +'<td>'+r.tuihuoTheo.toFixed(1)+'</td>'
-      +'<td>'+r.msgTheo.toFixed(1)+'</td>'
-      +'<td>'+fmt(r.swH2)+'</td>'
-      +'<td>'+r.mailH.toFixed(1)+'</td>'
-      +'<td>'+r.vidTheo.toFixed(1)+'</td>'
+      + cb.map(c=>'<td>'+c.f(r)+'</td>').join('')
       +'<td class="c-blue"><b>'+r.totTheo.toFixed(1)+'</b></td></tr>';
   });
-  htmlB+='</table><div class="hint" style="margin-top:6px">理论耗时 = 处理量 × 标准工时（取退货 4.5 分/件、消息回复 15.72 分/次、SW稽核见「工艺工时」对照表、异常邮件跟进 1 分/条、视频调取 6.05 分/个）；个人总处理量理论耗时 = 以上五项理论耗时之和。</div>';
+  htmlB+='</table><div class="hint" style="margin-top:6px">理论耗时 = 处理量 × 标准工时（取退货 4.5 分/件、消息回复 15.72 分/次、SW稽核见「工艺工时」对照表、异常邮件跟进 1 分/条、视频调取 6.05 分/个）；个人总处理量理论耗时 = 以上各项理论耗时之和。'+hidNote('理论耗时',hidB)+'</div>';
   document.getElementById('gsPerTotTable').innerHTML = htmlA + htmlB;
 
   // ④ 区间汇总口径（含异常邮件跟进、视频调取，与顶部汇总卡片一致）
@@ -1030,10 +1041,43 @@ function renderAttRange(start,end){
   }
   wrap.innerHTML=h;
   if(sm){
-    let head='<div class="hint" style="margin:10px 0 4px">区间汇总：每人出勤 / 休息天数</div>';
-    let chips='';
-    P.forEach(p=>{ chips+='<div class="vp-attchip"><span class="nm">'+p+'</span><span class="wh-tag">'+WAREHOUSE[p]+'</span><span class="st on">出 '+sum[p].on+'</span><span class="st off">休 '+sum[p].off+'</span></div>'; });
-    sm.innerHTML=head+chips;
+    const tot=daysAll.length;
+    const cats=[], onA=[], offA=[], othA=[];
+    let t='<div class="lbl" style="margin:10px 0 4px">区间汇总：每人出勤 / 休息天数（'+daysAll[0]+' ~ '+daysAll[daysAll.length-1]+'，共 '+tot+' 天）</div>';
+    t+='<table><tr><th class="nm">姓名</th><th>仓</th><th>出勤<span class="thu">(天)</span></th><th>休息<span class="thu">(天)</span></th><th>其它 / 未登记<span class="thu">(天)</span></th><th>出勤率</th></tr>';
+    P.forEach(p=>{
+      const o=sum[p].on, f=sum[p].off, oth=tot-o-f;
+      cats.push(p); onA.push(o); offA.push(f); othA.push(oth>0?oth:0);
+      t+='<tr><td class="nm">'+p+'</td><td>'+WAREHOUSE[p]+'</td><td style="color:#2c5cc5;font-weight:600">'+o+'</td>'
+        +'<td style="color:#d1342f;font-weight:600">'+f+'</td><td style="color:#98a2b3">'+oth+'</td>'
+        +'<td>'+(tot?(o/tot*100).toFixed(1)+'%':'—')+'</td></tr>';
+    });
+    t+='<tr style="background:#eaf0fa"><td class="nm"><b>合计</b></td><td>'+P.length+' 人</td><td><b>'+onA.reduce((x,y)=>x+y,0)+'</b></td>'
+      +'<td><b>'+offA.reduce((x,y)=>x+y,0)+'</b></td><td><b>'+othA.reduce((x,y)=>x+y,0)+'</b></td><td>'
+      +(tot?((onA.reduce((x,y)=>x+y,0)/(P.length*tot))*100).toFixed(1)+'%':'—')+'</td></tr>';
+    t+='</table>';
+    t+='<div id="attSumChart" style="width:100%;flex:0 0 100%;height:'+Math.max(260, Math.min(P.length*26+90, 700))+'px;margin-top:8px"></div>';
+    t+='<div class="hint" style="margin-top:6px">出勤 / 休息天数按所选区间全量统计（不受上方明细默认折叠影响）；出勤率 = 出勤天数 ÷ 区间天数；「其它 / 未登记」= 非出勤非休息的日期（含暂无排班源数据的成都 / 天津）。</div>';
+    sm.innerHTML=t;
+    try{   // 图：每人出勤 / 休息 / 其它 堆叠条形（横向，随仓筛选与区间联动）
+      const el=document.getElementById('attSumChart');
+      if(el && el.clientWidth>0 && window.echarts){
+        const ins=echarts.getInstanceByDom(el)||echarts.init(el);
+        ins.setOption({
+          grid:{left:6,right:26,top:38,bottom:6,containLabel:true},
+          tooltip:{trigger:'axis',axisPointer:{type:'shadow'},valueFormatter:v=>v+' 天'},
+          legend:{data:['出勤','休息','其它 / 未登记'],top:2,textStyle:{fontSize:11}},
+          xAxis:{type:'value',name:'天数',nameTextStyle:{fontSize:11}},
+          yAxis:{type:'category',data:cats,inverse:true,axisLabel:{fontSize:11}},
+          series:[
+            {name:'出勤',type:'bar',stack:'att',barWidth:'60%',itemStyle:{color:'#2c5cc5'},data:onA},
+            {name:'休息',type:'bar',stack:'att',itemStyle:{color:'#e08a8a'},data:offA},
+            {name:'其它 / 未登记',type:'bar',stack:'att',itemStyle:{color:'#dfe4ec',borderRadius:[0,4,4,0]},data:othA}
+          ]
+        },true);
+        ins.resize();
+      }
+    }catch(e){}
   }
   renderAttMonth();   // 当月应出勤天数 / 按人出勤计算（随筛选刷新）
 }
@@ -1842,7 +1886,8 @@ document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天�
 document.getElementById('foot').textContent='数据生成时间：'+D.meta.generated_at+' · 数据源：飞书群聊消息 + 飞书电子表格「抖音交付、稽核汇总」+ Base「标准作业审核表」（视频调取）/ 排班表（8月及以后 · 考勤）';
 if(GS_DATES.length || (ATT&&ATT.attendance)){ renderGongshi(); }
 window.addEventListener('resize',()=>{if(trendChart)trendChart.resize();if(regionChart)regionChart.resize();if(gsCmpChart)gsCmpChart.resize();if(gsQtyChart)gsQtyChart.resize();if(gsHoursChart)gsHoursChart.resize();if(attChart)attChart.resize();if(perChart)perChart.resize();
-  [ovMsgQtyChart,ovMsgPieChart,ovMsgPersonChart,ovMsgRateChart,ovRegDayChart,ovRegPieChart,ovRegTypeChart,ovRegProbChart].forEach(c=>{ if(c) c.resize(); });});
+  [ovMsgQtyChart,ovMsgPieChart,ovMsgPersonChart,ovMsgRateChart,ovRegDayChart,ovRegPieChart,ovRegTypeChart,ovRegProbChart].forEach(c=>{ if(c) c.resize(); });
+  try{ const el=document.getElementById('attSumChart'); if(el && el.clientWidth>0){ const ins=echarts.getInstanceByDom(el); if(ins) ins.resize(); } }catch(e){}});
 </script>
 </body>
 </html>
