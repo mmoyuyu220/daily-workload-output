@@ -236,6 +236,17 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
     <div class="fp-controls">
       <div class="fp-field"><label>开始日期</label><input type="date" id="gsStartInput"></div>
       <div class="fp-field"><label>结束日期</label><input type="date" id="gsEndInput"></div>
+      <!-- 总览「仓联动筛选」：与总览区底部的仓筛选条双向同步，仅总览 tab 显示 -->
+      <div class="fp-field" id="ovWhField" style="display:none">
+        <label>仓联动筛选（总览）</label>
+        <div class="fp-wh" id="ovWhBar">
+          <button type="button" data-c="all">全部四仓</button>
+          <button type="button" data-c="西安">西安</button>
+          <button type="button" data-c="沈阳">沈阳</button>
+          <button type="button" data-c="成都">成都</button>
+          <button type="button" data-c="天津">天津</button>
+        </div>
+      </div>
       <div class="fp-btnrow"><button type="button" class="sec" id="gsTodayBtn">今天</button><button type="button" class="sec" id="gsYestBtn">昨天</button></div>
       <div class="fp-btnrow"><button type="button" class="pri" id="gsApplyBtn">应用筛选</button><button type="button" class="sec" id="gsResetBtn">重置为全量</button></div>
     </div>
@@ -1685,26 +1696,30 @@ function renderOverview(){
   ['ovMsgQtyChart','ovMsgPieChart','ovMsgPersonChart','ovMsgRateChart','ovRegDayChart','ovRegPieChart','ovRegTypeChart','ovRegProbChart']
     .forEach(id=>{ const el=document.getElementById(id); if(el && el.clientWidth>0){ const ins=echarts.getInstanceByDom(el); if(ins) ins.resize(); } });
 }
-// 总览「仓联动筛选」：按仓名称多选，整体联动总表 / 消息回复 / 流转失误三大区块
+// 总览「仓联动筛选」：按仓名称多选 → 整体联动总表 / 消息回复 / 流转失误三大区块
+// 控件两处：顶部「筛选条件」面板 #ovWhBar（仅总览 tab 显示）+ 总览区 #ovCityBar，双向同步
 (function(){
-  const bar=document.getElementById('ovCityBar'); if(!bar) return;
-  const btns=Array.prototype.slice.call(bar.querySelectorAll('.ov-city-btn'));
-  const sync=()=>{ const all=OV_SEL.length===OV_CITIES.length;
-    btns.forEach(b=>{ const c=b.dataset.c;
-      b.classList.toggle('active', c==='all' ? all : (all || OV_SEL.indexOf(c)>=0)); }); };
-  btns.forEach(b=>{
-    b.onclick=()=>{
-      const c=b.dataset.c;
-      if(c==='all'){ OV_SEL=OV_CITIES.slice(); }
-      else{
-        const i=OV_SEL.indexOf(c);
-        if(i>=0) OV_SEL.splice(i,1); else OV_SEL.push(c);
-        if(!OV_SEL.length) OV_SEL=OV_CITIES.slice();            // 全部取消 → 视为全量
-        OV_SEL.sort((x,y)=>OV_CITIES.indexOf(x)-OV_CITIES.indexOf(y));
-      }
-      sync(); renderOverview();
-    };
-  });
+  const bars=[document.getElementById('ovWhBar'), document.getElementById('ovCityBar')].filter(Boolean);
+  if(!bars.length) return;
+  const groups=bars.map(bar=>({bar:bar, btns:Array.prototype.slice.call(bar.querySelectorAll('[data-c]'))}));
+  function sync(){
+    const all=OV_SEL.length===OV_CITIES.length;
+    groups.forEach(g=>g.btns.forEach(b=>{ const c=b.dataset.c;
+      b.classList.toggle('active', c==='all' ? all : (all || OV_SEL.indexOf(c)>=0)); }));
+  }
+  function clickCity(c){
+    if(c==='all'){ OV_SEL=OV_CITIES.slice(); }
+    else{
+      const i=OV_SEL.indexOf(c);
+      if(i>=0) OV_SEL.splice(i,1); else OV_SEL.push(c);
+      if(!OV_SEL.length) OV_SEL=OV_CITIES.slice();            // 全部取消 → 视为全量
+      OV_SEL.sort((x,y)=>OV_CITIES.indexOf(x)-OV_CITIES.indexOf(y));
+    }
+    sync(); renderOverview();
+  }
+  groups.forEach(g=>g.btns.forEach(b=>{ b.onclick=()=>clickCity(b.dataset.c); }));
+  window.ovSyncCityBar=sync;          // 供 tab 切换 / 重置等场合刷新选中态
+  window.ovResetCity=()=>{ OV_SEL=OV_CITIES.slice(); sync(); };
   sync();
 })();
 // 仓看板高亮（西安 / 沈阳 / 成都 / 天津 / 总览）：同步更新顶部 tab 选中态
@@ -1714,6 +1729,9 @@ function gsHighlightWh(wh){
   document.querySelectorAll('#boardTabs .tab').forEach(b=>b.classList.toggle('active', b.dataset.wh===wh));
   const ov=document.getElementById('overviewSection');
   if(ov) ov.style.display = gsIsOverview ? '' : 'none';
+  const ovField=document.getElementById('ovWhField');        // 顶部「筛选条件」面板里的仓联动筛选：仅总览 tab 可见
+  if(ovField) ovField.style.display = gsIsOverview ? '' : 'none';
+  if(window.ovSyncCityBar) ovSyncCityBar();
   regOnCityChange();     // 流转失误「按日期」模式下，切仓自动落到该仓最近的登记日
 }
 function gsRangeStartFor(days){
@@ -1728,7 +1746,8 @@ document.getElementById('gsApplyBtn').onclick=()=>{
 };
 document.getElementById('gsResetBtn').onclick=()=>{
   gsStartEl.value=gsAllMin; gsEndEl.value=gsAllMax;
-  gsHighlightWh('西安');   // 重置=筛选条件整体复位（区间 + 仓，仓复位到西安）
+  if(window.ovResetCity) ovResetCity();          // 重置=筛选条件整体复位（区间 + 总览仓筛选）
+  gsHighlightWh('西安');
   gsAttUserFiltered=false; gsHighlightQuick('all'); renderGongshi();  // 重置=恢复默认（仅最近3天）
 };
 // 今天 / 昨天：视频已改为区间累计，原「查看当日」单日标记已废除；现把区间直接定位到 T-1 / T-2 数据日（单日视图）
