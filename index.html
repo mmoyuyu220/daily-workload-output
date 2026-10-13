@@ -1189,7 +1189,7 @@ function renderRegSection(){
   const wrap=document.getElementById('regSection');
   if(!wrap) return;
   const _r=regActiveRange(), start=_r[0], end=_r[1];
-  let html='<div class="hint" style="margin-bottom:5px">抓取方式：<b>'+regModeLabel()+'</b></div>';
+  let html='';
   if(gsIsOverview){
     const cities=['西安','沈阳','成都','天津'];
     let h='<table><tr><th>仓</th><th>流转失误总次数</th><th>涉及人员数</th><th>主要业务分类(Top3)</th></tr>';
