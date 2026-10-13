@@ -24,6 +24,13 @@ body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
 select,input[type=date]{font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
 .sec-title{font-size:15px;font-weight:800;color:#12203a;margin:24px 0 10px;border-left:4px solid var(--blue);padding-left:10px}
 .chart{width:100%;height:380px}
+.ov-text{margin-top:10px;padding:12px 14px;background:#f6f9fd;border:1px solid #e4ecf7;border-radius:8px;font-size:13px;line-height:1.85;color:#25344f}
+.ov-text b{color:#12203a}
+.ov-text .ov-h{display:block;font-weight:800;color:#12203a;margin:8px 0 2px}
+.ov-text .ov-h:first-child{margin-top:0}
+.ov-text ul{margin:2px 0 4px 18px;padding:0}
+.ov-text li{margin:1px 0}
+.ov-text .tag{display:inline-block;background:#eef3fb;border:1px solid #dbe5f3;border-radius:4px;padding:0 6px;margin-right:4px;font-size:12px;color:#2c5cc5}
 .metric-chk{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}
 .metric-chk label{display:inline-flex;align-items:center;gap:6px;background:#f3f6fc;border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:13px;cursor:pointer;user-select:none}
 .metric-chk input{accent-color:var(--blue)}
@@ -296,13 +303,36 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
   <div class="chart" id="gsHoursChart" style="height:340px"></div>
 
-  <!-- 总看板（总览 tab 专属）：四仓成员横向对比分析 -->
+  <!-- 总看板（总览 tab 专属）：四仓全员总表 + 消息回复 / 流转失误 专题分析 -->
   <div id="overviewSection" style="display:none">
-    <div class="sec-title" style="margin-top:18px">总看板 · 四仓对比分析</div>
-    <div class="hint">汇总 西安 / 沈阳 / 成都 / 天津 成员，做横向对比。取退货 / SW / 视频 / 异常邮件 目前仅西安有完整源数据，其余仓待补源后自动并入；消息回复费率与流转失误已覆盖四仓。</div>
-    <div id="ovMemberScale"></div>
-    <div id="ovMsgRate"></div>
+    <div class="sec-title" style="margin-top:18px">四仓全员总表</div>
+    <div class="hint">汇总 西安 / 沈阳 / 成都 / 天津 全部 26 名成员，按当前区间统计四仓同源可比口径：消息回复（按实际回复人）与流转失误（分仓登记，取自 wiki）。取退货 / SW 稽核 / 视频调取 / 异常邮件 目前仅西安有完整源数据，不在本表强行并列。</div>
+    <div id="ovAllTable"></div>
+
+    <div class="sec-title">消息回复 · 数量分布与理论耗时</div>
+    <div id="ovMsgSummary"></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="chart" id="ovMsgQtyChart" style="height:330px;flex:1 1 460px;min-width:330px"></div>
+      <div class="chart" id="ovMsgPieChart" style="height:330px;flex:1 1 320px;min-width:300px"></div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
+      <div class="chart" id="ovMsgPersonChart" style="height:520px;flex:1 1 460px;min-width:330px"></div>
+      <div class="chart" id="ovMsgRateChart" style="height:520px;flex:1 1 320px;min-width:300px"></div>
+    </div>
+    <div id="ovMsgText" class="ov-text"></div>
+
+    <div class="sec-title">流转失误 · 登记量 · 占比与类型分析</div>
     <div id="ovRegSummary"></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="chart" id="ovRegDayChart" style="height:330px;flex:1 1 520px;min-width:330px"></div>
+      <div class="chart" id="ovRegPieChart" style="height:330px;flex:1 1 320px;min-width:300px"></div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
+      <div class="chart" id="ovRegTypeChart" style="height:360px;flex:1 1 420px;min-width:330px"></div>
+      <div class="chart" id="ovRegProbChart" style="height:360px;flex:1 1 420px;min-width:330px"></div>
+    </div>
+    <div id="ovRegDaily"></div>
+    <div id="ovRegText" class="ov-text"></div>
   </div>
 
 </div>
@@ -411,7 +441,7 @@ function renderGongshi(){
     }
     if(s){ selList.forEach(p=>{ const _o=(s.per&&s.per[p])||{}; sel.sq+=_o.qty||0; sel.shh+=_o.hours||0; }); }
   }); }
-  const _cityPick = f => gsWhFilter==='all' ? ({tq, mq, sq, th, mh, shh})[f] : sel[f];
+  const _cityPick = f => gsWhFilter==='all' ? ({tq, mq, sq, th, mh, shh: sh})[f] : sel[f];
   tq=_cityPick('tq'); mq=_cityPick('mq'); sq=_cityPick('sq');
   th=_cityPick('th'); mh=_cityPick('mh'); sh=_cityPick('shh');
   if(gsWhFilter!=='all' && gsWhFilter!=='西安'){ vq=0; mailq=0; }   // 视频调取 / 异常邮件跟进 仅分摊至西安人员 → 非西安仓恒 0
@@ -1237,30 +1267,396 @@ function renderRegSection(){
   }
   wrap.innerHTML=html;
 }
-// 总看板对比分析（仅总览可见）
+// ---------- 总览：四仓全员总表 + 消息回复 / 流转失误 专题分析（仅总览可见） ----------
+const OV_CITIES = ['西安','沈阳','成都','天津'];
+const OV_COLOR  = {'西安':'#2c5cc5','沈阳':'#1aa3a3','成都':'#e67e22','天津':'#a142f4'};
+let ovMsgQtyChart=null, ovMsgPieChart=null, ovMsgPersonChart=null, ovMsgRateChart=null,
+    ovRegDayChart=null, ovRegPieChart=null, ovRegTypeChart=null, ovRegProbChart=null;
+const ovPct = (a,b)=> b>0 ? (a/b*100) : 0;
+const ovP1  = v => (Math.round(v*10)/10).toFixed(1);
+// 失误问题 → 失误类型（归一化；先按问题关键词，未填写则落到业务分类）
+const OV_TYPE_RULES = [
+  ['清洁不彻底（屏幕 / 边框 / 后壳 / 摄像）','清洁|清理|污渍|灰尘|印渍|脏|未清|擦拭|指纹|油光|水渍'],
+  ['未取卡 / 卡槽遗漏','取卡|卡槽|卡针|SIM|sim'],
+  ['机器叠放 / 摆放违规','叠拿|叠放|堆叠|摆放|压放'],
+  ['账号未退出','账号|登陆|登录'],
+  ['外观损伤（漏液 / 划伤 / 拆机取证力度）','漏液|划伤|磕|碎|裂|脱胶|变形|拆机|取证|力度'],
+  ['配件缺失 / 错配','配件|缺失|少件|错发|错配|漏装|少发'],
+  ['异常 / 编码登记错误','编码|加错|录错|录入|异常加'],
+  ['流向 / 定级错误','等级|流向|定级|放错|错放|移交|盒子|错箱'],
+  ['标签 / 贴附错误','标签|贴错|贴反|贴膜'],
+  ['质检判定不一致','初检|复检|判定|定责|质检|结论不同'],
+  ['时效 / 交接延误','延误|超时|未及时|滞留|下班|未交接']
+];
+function ovRegType(yw, prob){
+  const p=String(prob||'').trim();
+  const bad=(!p||p==='（未填写）'||p==='（无）');
+  if(!bad){ for(let i=0;i<OV_TYPE_RULES.length;i++){ if(new RegExp(OV_TYPE_RULES[i][1]).test(p)) return OV_TYPE_RULES[i][0]; } }
+  const y=String(yw||'').trim();
+  if(y==='清洁专项') return '清洁不彻底（屏幕 / 边框 / 后壳 / 摄像）';
+  if(y==='流转专项') return '流转操作不规范（未注明具体问题）';
+  if(y==='常规业务') return '常规业务问题（未注明具体问题）';
+  if(y==='C2B')      return 'C2B 客诉 / 对接';
+  if(y==='商家维护') return '商家维护';
+  return '其他';
+}
+const OV_ADVICE = {
+  '清洁不彻底（屏幕 / 边框 / 后壳 / 摄像）':[
+    '固化「屏幕 → 边框 → 后壳 → 后置摄像」四区清洁清单，张贴工位，清洁后逐项自检',
+    '入库 / 出货前 100% 复检拍照留证，由复检岗拦截清洁问题，不流向下一环节',
+    '清洁耗材（无尘布 / 酒精 / 棉签）定点配备并规定更换频次，避免工具不洁二次污染',
+    '对高频人员做 1V1 带教复盘，周度公布各仓清洁合格率并纳入稽核扣款'
+  ],
+  '未取卡 / 卡槽遗漏':['把「拆机前先取卡」写入 SOP 第一步，工位张贴提示贴','下班前由组长抽检当日机器卡槽，漏取纳入日检'],
+  '机器叠放 / 摆放违规':['明确单层摆放、禁止叠拿叠放，工位置物区划线','现场 5S 纳入日检项，发现即通报'],
+  '账号未退出':['出货前增加「账号退出」检查项，复核岗抽检','对已发生账号未退出的机器做流向追溯与风险排查'],
+  '外观损伤（漏液 / 划伤 / 拆机取证力度）':['拆机 / 取证力度专项培训，内训师 1V1 带教复盘','取证动作标准化图册（角度、力度、支撑点）上墙'],
+  '配件缺失 / 错配':['配件与物品编码双人复核','装箱清单逐项打勾，缺失件当日补齐并登记'],
+  '异常 / 编码登记错误':['异常编码录入双人复核 + 系统校验规则','每周导出错误编码 TOP 清单回炉培训'],
+  '流向 / 定级错误':['等级仓 / 拆修流向容器颜色化、标识化','交接环节签字确认，杜绝桌面滞留'],
+  '标签 / 贴附错误':['标签打印与粘贴双人核对','贴膜 / 贴标首件确认制'],
+  '质检判定不一致':['初检 / 复检结论差异每日复盘，统一判定标准','典型案例入内训库，避免同类反复定责'],
+  '时效 / 交接延误':['明确交接时间节点与责任人','滞留机器每日盘点清零'],
+  '流转操作不规范（未注明具体问题）':[
+    '要求登记时必须填写「失误问题」具体内容，禁止只写业务分类（当前未填写占比见上）',
+    '未填写具体问题的条目按周回退补录，作为稽核数据质量考核项'
+  ],
+  '常规业务问题（未注明具体问题）':['补录具体问题字段，形成可分析的问题库','按业务分类做周度归并复盘'],
+  'C2B 客诉 / 对接':['客诉案例 48h 内闭环复盘，输出标准话术与判定口径','高频客诉类型做成日检清单'],
+  '商家维护':['维护动作标准化，异常商家单独跟踪'],
+  '其他':['补录具体问题，纳入下周期分析','按周复盘未分类条目，逐步收敛到标准类型']
+};
+// 区间内四仓消息回复汇总（按实际回复人）
+function ovMsgAgg(start,end){
+  const days=GS_DATES.filter(d=>d>=start&&d<=end);
+  const per={}, city={};
+  OV_CITIES.forEach(c=>city[c]={qty:0,hours:0,avgW:0,avgN:0,active:0,rate:MSG_RATES[c]||MSG_RATE,people:(CITY_PEOPLE[c]||[]).length});
+  days.forEach(d=>{ const g=G.dates[d]; if(!g||!g.msg_reply_per) return;
+    for(const p in g.msg_reply_per){
+      const o=g.msg_reply_per[p]||{}; const q=o.replied||0; if(!q) continue;
+      const c=WAREHOUSE[p]; if(!OV_CITIES.includes(c)) continue;
+      const t=per[p]||(per[p]={p:p,city:c,sub:CITY_SUBTYPE[p]||'',qty:0,days:0,wsum:0,wcnt:0});
+      t.qty+=q; t.days++; if(o.avg!=null){ t.wsum+=o.avg*q; t.wcnt+=q; }
+      const cc=city[c]; cc.qty+=q; if(o.avg!=null){ cc.avgW+=o.avg*q; cc.avgN+=q; }
+    }
+  });
+  const rows=[];
+  OV_CITIES.forEach(c=>{ (CITY_PEOPLE[c]||[]).forEach(p=>{ const t=per[p]||{p:p,city:c,sub:CITY_SUBTYPE[p]||'',qty:0,days:0,wsum:0,wcnt:0}; rows.push(t); }); });
+  rows.forEach(t=>{ t.rate=MSG_RATES[t.city]||MSG_RATE; t.hours=t.qty*t.rate/60; t.avg=t.wcnt?t.wsum/t.wcnt:null; });
+  OV_CITIES.forEach(c=>{ const cc=city[c];
+    cc.hours=cc.qty*cc.rate/60; cc.avg=cc.avgN?cc.avgW/cc.avgN:null;
+    cc.active=rows.filter(r=>r.city===c&&r.qty>0).length;
+    cc.per=cc.people?cc.qty/cc.people:0;
+  });
+  const tot=rows.reduce((a,r)=>a+r.qty,0), totH=rows.reduce((a,r)=>a+r.hours,0);
+  rows.forEach(r=>{ r.pctCity=city[r.city].qty?r.qty/city[r.city].qty*100:0; r.pctAll=tot?r.qty/tot*100:0; });
+  OV_CITIES.forEach(c=>{ city[c].pctAll=tot?city[c].qty/tot*100:0; });
+  return {days:days, rows:rows, city:city, tot:tot, totH:totH,
+          people:rows.slice().sort((a,b)=>b.qty-a.qty)};
+}
+// 区间内四仓流转失误汇总
+function ovRegAgg(start,end){
+  const out={};
+  OV_CITIES.forEach(c=>{
+    const reg=(REG_DATA&&REG_DATA[c])||{}; const byDay={}, byWho={}, byYw={}, byType={}, byProb={};
+    let rows=0, cnt=0;
+    for(const d in reg){ if(d<start||d>end) continue;
+      (reg[d]||[]).forEach(e=>{
+        const n=e.cnt||0; rows++; cnt+=n;
+        byDay[d]=(byDay[d]||0)+1;                       // 当日登记「条数」
+        byDay['_c'+d]=(byDay['_c'+d]||0)+n;             // 当日「失误量」
+        byWho[e.who||'—']=(byWho[e.who||'—']||0)+n;
+        byYw[e.yw||'—']=(byYw[e.yw||'—']||0)+n;
+        const t=ovRegType(e.yw,e.prob); byType[t]=(byType[t]||0)+n;
+        const p=String(e.prob||'').trim();
+        if(p&&p!=='（未填写）'&&p!=='（无）') byProb[p]=(byProb[p]||0)+n;
+      });
+    }
+    const days=Object.keys(byDay).filter(k=>k[0]!=='_').sort();
+    out[c]={rows:rows, cnt:cnt, days:days, byDay:byDay, byWho:byWho, byYw:byYw, byType:byType, byProb:byProb,
+            whoN:Object.keys(byWho).length,
+            perDay:days.length?rows/days.length:0,
+            blank:(function(){ let b=0; for(const d in reg){ if(d<start||d>end) continue; (reg[d]||[]).forEach(e=>{ const p=String(e.prob||'').trim(); if(!p||p==='（未填写）'||p==='（无）') b+=(e.cnt||0); }); } return b; })()};
+  });
+  const tot=OV_CITIES.reduce((a,c)=>a+out[c].cnt,0), totR=OV_CITIES.reduce((a,c)=>a+out[c].rows,0);
+  OV_CITIES.forEach(c=>{ out[c].pctAll=tot?out[c].cnt/tot*100:0; });
+  const allType={}, allProb={};
+  OV_CITIES.forEach(c=>{ for(const k in out[c].byType) allType[k]=(allType[k]||0)+out[c].byType[k];
+                         for(const k in out[c].byProb) allProb[k]=(allProb[k]||0)+out[c].byProb[k]; });
+  const allDays=Array.from(new Set(OV_CITIES.reduce((a,c)=>a.concat(out[c].days),[]))).sort();
+  return {city:out, tot:tot, totR:totR, allType:allType, allProb:allProb, days:allDays};
+}
 function renderOverview(){
   const ov=document.getElementById('overviewSection');
   if(!ov || !gsIsOverview) return;
-  const cities=['西安','沈阳','成都','天津'];
-  const _r=regActiveRange(), start=_r[0], end=_r[1];
-  let h='<div class="lbl" style="margin:10px 0 4px">各仓成员规模</div><table><tr><th>仓</th><th>总人数</th><th>商服</th><th>异常</th></tr>';
-  cities.forEach(c=>{
-    const people=CITY_PEOPLE[c]||[];
-    const shangfu=people.filter(p=>CITY_SUBTYPE[p]==='商服').length;
-    const yichang=people.filter(p=>CITY_SUBTYPE[p]==='异常').length;
-    h+='<tr><td>'+c+'</td><td>'+people.length+'</td><td>'+shangfu+'</td><td>'+yichang+'</td></tr>';
-  });
-  h+='</table>';
-  document.getElementById('ovMemberScale').innerHTML=h;
-  const note={'西安':'真实（看板响应时长加权，按实际回复人）','沈阳':'真实（7-9月 按实际回复人 reply_to 均值）','成都':'真实（7-9月 4 群 按实际回复人均值，剔除 >24h）','天津':'真实（7-9月 4 群 按实际回复人均值，剔除 >24h）'};
-  let h2='<div class="lbl" style="margin:12px 0 4px">各仓消息回复标准工时</div><table><tr><th>仓</th><th>标准工时</th><th>说明</th></tr>';
-  cities.forEach(c=>{ h2+='<tr><td>'+c+'</td><td>'+(MSG_RATES[c]||MSG_RATE)+'</td><td>'+note[c]+'</td></tr>'; });
-  h2+='</table>';
-  document.getElementById('ovMsgRate').innerHTML=h2;
-  let h3='<div class="lbl" style="margin:12px 0 4px">各仓流转失误</div><table><tr><th>仓</th><th>登记总次数</th></tr>';
-  cities.forEach(c=>{ const agg=regAgg(c, start, end); const total=Object.values(agg).reduce((a,b)=>a+b,0); h3+='<tr><td>'+c+'</td><td>'+total+'</td></tr>'; });
-  h3+='</table>';
-  document.getElementById('ovRegSummary').innerHTML=h3;
+  const mStart=gsRngStartPicker.value, mEnd=gsRngEndPicker.value;                 // 消息回复：跟随全局区间
+  const _r=regActiveRange(), start=_r[0], end=_r[1];                              // 流转失误：区间 / 单日
+  const M=ovMsgAgg(mStart,mEnd), R=ovRegAgg(start,end);
+  const noMsg = M.tot===0;
+  // ① 四仓全员总表
+  (function(){
+    const regPerson={};                                                          // 在册人员是否在失误登记中出现
+    OV_CITIES.forEach(c=>{ const m=R.city[c].byWho; M.rows.forEach(r=>{ if(m[r.p]) regPerson[r.p]=(regPerson[r.p]||0)+m[r.p]; }); });
+    const hasRegCol = M.rows.some(r=>regPerson[r.p]>0);
+    let h='<div class="lbl">四仓全员 · 消息回复明细（区间 '+mStart+' ~ '+mEnd+'，共 '+M.days.length+' 天）</div>';
+    h+='<table><tr><th class="nm">仓</th><th class="nm">人员</th><th>子类</th><th>消息回复<span class="thu">次</span></th>'
+      +'<th>有回复<span class="thu">天数</span></th><th>日均<span class="thu">次/天</span></th><th>平均响应<span class="thu">分钟</span></th>'
+      +'<th>标准工时<span class="thu">分/次</span></th><th>理论耗时<span class="thu">小时</span></th><th>仓内<span class="thu">占比</span></th><th>四仓<span class="thu">占比</span></th>'
+      +(hasRegCol?'<th>流转失误<span class="thu">次</span></th>':'')+'</tr>';
+    const cell=(v,cls)=>'<td'+(cls?(' class="'+cls+'"'):'')+'>'+v+'</td>';
+    const dash='<span style="color:#9aa0a6">—</span>';
+    OV_CITIES.forEach(c=>{
+      const list=M.rows.filter(r=>r.city===c).sort((a,b)=>b.qty-a.qty);
+      const cc=M.city[c];
+      list.forEach((r,i)=>{
+        h+='<tr>'+cell(i===0?('<b>'+c+'</b>'):'','nm')+cell('<b>'+r.p+'</b>','nm')+cell(r.sub||dash)
+          +cell(r.qty?('<b>'+fmt(r.qty)+'</b>'):dash)
+          +cell(r.days||dash)+cell(r.qty?ovP1(r.qty/M.days.length):dash)
+          +cell(r.avg!=null?ovP1(r.avg):dash)+cell(r.rate)
+          +cell(r.hours?ovP1(r.hours):dash)+cell(r.qty?ovP1(r.pctCity)+'%':dash)+cell(r.qty?ovP1(r.pctAll)+'%':dash)
+          +(hasRegCol?cell(regPerson[r.p]?fmt(regPerson[r.p]):dash):'')+'</tr>';
+      });
+      h+='<tr style="background:#f4f7fc"><td class="nm"><b>'+c+' 小计</b></td><td class="nm">'+cc.people+' 人 / 有回复 '+cc.active+' 人</td><td></td>'
+        +'<td><b>'+fmt(cc.qty)+'</b></td><td>'+M.days.length+'</td><td><b>'+ovP1(cc.qty/(M.days.length||1))+'</b></td>'
+        +'<td>'+(cc.avg!=null?ovP1(cc.avg):dash)+'</td><td>'+cc.rate+'</td><td><b>'+ovP1(cc.hours)+'</b></td>'
+        +'<td>100%</td><td><b>'+ovP1(cc.pctAll)+'%</b></td>'+(hasRegCol?('<td><b>'+fmt(R.city[c].cnt)+'</b></td>'):'')+'</tr>';
+    });
+    h+='<tr style="background:#eaf0fa"><td class="nm"><b>四仓合计</b></td><td class="nm">26 人 / 有回复 '+M.rows.filter(r=>r.qty>0).length+' 人</td><td></td>'
+      +'<td><b>'+fmt(M.tot)+'</b></td><td>'+M.days.length+'</td><td><b>'+ovP1(M.tot/(M.days.length||1))+'</b></td>'
+      +'<td>'+(function(){ const w=M.city; let s=0,n=0; OV_CITIES.forEach(c=>{ s+=w[c].avgW; n+=w[c].avgN; }); return n?ovP1(s/n):dash; })()+'</td>'
+      +'<td>—</td><td><b>'+ovP1(M.totH)+'</b></td><td>—</td><td>100%</td>'+(hasRegCol?('<td><b>'+fmt(R.tot)+'</b></td>'):'')+'</tr>';
+    h+='</table>';
+    h+='<div class="hint">理论耗时 = 消息回复次数 × 本仓标准工时（分/次）÷ 60；平均响应 = 各日响应时长按回复量加权。'
+      +(hasRegCol?'':'流转失误由各仓现场 / 质检侧登记，登记名单与在册 26 人不同源，故不并入本表，见下方「流转失误」专题按仓分析。')
+      +'</div>';
+    document.getElementById('ovAllTable').innerHTML=h;
+  })();
+  // ② 消息回复：汇总表 + 三图 + 分析
+  (function(){
+    const rank=OV_CITIES.slice().sort((a,b)=>M.city[b].qty-M.city[a].qty);
+    let h='<div class="lbl">各仓消息回复汇总（区间 '+mStart+' ~ '+mEnd+'）</div><table>'
+      +'<tr><th class="nm">仓</th><th>在册人数</th><th>有回复人数</th><th>回复次数</th><th>四仓占比</th><th>人均回复</th><th>日均回复</th><th>标准工时<span class="thu">分/次</span></th><th>理论耗时<span class="thu">小时</span></th><th>平均响应<span class="thu">分钟</span></th></tr>';
+    rank.forEach(c=>{ const k=M.city[c];
+      h+='<tr><td class="nm"><b style="color:'+OV_COLOR[c]+'">'+c+'</b></td><td>'+k.people+'</td><td>'+k.active+'</td>'
+        +'<td><b>'+fmt(k.qty)+'</b></td><td><b>'+ovP1(k.pctAll)+'%</b></td><td>'+ovP1(k.per)+'</td><td>'+ovP1(k.qty/(M.days.length||1))+'</td>'
+        +'<td>'+k.rate+'</td><td><b>'+ovP1(k.hours)+'</b></td><td>'+(k.avg!=null?ovP1(k.avg):'—')+'</td></tr>';
+    });
+    h+='<tr style="background:#eaf0fa"><td class="nm"><b>合计</b></td><td>26</td><td>'+M.rows.filter(r=>r.qty>0).length+'</td><td><b>'+fmt(M.tot)+'</b></td><td>100%</td><td>'+ovP1(M.tot/26)+'</td><td>'+ovP1(M.tot/(M.days.length||1))+'</td><td>—</td><td><b>'+ovP1(M.totH)+'</b></td><td>—</td></tr></table>';
+    document.getElementById('ovMsgSummary').innerHTML=h;
+    // 图 A：回复量 + 理论耗时（双轴）
+    if(!ovMsgQtyChart) ovMsgQtyChart=echarts.init(document.getElementById('ovMsgQtyChart'));
+    if(noMsg){ ovMsgQtyChart.clear(); }
+    else ovMsgQtyChart.setOption({
+      tooltip:{trigger:'axis'}, legend:{top:4, textStyle:{fontSize:12}},
+      grid:{left:64, right:64, top:44, bottom:34},
+      xAxis:{type:'category', data:rank, axisLabel:{fontSize:12}},
+      yAxis:[{type:'value', name:'回复次数', nameTextStyle:{fontSize:11}},{type:'value', name:'理论耗时(小时)', nameTextStyle:{fontSize:11}}],
+      series:[
+        {name:'回复次数', type:'bar', barWidth:'38%', data:rank.map(c=>({value:M.city[c].qty, itemStyle:{color:OV_COLOR[c], borderRadius:[4,4,0,0]}})),
+         label:{show:true, position:'top', formatter:p=>fmt(p.value)+' 次', fontSize:11, fontWeight:600}},
+        {name:'理论耗时(小时)', type:'bar', yAxisIndex:1, barWidth:'38%', data:rank.map(c=>({value:+M.city[c].hours.toFixed(1), itemStyle:{color:'#8fa5c7', borderRadius:[4,4,0,0]}})),
+         label:{show:true, position:'top', formatter:p=>p.value+' h', fontSize:11}}
+      ]
+    }, true);
+    // 图 B：占比环形
+    if(!ovMsgPieChart) ovMsgPieChart=echarts.init(document.getElementById('ovMsgPieChart'));
+    if(noMsg){ ovMsgPieChart.clear(); }
+    else ovMsgPieChart.setOption({
+      tooltip:{trigger:'item', formatter:'{b}<br/>{c} 次（{d}%）'},
+      legend:{bottom:2, textStyle:{fontSize:12}},
+      title:{text:'回复量分布', left:'center', top:6, textStyle:{fontSize:13, color:'#5a6b85', fontWeight:'normal'}},
+      series:[{type:'pie', radius:['38%','62%'], center:['50%','52%'], avoidLabelOverlap:true,
+        data:rank.map(c=>({name:c, value:M.city[c].qty, itemStyle:{color:OV_COLOR[c]}})),
+        label:{formatter:'{b}\n{d}%', fontSize:12}, labelLine:{length:12, length2:10}}]
+    }, true);
+    // 图 C：26 人分布（按仓着色）
+    if(!ovMsgPersonChart) ovMsgPersonChart=echarts.init(document.getElementById('ovMsgPersonChart'));
+    if(noMsg){ ovMsgPersonChart.clear(); }
+    else{
+      const people=M.people.filter(r=>r.qty>0);
+      const ys=people.map(r=>r.p+' · '+r.city);
+      ovMsgPersonChart.setOption({
+        tooltip:{trigger:'axis', axisPointer:{type:'shadow'}, formatter:p=>p[0].name+'<br/>回复 '+fmt(p[0].value)+' 次'},
+        legend:{top:4, data:OV_CITIES, textStyle:{fontSize:12}},
+        grid:{left:96, right:56, top:44, bottom:28},
+        xAxis:{type:'value', name:'回复次数', nameTextStyle:{fontSize:11}},
+        yAxis:{type:'category', data:ys.slice().reverse(), axisLabel:{fontSize:11}},
+        series:OV_CITIES.map(c=>({name:c, type:'bar', barGap:'-100%', barWidth:'62%',
+          data:people.slice().reverse().map(r=>r.city===c?r.qty:null), itemStyle:{color:OV_COLOR[c], borderRadius:[0,3,3,0]},
+          label:{show:true, position:'right', fontSize:10, formatter:p=>p.value?fmt(p.value):''}}))
+      }, true);
+    }
+    // 图 D：各仓人均回复量 + 平均响应时长
+    if(!ovMsgRateChart) ovMsgRateChart=echarts.init(document.getElementById('ovMsgRateChart'));
+    if(noMsg){ ovMsgRateChart.clear(); }
+    else ovMsgRateChart.setOption({
+      tooltip:{trigger:'axis'}, legend:{top:4, textStyle:{fontSize:12}},
+      grid:{left:58, right:62, top:44, bottom:34},
+      xAxis:{type:'category', data:rank, axisLabel:{fontSize:12}},
+      yAxis:[{type:'value', name:'人均回复(次/人)', nameTextStyle:{fontSize:11}},{type:'value', name:'平均响应(分钟)', nameTextStyle:{fontSize:11}}],
+      series:[
+        {name:'人均回复(次/人)', type:'bar', barWidth:'40%', data:rank.map(c=>({value:+M.city[c].per.toFixed(1), itemStyle:{color:OV_COLOR[c], borderRadius:[4,4,0,0]}})),
+         label:{show:true, position:'top', fontSize:11, fontWeight:600}},
+        {name:'平均响应(分钟)', type:'line', yAxisIndex:1, symbol:'circle', symbolSize:8, lineStyle:{width:3, color:'#ea4335'}, itemStyle:{color:'#ea4335'},
+         data:rank.map(c=>+(M.city[c].avg||0).toFixed(1)), label:{show:true, position:'top', fontSize:11, formatter:'{c} 分'}}
+      ]
+    }, true);
+    // 文字分析
+    const t=[];
+    if(noMsg){ t.push('<span class="ov-h">数据提示</span>当前区间（'+mStart+' ~ '+mEnd+'）四仓均无消息回复数据。'); }
+    else{
+      const top=rank[0], last=rank[rank.length-1];
+      const top3p=M.people.slice(0,3);
+      const zero=M.rows.filter(r=>r.qty===0).map(r=>r.p);
+      const rateMax=OV_CITIES.slice().sort((a,b)=>M.city[b].rate-M.city[a].rate)[0];
+      const rateMin=OV_CITIES.slice().sort((a,b)=>M.city[a].rate-M.city[b].rate)[0];
+      const avgGap=(M.city[rateMax].rate-M.city[rateMin].rate)*1000/60;
+      t.push('<span class="ov-h">① 总量与分布</span>');
+      t.push('<ul>'
+        +'<li>区间内四仓合计消息回复 <b>'+fmt(M.tot)+'</b> 次，理论耗时 <b>'+ovP1(M.totH)+'</b> 小时；日均 <b>'+ovP1(M.tot/(M.days.length||1))+'</b> 次。</li>'
+        +'<li>分布排序：'+rank.map(c=>'<span class="tag">'+c+' '+fmt(M.city[c].qty)+' 次 · '+ovP1(M.city[c].pctAll)+'%</span>').join('')
+        +'　→ 头部仓 <b>'+top+'</b> 占 <b>'+ovP1(M.city[top].pctAll)+'%</b>，是末位 '+last+'（'+ovP1(M.city[last].pctAll)+'%）的 '
+        +(M.city[last].qty?ovP1(M.city[top].qty/M.city[last].qty):'—')+' 倍，回复量高度集中。</li>'
+        +'</ul>');
+      t.push('<span class="ov-h">② 人力与效率</span>');
+      t.push('<ul>'
+        +'<li>人均回复：'+rank.map(c=>'<span class="tag">'+c+' '+ovP1(M.city[c].per)+' 次/人</span>').join('')
+        +'；'+OV_CITIES.slice().sort((a,b)=>M.city[b].per-M.city[a].per)[0]+' 人均负荷最高，'
+        +OV_CITIES.slice().sort((a,b)=>M.city[a].per-M.city[b].per)[0]+' 最低，存在明显的负荷不均衡。</li>'
+        +'<li>在册 26 人中实际产生回复 <b>'+M.rows.filter(r=>r.qty>0).length+'</b> 人'+(zero.length?('，区间内 0 回复：'+zero.join('、')+'（建议核实是否离职 / 转岗或群聊未纳入统计）'):'')+'。</li>'
+        +'<li>标准工时（分/次）最高 '+rateMax+' '+M.city[rateMax].rate+' 分，最低 '+rateMin+' '+M.city[rateMin].rate+' 分；同样 1000 次回复，'+rateMax+' 比 '+rateMin+' 多耗时约 <b>'+ovP1(avgGap)+' 小时</b>，优化响应时效对 '+rateMax+' 的工时释放最直接。</li>'
+        +'</ul>');
+      t.push('<span class="ov-h">③ 人员集中度</span>');
+      t.push('<ul><li>回复量 Top3：'+top3p.map(r=>'<span class="tag">'+r.p+'（'+r.city+'）'+fmt(r.qty)+' 次 · '+ovP1(r.pctAll)+'%</span>').join('')
+        +'　合计 <b>'+fmt(top3p.reduce((a,r)=>a+r.qty,0))+'</b> 次，占四仓 <b>'+ovP1(top3p.reduce((a,r)=>a+r.pctAll,0))+'%</b>。</li>'
+        +'<li>结论：消息回复高度依赖少数骨干，建议对 Top3 所在仓做群聊分流与话术标准化（高频问题模板化回复），降低单点依赖；对 0 回复或极低频人员核实群权限与职责归属。</li></ul>');
+    }
+    document.getElementById('ovMsgText').innerHTML=t.join('');
+  })();
+  // ③ 流转失误：排列 + 四图 + 每日明细 + 分析改善
+  (function(){
+    const rank=OV_CITIES.slice().sort((a,b)=>R.city[b].cnt-R.city[a].cnt);
+    let h='<div class="lbl">各仓流转失误排列（'+regModeLabel()+'，按失误量降序）</div><table>'
+      +'<tr><th class="nm">排名</th><th class="nm">仓</th><th>登记天数</th><th>登记条数</th><th>失误量<span class="thu">次</span></th><th>失误占比</th>'
+      +'<th>日均登记<span class="thu">条/天</span></th><th>涉及人员</th><th>主要业务分类</th><th>主要失误类型</th><th>问题未填写<span class="thu">次数</span></th></tr>';
+    const topK=(o,n)=>{ const e=Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,n); return e.length?e.map(x=>x[0]+' '+x[1]).join('、'):'—'; };
+    rank.forEach((c,i)=>{ const k=R.city[c];
+      h+='<tr><td class="nm">'+(i+1)+'</td><td class="nm"><b style="color:'+OV_COLOR[c]+'">'+c+'</b></td><td>'+k.days.length+'</td><td>'+fmt(k.rows)+'</td>'
+        +'<td><b>'+fmt(k.cnt)+'</b></td><td><b>'+ovP1(k.pctAll)+'%</b></td><td>'+ovP1(k.perDay)+'</td><td>'+k.whoN+' 人</td>'
+        +'<td style="font-size:12px">'+topK(k.byYw,2)+'</td><td style="font-size:12px">'+topK(k.byType,2)+'</td><td>'+(k.blank?fmt(k.blank):'0')+'</td></tr>';
+    });
+    h+='<tr style="background:#eaf0fa"><td class="nm">—</td><td class="nm"><b>合计</b></td><td>'+R.days.length+' 天</td><td><b>'+fmt(R.totR)+'</b></td><td><b>'+fmt(R.tot)+'</b></td><td>100%</td><td>'+ovP1(R.totR/(R.days.length||1))+'</td><td>—</td><td>—</td><td>—</td><td><b>'+fmt(OV_CITIES.reduce((a,c)=>a+R.city[c].blank,0))+'</b></td></tr></table>';
+    h+='<div class="hint">「登记条数」= 区间内登记的行数；「失误量」= 各条登记的数量合计（同类问题可合并计数）；「失误占比」= 该仓失误量 ÷ 四仓合计；数据自 2026-09-01 起抓取。</div>';
+    document.getElementById('ovRegSummary').innerHTML=h;
+    const noReg=R.tot===0;
+    // 图 E：各仓每日登记条数
+    if(!ovRegDayChart) ovRegDayChart=echarts.init(document.getElementById('ovRegDayChart'));
+    if(noReg||!R.days.length){ ovRegDayChart.clear(); ovRegDayChart.setOption({title:{text:'当前区间无流转失误数据', left:'center', top:'center', textStyle:{color:'#98a2b3', fontSize:13, fontWeight:'normal'}}, xAxis:{type:'category', data:[]}, yAxis:{type:'value'}, series:[]}, true); }
+    else ovRegDayChart.setOption({
+      tooltip:{trigger:'axis'},
+      legend:{top:4, textStyle:{fontSize:12}},
+      grid:{left:56, right:26, top:44, bottom:R.days.length>14?74:40},
+      dataZoom:R.days.length>14?[{type:'inside'},{type:'slider', height:18, bottom:12, brushSelect:false}]:[],
+      xAxis:{type:'category', data:R.days, axisLabel:{fontSize:11, hideOverlap:true}},
+      yAxis:{type:'value', name:'登记条数', nameTextStyle:{fontSize:11}},
+      series:OV_CITIES.map(c=>({name:c, type:'bar', stack:'r', barWidth:'62%',
+        data:R.days.map(d=>(R.city[c].byDay[d]||0)), itemStyle:{color:OV_COLOR[c]}}))
+    }, true);
+    // 图 F：失误量占比
+    if(!ovRegPieChart) ovRegPieChart=echarts.init(document.getElementById('ovRegPieChart'));
+    if(noReg){ ovRegPieChart.clear(); }
+    else ovRegPieChart.setOption({
+      tooltip:{trigger:'item', formatter:'{b}<br/>{c} 次（{d}%）'},
+      legend:{bottom:2, textStyle:{fontSize:12}},
+      title:{text:'失误量占比', left:'center', top:6, textStyle:{fontSize:13, color:'#5a6b85', fontWeight:'normal'}},
+      series:[{type:'pie', radius:['38%','62%'], center:['50%','52%'], avoidLabelOverlap:true,
+        data:rank.map(c=>({name:c, value:R.city[c].cnt, itemStyle:{color:OV_COLOR[c]}})),
+        label:{formatter:'{b}\n{d}%', fontSize:12}, labelLine:{length:12, length2:10}}]
+    }, true);
+    // 图 G：失误类型分布
+    if(!ovRegTypeChart) ovRegTypeChart=echarts.init(document.getElementById('ovRegTypeChart'));
+    if(noReg){ ovRegTypeChart.clear(); }
+    else{
+      const te=Object.entries(R.allType).sort((a,b)=>b[1]-a[1]);
+      const pal=['#ea4335','#2c5cc5','#1aa3a3','#e67e22','#a142f4','#34a853','#fbbc04','#8e44ad','#607d8b','#c2185b','#009688'];
+      ovRegTypeChart.setOption({
+        tooltip:{trigger:'axis', axisPointer:{type:'shadow'}, formatter:p=>p[0].name+'<br/>'+fmt(p[0].value)+' 次（'+(R.tot?ovP1(p[0].value/R.tot*100):0)+'%）'},
+        grid:{left:150, right:56, top:34, bottom:26},
+        title:{text:'失误类型分布（按失误量）', left:'center', top:6, textStyle:{fontSize:13, color:'#5a6b85', fontWeight:'normal'}},
+        xAxis:{type:'value', name:'失误量(次)', nameTextStyle:{fontSize:11}},
+        yAxis:{type:'category', data:te.map(x=>x[0]).slice().reverse(), axisLabel:{fontSize:11, width:140, overflow:'truncate'}},
+        series:[{type:'bar', barWidth:'58%', data:te.slice().reverse().map((x,i)=>({value:x[1], itemStyle:{color:pal[(te.length-1-i)%pal.length], borderRadius:[0,3,3,0]}})),
+          label:{show:true, position:'right', fontSize:11, formatter:p=>fmt(p.value)}}]
+      }, true);
+    }
+    // 图 H：高频具体失误问题 Top10
+    if(!ovRegProbChart) ovRegProbChart=echarts.init(document.getElementById('ovRegProbChart'));
+    if(noReg||!Object.keys(R.allProb).length){ ovRegProbChart.clear(); }
+    else{
+      const pe=Object.entries(R.allProb).sort((a,b)=>b[1]-a[1]).slice(0,10);
+      ovRegProbChart.setOption({
+        tooltip:{trigger:'axis', axisPointer:{type:'shadow'}, formatter:p=>p[0].name+'<br/>'+fmt(p[0].value)+' 次'},
+        grid:{left:170, right:52, top:34, bottom:26},
+        title:{text:'高频失误问题 Top10', left:'center', top:6, textStyle:{fontSize:13, color:'#5a6b85', fontWeight:'normal'}},
+        xAxis:{type:'value', name:'次数', nameTextStyle:{fontSize:11}},
+        yAxis:{type:'category', data:pe.map(x=>x[0]).slice().reverse(), axisLabel:{fontSize:11, width:160, overflow:'truncate'}},
+        series:[{type:'bar', barWidth:'58%', data:pe.slice().reverse().map(x=>({value:x[1], itemStyle:{color:'#ea6b5a', borderRadius:[0,3,3,0]}})),
+          label:{show:true, position:'right', fontSize:11, formatter:p=>fmt(p.value)}}]
+      }, true);
+    }
+    // 每日明细表
+    (function(){
+      const w=document.getElementById('ovRegDaily'); if(!w) return;
+      if(!R.days.length){ w.innerHTML='<div class="hint">'+regModeLabel()+' 无流转失误登记数据。</div>'; return; }
+      const rows=R.days.slice().reverse(); const LIM=80;
+      let h='<div class="lbl" style="margin-top:12px">各仓每日登记明细（日期倒序'+(rows.length>LIM?('，显示最近 '+LIM+' 天'):'')+'）</div>';
+      h+='<table><tr><th class="nm">日期</th>'+OV_CITIES.map(c=>'<th>'+c+'<span class="thu">条 / 次</span></th>').join('')+'<th>合计条数</th><th>合计失误量</th></tr>';
+      rows.slice(0,LIM).forEach(d=>{
+        let sr=0, sc=0;
+        const tds=OV_CITIES.map(c=>{ const a=R.city[c].byDay[d]||0, b=R.city[c].byDay['_c'+d]||0; sr+=a; sc+=b;
+          return '<td>'+(a?('<b>'+a+'</b> / '+b):'<span style="color:#9aa0a6">—</span>')+'</td>'; }).join('');
+        h+='<tr><td class="nm">'+d+'</td>'+tds+'<td><b>'+sr+'</b></td><td><b>'+sc+'</b></td></tr>';
+      });
+      h+='</table><div class="hint">每仓单元格为「登记条数 / 失误量（次）」；合计为当日四仓汇总。</div>';
+      w.innerHTML=h;
+    })();
+    // 文字分析 + 改善建议
+    const t=[];
+    if(noReg){ t.push('<span class="ov-h">数据提示</span>'+regModeLabel()+' 四仓均无流转失误登记数据。'); }
+    else{
+      const top=rank[0];
+      const te=Object.entries(R.allType).sort((a,b)=>b[1]-a[1]);
+      const pe=Object.entries(R.allProb).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      const peak=(function(){ let bd='',bv=-1; R.days.forEach(d=>{ let s=0; OV_CITIES.forEach(c=>{ s+=R.city[c].byDay['_c'+d]||0; }); if(s>bv){bv=s;bd=d;} }); return [bd,bv]; })();
+      const blankAll=OV_CITIES.reduce((a,c)=>a+R.city[c].blank,0);
+      t.push('<span class="ov-h">① 登记量与占比</span>');
+      t.push('<ul><li>'+regModeLabel()+' 四仓共登记 <b>'+fmt(R.totR)+'</b> 条、失误量合计 <b>'+fmt(R.tot)+'</b> 次，覆盖 '+R.days.length+' 个登记日。</li>'
+        +'<li>排列：'+rank.map((c,i)=>'<span class="tag">'+(i+1)+'. '+c+' '+fmt(R.city[c].cnt)+' 次 · '+ovP1(R.city[c].pctAll)+'%</span>').join('')
+        +'</li><li><b>'+top+'</b> 一家占 <b>'+ovP1(R.city[top].pctAll)+'%</b>，日均登记 <b>'+ovP1(R.city[top].perDay)+'</b> 条、涉及 <b>'+R.city[top].whoN+'</b> 人，是本周期失误治理的绝对重点；其余三仓为偶发登记，建议保持周度复盘即可。</li></ul>');
+      t.push('<span class="ov-h">② 每日节奏</span>');
+      t.push('<ul><li>峰值日 <b>'+peak[0]+'</b>，单日失误量 <b>'+fmt(peak[1])+'</b> 次；四仓日均登记 '+ovP1(R.totR/(R.days.length||1))+' 条。</li>'
+        +'<li>各仓登记天数：'+OV_CITIES.map(c=>'<span class="tag">'+c+' '+R.city[c].days.length+' 天</span>').join('')+'，登记连续性差异较大（部分仓为抽查式登记，需确认漏登）。</li></ul>');
+      t.push('<span class="ov-h">③ 失误类型分布</span>');
+      t.push('<ul><li>'+te.slice(0,5).map(x=>'<span class="tag">'+x[0]+' '+fmt(x[1])+' 次 · '+ovP1(x[1]/R.tot*100)+'%</span>').join('')+'</li>'
+        +'<li>类型集中度：Top1 <b>'+te[0][0]+'</b> 占 <b>'+ovP1(te[0][1]/R.tot*100)+'%</b>'+(te.length>1?('，Top2 '+te[1][0]+' 占 '+ovP1(te[1][1]/R.tot*100)+'%'):'')+'，说明失误并非分散偶发，而是集中在少数可标准化的作业环节。</li>'
+        +(pe.length?('<li>高频具体问题：'+pe.map(x=>'<span class="tag">'+x[0]+' '+fmt(x[1])+' 次</span>').join('')+'</li>'):'')
+        +(blankAll?('<li>数据质量：有 <b>'+fmt(blankAll)+'</b> 次登记未填写「失误问题」（占 '+ovP1(blankAll/R.tot*100)+'%），导致这部分无法归类分析，建议纳入登记必填校验。</li>'):'')
+        +'</ul>');
+      t.push('<span class="ov-h">④ 改善建议</span>');
+      const adv=[];
+      te.slice(0,3).forEach((x,i)=>{ const a=OV_ADVICE[x[0]]||OV_ADVICE['其他'];
+        adv.push('<li><b>'+(i+1)+'. '+x[0]+'（'+fmt(x[1])+' 次，'+ovP1(x[1]/R.tot*100)+'%）</b><ul>'+a.map(s=>'<li>'+s+'</li>').join('')+'</ul></li>'); });
+      if(blankAll) adv.push('<li><b>数据质量：' + fmt(blankAll) + ' 次未填写具体问题</b><ul><li>登记表「失误问题」设为必填，未填写不予提交</li><li>每周导出未填写清单回退补录，作为登记质量考核项</li></ul></li>');
+      t.push('<ul>'+adv.join('')+'</ul>');
+      t.push('<span class="ov-h">⑤ 管理机制</span><ul>'
+        +'<li>日检：各仓每日固定时段导出当日登记，组长 2 小时内完成确认与整改指派。</li>'
+        +'<li>周复盘：按「类型 → 人员 → 环节」三维度出周报，Top1 类型必须输出整改动作与下周验证结果。</li>'
+        +'<li>闭环：整改动作与稽核扣款挂钩，连续两周无改善的人员进入 1V1 带教。</li></ul>');
+    }
+    document.getElementById('ovRegText').innerHTML=t.join('');
+  })();
+  ['ovMsgQtyChart','ovMsgPieChart','ovMsgPersonChart','ovMsgRateChart','ovRegDayChart','ovRegPieChart','ovRegTypeChart','ovRegProbChart']
+    .forEach(id=>{ const el=document.getElementById(id); if(el && el.clientWidth>0){ const ins=echarts.getInstanceByDom(el); if(ins) ins.resize(); } });
 }
 // 仓看板高亮（西安 / 沈阳 / 成都 / 天津 / 总览）：同步更新顶部 tab 选中态
 function gsHighlightWh(wh){
@@ -1340,7 +1736,8 @@ document.querySelectorAll('#boardTabs .tab').forEach(b=>{
 document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天（'+DAYS[0].date+' ~ '+DAYS[DAYS.length-1].date+'）';
 document.getElementById('foot').textContent='数据生成时间：'+D.meta.generated_at+' · 数据源：飞书群聊消息 + 飞书电子表格「抖音交付、稽核汇总」+ Base「标准作业审核表」（视频调取）/ 排班表（8月及以后 · 考勤）';
 if(GS_DATES.length || (ATT&&ATT.attendance)){ renderGongshi(); }
-window.addEventListener('resize',()=>{if(trendChart)trendChart.resize();if(regionChart)regionChart.resize();if(gsCmpChart)gsCmpChart.resize();if(gsQtyChart)gsQtyChart.resize();if(gsHoursChart)gsHoursChart.resize();if(attChart)attChart.resize();if(perChart)perChart.resize();});
+window.addEventListener('resize',()=>{if(trendChart)trendChart.resize();if(regionChart)regionChart.resize();if(gsCmpChart)gsCmpChart.resize();if(gsQtyChart)gsQtyChart.resize();if(gsHoursChart)gsHoursChart.resize();if(attChart)attChart.resize();if(perChart)perChart.resize();
+  [ovMsgQtyChart,ovMsgPieChart,ovMsgPersonChart,ovMsgRateChart,ovRegDayChart,ovRegPieChart,ovRegTypeChart,ovRegProbChart].forEach(c=>{ if(c) c.resize(); });});
 </script>
 </body>
 </html>
