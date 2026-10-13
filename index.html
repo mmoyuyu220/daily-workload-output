@@ -439,8 +439,20 @@ const GS_DATES = Array.from(new Set([...Object.keys(G.dates), ...Object.keys(S.d
   const _msgRateOf = p => MSG_RATES[WAREHOUSE[p]] || MSG_RATE;
   // 规范化 msg_reply_hours（按人・分仓费率重算）
   for(const _d in G.dates){ const _g=G.dates[_d]; if(_g && _g.msg_reply_per){ let _s=0; for(const _k in _g.msg_reply_per){ _s += (_g.msg_reply_per[_k].replied||0)*_msgRateOf(_k); } _g.msg_reply_hours = +_s.toFixed(1); } }
-  let gsWhFilter = '西安';          // '西安' | '沈阳' | '成都' | '天津' | 'all'(总览)
-  let gsIsOverview = false;         // 总览 tab 是否激活（标准板显示全部 + 对比分析）
+let gsWhFilter = '西安';          // '西安' | '沈阳' | '成都' | '天津' | 'all'(总览)
+let gsIsOverview = false;         // 总览 tab 是否激活（标准板显示全部 + 对比分析）
+// ——「有效仓集合」统一口径：总览 tab 下所有子模块都以此为准，实现全看板随「仓联动筛选」联动 ——
+//   单仓 tab → [该仓]；总览 tab → 仓联动筛选所选仓（默认四仓全量）
+function _ovFallbackCities(){ return ['西安','沈阳','成都','天津']; }
+function gsCitySet(){
+  if(!gsIsOverview) return [gsWhFilter];
+  const _all = (typeof OV_CITIES!=='undefined' && OV_CITIES && OV_CITIES.length) ? OV_CITIES : _ovFallbackCities();
+  const _sel = (typeof OV_SEL!=='undefined' && OV_SEL && OV_SEL.length) ? OV_SEL : _all;
+  return _sel.slice();
+}
+function gsCityAll(){ return gsCitySet().length >= ((typeof OV_CITIES!=='undefined' && OV_CITIES) ? OV_CITIES.length : 4); }
+function gsCityHas(p){ if(gsCityAll()) return true; return gsCitySet().indexOf(WAREHOUSE[p]||'西安')>=0; }
+function gsCityLabel(){ return gsCityAll() ? '所选仓' : gsCitySet().join('、'); }
 // 区间筛选选择器（gsRngStartPicker / gsRngEndPicker）在文件末尾 ATT / VIDEO_DATA 常量定义之后创建，避免 const TDZ。
 // 某日三源合计（源缺数据按 0 计；两源皆无 → null 断线）
 function gsDayTotals(d){
@@ -474,7 +486,9 @@ function renderGongshi(){
   let mailq=0;
   Object.keys((MAIL_ANOMALY&&MAIL_ANOMALY.byDay)||{}).filter(d=>d>=start&&d<=end).forEach(d=>{ mailq += MAIL_ANOMALY.byDay[d]||0; });
   // 仓联动（核心指标随「仓筛选」折算）：全部=原值；指定仓=该仓按人明细合计（直接算，不靠 全部−其它）
-  const selList = (gsWhFilter==='all') ? null : (CITY_PEOPLE[gsWhFilter]||[]);
+  const _AC = gsCitySet();                       // 有效仓集合（总览 = 仓联动筛选所选仓）
+  const _ALLPICK = gsCityAll();
+  const selList = _ALLPICK ? null : _AC.reduce((a,c)=>a.concat(CITY_PEOPLE[c]||[]), []);
   let sel={tq:0,mq:0,sq:0,th:0,mh:0,shh:0};
   if(selList){ rngDays.forEach(d=>{
     const g=G.dates[d], s=S.dates[d];
@@ -487,10 +501,10 @@ function renderGongshi(){
     }
     if(s){ selList.forEach(p=>{ const _o=(s.per&&s.per[p])||{}; sel.sq+=_o.qty||0; sel.shh+=_o.hours||0; }); }
   }); }
-  const _cityPick = f => gsWhFilter==='all' ? ({tq, mq, sq, th, mh, shh: sh})[f] : sel[f];
+  const _cityPick = f => _ALLPICK ? ({tq, mq, sq, th, mh, shh: sh})[f] : sel[f];
   tq=_cityPick('tq'); mq=_cityPick('mq'); sq=_cityPick('sq');
   th=_cityPick('th'); mh=_cityPick('mh'); sh=_cityPick('shh');
-  if(gsWhFilter!=='all' && gsWhFilter!=='西安'){ vq=0; mailq=0; }   // 视频调取 / 异常邮件跟进 仅分摊至西安人员 → 非西安仓恒 0
+  if(!_ALLPICK && _AC.indexOf('西安')<0){ vq=0; mailq=0; }   // 视频调取 / 异常邮件跟进 仅分摊至西安人员 → 所选仓不含西安则 0
   setTxt('gsRangeLbl2', (start&&end)?(start+' ~ '+end):'—');
   setTxt('gsTqQty', hasRng?fmt(tq)+' 件':'—');
   setTxt('gsMsgQty', hasRng?fmt(mq)+' 次':'—');
@@ -525,7 +539,7 @@ function renderGongshi(){
   rngDays.forEach(d=>{ const m=mailSplit(d); FIVE.forEach(p=>{ mailPer[p]+=m[p]; }); });
   const emps = Array.from(new Set([...FIVE, ...(S.employees||[])]));
   // 仓筛选：仅保留所选仓的人员（默认全部）
-  const _emps = emps.filter(p=> gsWhFilter==='all' || (WAREHOUSE[p]||'西安')===gsWhFilter);
+  const _emps = emps.filter(p=> gsCityHas(p));
   const rows = _emps.map(p=>{
     let a=0,b=0,c=0,swH2=0;
     rngDays.forEach(d=>{ const g=G.dates[d], s=S.dates[d];
@@ -605,7 +619,7 @@ function renderGongshi(){
   setTxt('gsDaysCnt', hasRng?rngDays.length:'—');
 
   // ④.1 顶部汇总卡片（每日处理量 / 日均UPPH / 理论耗时(区间合计) / 日均出勤人数）—— 随筛选联动
-  const ATT_PEOPLE = ((ATT&&ATT.people)||[]).filter(p=> gsWhFilter==='all' || (WAREHOUSE[p]||'西安')===gsWhFilter);
+  const ATT_PEOPLE = ((ATT&&ATT.people)||[]).filter(p=> gsCityHas(p));
   let attManDays = 0;   // 区间出勤人日 = 各日出勤人数(<== 与出勤趋势图同源：ATT.people 中当日='出勤')之和
   rngDays.forEach(d=>{ const row=(ATT&&ATT.attendance&&ATT.attendance[d])||{};
     attManDays += ATT_PEOPLE.filter(p=>(row[p]||'')==='出勤').length; });
@@ -620,9 +634,9 @@ function renderGongshi(){
   const cmpColors=['#ea4335','#4285f4','#e67e22'];
   const cmpVals=[th||0, mh||0, sh||0];
   if(!hasRng){ gsCmpChart.clear(); }
-  else if(gsWhFilter!=='all' && tq===0 && sq===0 && mq===0){
+  else if(!_ALLPICK && tq===0 && sq===0 && mq===0){
     // 该仓暂无各理论耗时量对比数据（取退货/消息回复/SW 三项皆 0）→ 空态
-    gsCmpChart.setOption({title:{text:gsWhFilter+'暂无各理论耗时量对比数据', left:'center', top:'center', textStyle:{color:'#98a2b3', fontSize:13, fontWeight:'normal'}}, xAxis:{type:'category', data:[]}, yAxis:{type:'value', name:'理论耗时(分)', nameTextStyle:{fontSize:11}}, series:[]}, true);
+    gsCmpChart.setOption({title:{text:gsCityLabel()+'暂无各理论耗时量对比数据', left:'center', top:'center', textStyle:{color:'#98a2b3', fontSize:13, fontWeight:'normal'}}, xAxis:{type:'category', data:[]}, yAxis:{type:'value', name:'理论耗时(分)', nameTextStyle:{fontSize:11}}, series:[]}, true);
   }
   else{
     gsCmpChart.setOption({
@@ -656,16 +670,16 @@ function renderGongshi(){
     }
     return o;
   };
-  const _adj=(base,k)=> gsWhFilter==='all'? base : (sel[k]||0);
+  const _adj=(base,k)=> _ALLPICK? base : (sel[k]||0);
   const gv=(d,k)=>{const r=G.dates[d]; if(!r) return null; const base=(r[k]==null?0:r[k]);
-    if(gsWhFilter==='all') return base; const c=_shComp(d);
+    if(_ALLPICK) return base; const c=_shComp(d);
     const _m={tuihuo_qty:'tq',msg_reply_qty:'mq',tuihuo_hours:'th',msg_reply_hours:'mh'};
     return _adj(base, _m[k]);};
   const sv=(d,k)=>{const r=S.dates[d]; if(!r) return null; const base=(r[k]==null?0:r[k]);
-    if(gsWhFilter==='all') return base; const c=_shComp(d);
+    if(_ALLPICK) return base; const c=_shComp(d);
     return _adj(base, k==='qty'? c.sq : c.shh);};
   const tv=(d,k)=>{const t=gsDayTotals(d); if(!t) return null;
-    if(gsWhFilter==='all') return t[k]; const c=_shComp(d);
+    if(_ALLPICK) return t[k]; const c=_shComp(d);
     return _adj(t[k], k==='qty'? (c.tq+c.mq+c.sq) : (c.th+c.mh+c.shh));};
   const xlab = rngDays.map(G_LABEL);
   const mk=(name,color,data,bold)=>({name:name,type:'line',smooth:true,symbol:'circle',symbolSize:6,
@@ -729,26 +743,25 @@ const GS_GONGSHI = [
 function renderGongshiTable(){
   const wrap=document.getElementById('gsGongshiTable');
   if(!wrap) return;
-  // 非西安仓：暂无取退货/SW 等源数据；消息回复已按各仓真实群消息测定（沈阳 17.6 / 成都 21.6 / 天津 15.9）
-  if(gsWhFilter!=='all' && gsWhFilter!=='西安'){
-    const rate = MSG_RATES[gsWhFilter]||MSG_RATE;
-    wrap.innerHTML='<table><tr><th>工艺名称</th><th>标准工时<br>(min/次)</th><th>计算逻辑</th><th>更新日期</th></tr>'
-      +'<tr><td class="nm">消息回复（客诉对接）</td><td class="rate">'+rate+'</td>'
-      +'<td>由'+gsWhFilter+' 人员 2026 年 7–9 月群消息（C2B客服&供应链能力中心异常对接群(新)、B2B出货组、供应链能力中心&顾问&异常协作群、C2B供应链能力中心客诉对接）回复平均时长测定（按实际回复人统计，非被@人）'+'</td><td>2026-10-13</td></tr>'
-      +'<tr><td class="nm">取退货</td><td class="na">—</td><td><span class="na">'+gsWhFilter+'暂无源数据</span></td><td><span class="na">—</span></td></tr>'
-      +'<tr><td class="nm">SW稽核</td><td class="na">—</td><td><span class="na">'+gsWhFilter+'暂无源数据</span></td><td><span class="na">—</span></td></tr>'
-      +'</table>';
-    return;
+  // 随「有效仓集合」联动：西安=完整工艺工时表；沈阳 / 成都 / 天津 = 各自消息回复费率 + 取退货 / SW 无源数据说明
+  const CS=gsCitySet(), HAS_XA=CS.indexOf('西安')>=0, OTH=CS.filter(c=>c!=='西安');
+  let h='<table><tr><th>工艺名称</th><th>仓</th><th>标准工时<br>(min/次)</th><th>计算逻辑</th><th>更新日期</th></tr>';
+  if(HAS_XA){
+    GS_GONGSHI.forEach(r=>{
+      const rate = r.rate ? '<td class="rate">'+r.rate+'</td>' : '<td class="na">—</td>';
+      const logic = r.logic ? r.logic : '<span class="na">—</span>';
+      const date  = r.date  ? r.date  : '<span class="na">—</span>';
+      h+='<tr><td class="nm">'+r.name+'</td><td>西安</td>'+rate+'<td>'+logic+'</td><td>'+date+'</td></tr>';
+    });
   }
-  let h='<table><tr><th>工艺名称</th><th>标准工时<br>(min/次)</th><th>计算逻辑</th><th>更新日期</th></tr>';
-  GS_GONGSHI.forEach(r=>{
-    const rate = r.rate ? '<td class="rate">'+r.rate+'</td>' : '<td class="na">—</td>';
-    const logic = r.logic ? r.logic : '<span class="na">—</span>';
-    const date  = r.date  ? r.date  : '<span class="na">—</span>';
-    h+='<tr><td class="nm">'+r.name+'</td>'+rate+'<td>'+logic+'</td><td>'+date+'</td></tr>';
+  OTH.forEach(c=>{
+    const rate = MSG_RATES[c]||MSG_RATE;
+    h+='<tr><td class="nm">消息回复（客诉对接）</td><td>'+c+'</td><td class="rate">'+rate+'</td>'
+      +'<td>由'+c+' 人员 2026 年 7–9 月群消息（C2B客服&供应链能力中心异常对接群(新)、B2B出货组、供应链能力中心&顾问&异常协作群、C2B供应链能力中心客诉对接）回复平均时长测定（按实际回复人统计，非被@人）</td><td>2026-10-13</td></tr>'
+      +'<tr><td class="nm">取退货</td><td>'+c+'</td><td class="na">—</td><td><span class="na">'+c+'暂无源数据</span></td><td><span class="na">—</span></td></tr>'
+      +'<tr><td class="nm">SW稽核</td><td>'+c+'</td><td class="na">—</td><td><span class="na">'+c+'暂无源数据</span></td><td><span class="na">—</span></td></tr>';
   });
-  h+='</table>';
-  wrap.innerHTML=h;
+  wrap.innerHTML=h+'</table>';
 }
 // 视频调取明细（仅 9/14、9/15 有数据；其余日期走「无数据」空态但仍显示考勤）
 const VIDEO_DATA = {
@@ -1016,7 +1029,7 @@ function renderAttRange(start,end){
   } else {
     days=daysAll;
   }
-  const P=ATT.people.filter(p=> gsWhFilter==='all' || (WAREHOUSE[p]||'西安')===gsWhFilter);
+  const P=ATT.people.filter(p=> gsCityHas(p));
   // 汇总始终按所选区间全量统计，避免被默认折叠误导
   const sum={}; P.forEach(p=>sum[p]={on:0,off:0});
   daysAll.forEach(d=>{ P.forEach(p=>{ const s=(ATT.attendance[d][p]||'');
@@ -1116,7 +1129,7 @@ function renderAttMonth(){
   const y = parseInt(dm.slice(0,4),10), m = parseInt(dm.slice(5,7),10);
   const should = computeShouldAttend(y, m);
   const shouldH = should * 8;
-  const P = ATT.people.filter(p=> gsWhFilter==='all' || (WAREHOUSE[p]||'西安')===gsWhFilter);
+  const P = ATT.people.filter(p=> gsCityHas(p));
   const actual = {}; P.forEach(p=>actual[p]=0);
   Object.keys(ATT.attendance).forEach(d=>{
     if(!d.startsWith(dm)) return;
@@ -1140,7 +1153,7 @@ function renderAttChart(start,end){
   const el=document.getElementById('attChart'); if(!el) return;
   if(!attChart) attChart=echarts.init(el);
   const days=Object.keys(ATT.attendance).filter(d=>d>=start&&d<=end).sort();
-  const P=ATT.people.filter(p=> gsWhFilter==='all' || (WAREHOUSE[p]||'西安')===gsWhFilter);
+  const P=ATT.people.filter(p=> gsCityHas(p));
   if(!days.length){ attChart.clear(); return; }
   const onCnt=[], rate=[];
   days.forEach(d=>{
@@ -1175,7 +1188,7 @@ function renderPerChart(start,end){
   // 视频调取：区间内各视频日按人累计（与表格/核心指标口径一致、随区间联动）
   const vidPer={}; FIVE.forEach(p=>vidPer[p]=0);
   Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).forEach(d=>{ const m=vidDayMapBuild(d); FIVE.forEach(p=>{ vidPer[p]+=(m[p]||0); }); });
-  const P=Array.from(new Set([...FIVE, ...(S.employees||[])])).filter(p=> gsWhFilter==='all' || (WAREHOUSE[p]||'西安')===gsWhFilter);
+  const P=Array.from(new Set([...FIVE, ...(S.employees||[])])).filter(p=> gsCityHas(p));
   const aArr=[],bArr=[],cArr=[],vArr=[],mArr=[];
   P.forEach(p=>{
     let a=0,b=0,c=0;
@@ -1237,11 +1250,12 @@ function regDatesOf(city){
 }
 // 当前视图（所选仓 / 总览四仓并集）可用日期
 function regActiveDates(){
-  if(gsIsOverview){
-    const all = REG_CITIES.reduce((a,c)=>a.concat(regDatesOf(c)), []);
+  const CS = gsCitySet();
+  if(CS.length>1 || gsIsOverview){
+    const all = CS.reduce((a,c)=>a.concat(regDatesOf(c)), []);
     return Array.from(new Set(all)).sort();
   }
-  return regDatesOf(gsWhFilter);
+  return regDatesOf(CS[0]||gsWhFilter);
 }
 // 生效区间：按日期 → start=end=所选日；按区间 → 跟随全局筛选
 function regActiveRange(){
@@ -1317,7 +1331,7 @@ function renderRegSection(){
   const _r=regActiveRange(), start=_r[0], end=_r[1];
   let html='';
   if(gsIsOverview){
-    const cities=['西安','沈阳','成都','天津'];
+    const cities=gsCitySet();
     let h='<table><tr><th>仓</th><th>流转失误总次数</th><th>涉及人员数</th><th>主要业务分类(Top3)</th></tr>';
     cities.forEach(c=>{
       const agg=regAgg(c, start, end);
@@ -1784,7 +1798,9 @@ function renderOverview(){
       if(!OV_SEL.length) OV_SEL=OV_CITIES.slice();            // 全部取消 → 视为全量
       OV_SEL.sort((x,y)=>OV_CITIES.indexOf(x)-OV_CITIES.indexOf(y));
     }
-    sync(); renderOverview();
+    sync();
+    if(gsIsOverview && typeof gsApplyFilter==='function') gsApplyFilter();   // 总览：全看板整体重算（核心指标 / 工艺工时 / 耗时对比 / 趋势 / 各人出勤 / 每人工作量 / 流转失误 + 总览专题）
+    else renderOverview();
   }
   secBtns.forEach(b=>{ b.onclick=()=>clickCity(b.dataset.c); });
   if(sel){
