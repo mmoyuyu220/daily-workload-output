@@ -1243,8 +1243,8 @@ const gsRngStartPicker={get value(){return gsStartEl.value;}};
 const gsRngEndPicker  ={get value(){return gsEndEl.value;}};
 // 考勤明细折叠开关：false=默认仅显示最近 3 天（多余隐藏）；true=按所选区间完整呈现（用户手动筛选后）
 let gsAttUserFiltered=false;
-// 默认区间 = 最近 3 个数据日（多余天数全部隐藏）；用户可用「区间快速选择 / 应用筛选」放大
-gsEndEl.value=gsDataMax||gsAllMax;
+// 默认区间 = 所选仓最近 3 个数据日（多余天数隐藏）；用户可用「区间快速选择 / 应用筛选」放大
+gsEndEl.value=gsAnchorMax();
 gsStartEl.value=gsRangeStartFor(3);
 function gsApplyFilter(){
   let st=gsStartEl.value||gsAllMin, en=gsEndEl.value||gsAllMax;
@@ -1840,6 +1840,7 @@ function renderOverview(){
       OV_SEL.sort((x,y)=>OV_CITIES.indexOf(x)-OV_CITIES.indexOf(y));
     }
     sync();
+    if(!gsRangeManual) gsSetDefaultRange(3);      // 未手动选区间 → 跟随所选仓的数据末日（防止成都 / 天津被切空）
     if(gsIsOverview && typeof gsApplyFilter==='function') gsApplyFilter();   // 总览：全看板整体重算（核心指标 / 工艺工时 / 耗时对比 / 趋势 / 各人出勤 / 每人工作量 / 流转失误 + 总览专题）
     else renderOverview();
   }
@@ -1872,42 +1873,85 @@ function gsHighlightWh(wh){
   if(window.ovSyncCityBar) ovSyncCityBar();
   regOnCityChange();     // 流转失误「按日期」模式下，切仓自动落到该仓最近的登记日
 }
+// —— 各仓「最后有数据日」→ 默认 / 近 N 天区间的基准日 ——
+// 各仓数据源覆盖不一致（西安 / 沈阳更新到 10 月，成都 / 天津源数据止于 2026-09-30）。
+// 若统一以「全局最新数据日」做最近 N 天基准，源数据较早的仓会被整段切空（表格全 0 / 图表空白）。
+// 现规则：基准日 = 所选仓各自「最后有数据日」中最早的那天 → 保证所选仓都不落空，并随仓筛选联动。
+let gsRangeManual=false;      // true = 用户手动指定过区间（切仓 / 切 tab 时不再自动调整）
+function gsLastDayOf(city){
+  try{
+    if(city==='西安') return gsDataMax||gsAllMax;      // 西安=主数据源（取退货 / 视频 / 异常邮件均以西安口径核算），覆盖到最新数据日
+    const people=(typeof CITY_PEOPLE!=='undefined'&&CITY_PEOPLE[city])||[];
+    for(let i=GS_DATES.length-1;i>=0;i--){
+      const d=GS_DATES[i], gd=G.dates[d], sd=S.dates[d];
+      // 注意：gd.tuihuo_qty / gd.msg_reply_qty 为全局（西安口径）汇总量，不能用于判断其它仓是否有数据，
+      //      非西安仓只能看「本仓人员」的 msg_reply_per / SW per。
+      if(gd){
+        const mp=gd.msg_reply_per||{};
+        if(people.some(p=>((mp[p]||{}).replied||0)>0)) return d;
+      }
+      if(sd && (sd.qty||0)>0 && people.some(p=>(((sd.per||{})[p]||{}).qty||0)>0)) return d;
+    }
+  }catch(e){}
+  return null;
+}
+function gsAnchorMax(){
+  try{
+    const ls=gsCitySet().map(gsLastDayOf).filter(Boolean);
+    if(ls.length) return ls.slice().sort()[0];
+  }catch(e){}
+  return gsDataMax||gsAllMax;
+}
+function gsDefaultRangeOf(days){
+  const a=gsAnchorMax(), i=gsAllDates.lastIndexOf(a);
+  return {end:a, start: gsAllDates[Math.max(0,i-((days||3)-1))]||gsAllMin};
+}
+function gsSetDefaultRange(days){
+  const r=gsDefaultRangeOf(days);
+  gsEndEl.value=r.end; gsStartEl.value=r.start;
+  gsRangeManual=false;
+}
 function gsRangeStartFor(days){
   if(!days) return gsAllMin;
-  const i=gsAllDates.lastIndexOf(gsDataMax||gsAllMax);
+  const i=gsAllDates.lastIndexOf(gsAnchorMax());
   return gsAllDates[Math.max(0, i-days+1)]||gsAllMin;
 }
 document.getElementById('gsApplyBtn').onclick=()=>{
   const b=document.getElementById('gsApplyBtn');
   b.classList.add('flash'); setTimeout(()=>b.classList.remove('flash'),520);
+  // 手动「应用筛选」：若所选区间与默认区间不同 → 标记为用户手动区间（后续切仓 / 切 tab 不再自动改）
+  try{ const _r=gsDefaultRangeOf(3);
+       gsRangeManual = !((gsStartEl.value===_r.start) && (gsEndEl.value===_r.end)); }catch(e){ gsRangeManual=true; }
   gsAttUserFiltered=true; gsApplyFilter();   // 手动应用区间 → 完整呈现考勤明细
 };
 document.getElementById('gsResetBtn').onclick=()=>{
-  gsEndEl.value=gsDataMax||gsAllMax; gsStartEl.value=gsRangeStartFor(3);   // 重置=恢复默认（最近 3 个数据日）
+  gsHighlightWh('西安');                          // 先复位到西安 tab（基准仓决定默认区间的 anchor）
   if(window.ovResetCity) ovResetCity();          // 重置=筛选条件整体复位（区间 + 总览仓筛选）
-  gsHighlightWh('西安');
+  gsEndEl.value=gsAnchorMax(); gsStartEl.value=gsRangeStartFor(3);   // 重置=恢复默认（所选仓最近 3 个数据日）
   gsAttUserFiltered=false; gsHighlightQuick('3'); renderGongshi();
 };
 // 今天 / 昨天：视频已改为区间累计，原「查看当日」单日标记已废除；现把区间直接定位到 T-1 / T-2 数据日（单日视图）
-document.getElementById('gsTodayBtn').onclick=()=>{ gsAttUserFiltered=true; gsStartEl.value=gsDataMax||gsAllMax; gsEndEl.value=gsDataMax||gsAllMax; gsApplyFilter(); };
+document.getElementById('gsTodayBtn').onclick=()=>{ gsAttUserFiltered=true; gsRangeManual=true; gsStartEl.value=gsDataMax||gsAllMax; gsEndEl.value=gsDataMax||gsAllMax; gsApplyFilter(); };
 document.getElementById('gsYestBtn').onclick=()=>{
   const i=gsAllDates.lastIndexOf(gsDataMax||gsAllMax);
-  const y=(i>0?gsAllDates[i-1]:(gsDataMax||gsAllMax)); gsAttUserFiltered=true; gsStartEl.value=y; gsEndEl.value=y; gsApplyFilter();
+  const y=(i>0?gsAllDates[i-1]:(gsDataMax||gsAllMax)); gsAttUserFiltered=true; gsRangeManual=true; gsStartEl.value=y; gsEndEl.value=y; gsApplyFilter();
 };
 document.querySelectorAll('.fp-quick button').forEach(b=>{
   b.onclick=()=>{
     const r=b.dataset.range;
     gsHighlightQuick(r);
     gsAttUserFiltered=true;   // 手动选择区间 → 完整呈现考勤明细
+    if(r==='all') gsRangeManual=true;
     if(r==='all'){ gsStartEl.value=gsAllMin; gsEndEl.value=gsAllMax; }
-    else{ gsEndEl.value=gsDataMax||gsAllMax; gsStartEl.value=gsRangeStartFor(parseInt(r,10)); }
+    else{ gsEndEl.value=gsAnchorMax(); gsStartEl.value=gsRangeStartFor(parseInt(r,10)); gsRangeManual=false; }
     gsApplyFilter();
   };
 });
 // 仓看板切换（西安 / 沈阳）：点击即联动重渲染，不改变日期区间与考勤明细折叠状态
 document.querySelectorAll('#boardTabs .tab').forEach(b=>{
   b.onclick=()=>{
-    gsHighlightWh(b.dataset.wh);
+    gsHighlightWh(b.dataset.wh);                 // 先写入当前仓（gsWhFilter / gsIsOverview）
+    if(!gsRangeManual) gsSetDefaultRange(3);     // 再按目标仓的数据末日重置默认区间（成都 / 天津源止于 9-30，不会被 10 月窗口切空）
     renderGongshi();
     regSyncBar();
   };
@@ -1937,7 +1981,7 @@ document.querySelectorAll('#boardTabs .tab').forEach(b=>{
 })();
 [gsStartEl,gsEndEl].forEach(el=>{
   el.addEventListener('keydown',ev=>{ if(ev.key==='Enter') gsApplyFilter(); });
-  el.addEventListener('change',()=>{ gsApplyFilter(); });   // 改日期（含原生日期选择器选取）即时联动，无需点「应用筛选」
+  el.addEventListener('change',()=>{ gsRangeManual=true; gsApplyFilter(); });   // 改日期（含原生日期选择器选取）即时联动，无需点「应用筛选」
 });
 document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天（'+DAYS[0].date+' ~ '+DAYS[DAYS.length-1].date+'）';
 document.getElementById('foot').textContent='数据生成时间：'+D.meta.generated_at+' · 数据源：飞书群聊消息 + 飞书电子表格「抖音交付、稽核汇总」+ Base「标准作业审核表」（视频调取）/ 排班表（8月及以后 · 考勤）';
