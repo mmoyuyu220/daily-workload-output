@@ -668,15 +668,15 @@ try{
       return '<tr><td class="grp">'+r.group+'</td><td class="cname">'+r.atPerson+'</td><td>'+r.atTime+'</td><td class="cname">'+(r.actualReplier||'—')+'</td><td>'+(r.responseMin||'—')+'</td><td>'+statusTag(r.status)+'</td></tr>';
     }).join('');
     var html='';
-    html+='<div class="ctable-block"><div class="ctable-title">外部客服对接 · 目标同事回复明细（精确到人）</div>'+
+    html+='<div class="ctable-block"><div class="ctable-title">外部客服对接 · 目标同事回复明细</div>'+
       '<div class="ctable-desc">按 7 位目标同事分人统计：被@数 = 当日被@次数；回复数量 = 该同事实际处理（回复）的工单数；他人代回 = 被@后由其他同事跟进；未跟进 = 被@后无人处理；平均/最大回复时长（分）。</div>'+
       '<table class="ops-table"><thead><tr><th>姓名</th><th>被@数</th><th>回复数量</th><th>他人代回</th><th>未跟进</th><th>平均回复时长(分)</th><th>最大回复时长(分)</th></tr></thead><tbody>'+extRows+'</tbody></table></div>';
-    html+='<div class="ctable-block" style="margin-top:18px;"><div class="ctable-title">群消息回复明细（实际回复人）</div>'+
+    html+='<div class="ctable-block" style="margin-top:18px;"><div class="ctable-title">群消息回复明细</div>'+
       '<div class="ctable-desc">每条@工单的归属：群 / 被@人 / 时间 / 实际回复人 / 响应时长(分) / 状态。</div>'+
       '<table class="ops-table"><thead><tr><th>群</th><th>被@人</th><th>时间</th><th>实际回复人</th><th>响应(分)</th><th>状态</th></tr></thead><tbody>'+detailRows+'</tbody></table></div>';
     var intPc=int_.perColleague||[]; var intMax=Math.max(1,...intPc.map(function(c){return c.sent||0;}));
     var intRows=intPc.map(function(c){ var v=c.sent||0; var w=Math.round(v/intMax*100); return '<tr><td class="cname">'+c.name+'</td><td class="bar-cell"><div class="hbar"><span class="hbar-fill" style="width:'+w+'%"></span><span class="hbar-val">'+v+'</span></div></td><td class="grp">'+((c.groups||[]).join('、')||'—')+'</td></tr>'; }).join('');
-    html+='<div class="ctable-block"><div class="ctable-title">内部客服对接 · 目标人明细（回复/发言次数）</div><table class="ops-table"><thead><tr><th>目标人</th><th>回复次数</th><th>涉及群聊</th></tr></thead><tbody>'+intRows+'</tbody></table></div>';
+    html+='<div class="ctable-block"><div class="ctable-title">内部客服对接 · 目标人明细</div><table class="ops-table"><thead><tr><th>目标人</th><th>回复次数</th><th>涉及群聊</th></tr></thead><tbody>'+intRows+'</tbody></table></div>';
     return html;
   }
   function genMessageCards(d){
@@ -746,13 +746,13 @@ try{
     var genTime=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
     var wo=cur.ops.workOrder;
     return '<div class="single-report">'+
-      '<div class="header"><h1>运营数据汇总日报</h1><div class="sub">统计日期：'+date+' ｜ 数据范围：客服对接 · 内部消息 · 运营处理量(含工单) · 素养检查（当日检出问题） · 预警看板（西安未处理预警）</div></div>'+
+      '<div class="header"><h1>运营数据汇总日报</h1><div class="sub">统计日期：'+date+' ｜ 数据范围：客服对接 · 内部消息 · 运营处理量 · 素养检查 · 预警看板</div></div>'+
       '<div class="section"><div class="section-title">板块一 · 消息对接统计</div>'+genMessageCards(cur)+'</div>'+
       '<div class="section"><div class="section-title">板块二 · '+month+'月'+day+'日 运营处理量</div><div class="panel"><div class="ops-grid">'+genOpsGrid(cur)+'</div></div>'+
-      '<div class="panel wo-section"><div class="wo-header">工单处理量明细 · 各区域日工单（西安'+wo['西安']+' 太原'+wo['太原']+' 兰州'+wo['兰州']+'） ｜ 当日合计 <strong>'+wo.total+'</strong> 单</div>'+genWorkorderBars(cur)+'</div>'+
+      '<div class="panel wo-section"><div class="wo-header">工单处理量明细 · 各区域日工单 ｜ 西安'+wo['西安']+' 太原'+wo['太原']+' 兰州'+wo['兰州']+' ｜ 当日合计 <strong>'+wo.total+'</strong> 单</div>'+genWorkorderBars(cur)+'</div>'+
       '<div class="panel chart-section"><div class="chart-title">运营处理量分布 · 各指标对比</div><div class="chart-wrap">'+genBarChart(cur)+'</div></div></div>'+
-      '<div class="section"><div class="section-title">板块三 · 素养检查（当日检出问题）</div><div class="panel">'+genQualityCheckSection(cur)+'</div></div>'+
-      '<div class="section"><div class="section-title">板块四 · 预警看板（西安未处理预警）</div><div class="panel">'+genWarningSection(cur)+'</div></div>'+
+      '<div class="section"><div class="section-title">板块三 · 素养检查</div><div class="panel">'+genQualityCheckSection(cur)+'</div></div>'+
+      '<div class="section"><div class="section-title">板块四 · 预警看板</div><div class="panel">'+genWarningSection(cur)+'</div></div>'+
       '<div class="footer">报告生成时间：'+genTime+' ｜ 数据来源：飞书群消息 + 飞书表格「抖音交付、稽核汇总」+ 飞书多维表「预警未处理明细 / 素养检查」</div></div>';
   }
   function odsRender(date){ $('odsContent').innerHTML=odsReportHtml(date); }
