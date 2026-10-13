@@ -237,7 +237,7 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
     <div class="gs-card"><div class="gs-lb">出勤人数</div><div class="gs-vl"><span id="gsSumAtt">—</span><span class="gs-un">人 / 天</span></div></div>
   </div>
 
-  <div class="sec-title">核心指标（区间：<span id="gsRangeLbl2">—</span>）</div>
+  <div class="sec-title">核心指标<span id="gsRangeLbl2" style="display:none"></span></div>
   <table class="core-tbl">
     <tr><th class="nm">指标</th><th>数量</th><th>理论耗时</th></tr>
     <tr><td class="nm">取退货</td><td id="gsTqQty">—</td><td id="gsTqHours">—</td></tr>
@@ -249,29 +249,29 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
     <tr class="upph-row"><td class="nm">日均UPPH<span class="thu">（区间综合·8H）</span></td><td id="gsAvgUpph">—</td><td>—</td></tr>
   </table>
 
-  <div class="sec-title">工艺工时（标准工时对照表）</div>
+  <div class="sec-title">工艺工时</div>
   <div class="hint">每日明细中（一部分）的耗时按本表标准工时自动计算（耗时 = 处理量 × 标准工时）。来源：飞书「工艺工时摸底」子表（视频调取 / 流转专项视频 标准工时另取每日明细(西安)Q列「视频调取耗时÷量」均值），更新于 2026-09-18。</div>
   <div id="gsGongshiTable"></div>
 
-  <div class="sec-title">各理论耗时量对比（区间）</div>
+  <div class="sec-title">各理论耗时量对比</div>
   <div class="chart" id="gsCmpChart" style="height:300px"></div>
 
   <!-- 每人每天的出勤详情（随上方「筛选条件」联动；默认显示最近 3 天，多余天数自动隐藏） -->
   <div class="m-video">
-    <div class="sec-title">📅 各人出勤（区间：<span id="attRangeLbl">—</span>）</div>
+    <div class="sec-title">📅 各人出勤<span id="attRangeLbl" style="display:none"></span></div>
     <div class="hint">出勤=「上班」(绿)、休息=「休息」(红)、婚假(红)。每行一日、每列一人；默认仅显示最近 3 天明细，其余天数自动隐藏。如需查看完整明细，请用上方「筛选条件」选择所需区间（如近7天）。下方汇总统计所选区间全量出勤 / 休息天数。成都 / 天津 暂无排班源数据，出勤列留空（待补源后自动并入）。</div>
     <div id="attTableWrap" class="att-scroll"></div>
     <div id="attSummary" class="vp-attstrip att-sum"></div>
     <div id="attMonthStat" class="vp-attstrip att-sum"></div>
-    <div class="sec-title" style="margin-top:14px">出勤趋势分析（折线图）</div>
+    <div class="sec-title" style="margin-top:14px">出勤趋势分析</div>
     <div class="hint">所选区间内每日出勤人数（左轴）与出勤率＝当日出勤人数 ÷ 所选仓应出勤人数（仓筛选=全部时为四仓合计 26 人，选西安 5 / 沈阳 3 / 成都 5 / 天津 13 人）（右轴）。</div>
     <div class="chart" id="attChart" style="height:300px"></div>
   </div>
 
-  <div class="sec-title">每人工作量（区间累计 · <span id="gsPerRangeLbl">—</span>）</div>
+  <div class="sec-title">每人工作量<span id="gsPerRangeLbl" style="display:none"></span></div>
   <div id="gsPerTotTable"></div>
 
-  <div class="sec-title" style="margin-top:16px">流转失误（客诉、流转风险识别 · 按 业务分类 / 失误人员 / 处罚措施 合并，工艺工时暂不计算）</div>
+  <div class="sec-title" style="margin-top:16px">流转失误</div>
   <div class="hint">数据来源：飞书 wiki「客诉、流转风险识别」(CMI5wxhZ3iRrO1koLzxczUIlnrg · 子表 3f5583)，按 仓 + 日期 抓取；同类同罚相同 → 合并计次、数量累加。每日 T-1 自动刷新，抓取脚本 _pull_city_reg.py 支持 单日 / --date / --dates / --from--to 区间 / --days / --all 全量补抓。</div>
   <div class="fp-quick" id="regDateBar" style="margin:9px 0 6px;padding-top:9px;border-top:1px dashed #e6eaf0">
     <span>抓取方式</span>
@@ -284,21 +284,21 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
   </div>
   <div id="regSection"></div>
 
-  <div class="sec-title" style="margin-top:14px">每人工作量对比（图表）</div>
+  <div class="sec-title" style="margin-top:14px">每人工作量对比</div>
   <div class="hint">区间累计：取退货 / 消息回复 / SW稽核 / 视频调取量 / 异常邮件跟进 均为所选区间合计（视频调取量 = 区间内各视频日 Part2+群视频 Part3+西安流转专项视频按人累计，与表格、核心指标口径一致，随区间筛选联动）。</div>
   <div class="chart" id="perChart" style="height:340px"></div>
 
-  <div class="sec-title">趋势分析 ① 数量 &amp; 总处理量（折线图）</div>
+  <div class="sec-title">趋势分析 ① 数量 &amp; 总处理量</div>
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
   <div class="chart" id="gsQtyChart" style="height:340px"></div>
 
-  <div class="sec-title">趋势分析 ② 理论耗时（折线图）</div>
+  <div class="sec-title">趋势分析 ② 理论耗时</div>
   <div class="hint">提示：点击图例可显示/隐藏对应指标；折线断开处表示该指标当日暂无采集数据（非 0）。</div>
   <div class="chart" id="gsHoursChart" style="height:340px"></div>
 
   <!-- 总看板（总览 tab 专属）：四仓成员横向对比分析 -->
   <div id="overviewSection" style="display:none">
-    <div class="sec-title" style="margin-top:18px">总看板 · 四仓对比分析（以西安板块为参照）</div>
+    <div class="sec-title" style="margin-top:18px">总看板 · 四仓对比分析</div>
     <div class="hint">汇总 西安 / 沈阳 / 成都 / 天津 成员，做横向对比。取退货 / SW / 视频 / 异常邮件 目前仅西安有完整源数据，其余仓待补源后自动并入；消息回复费率与流转失误已覆盖四仓。</div>
     <div id="ovMemberScale"></div>
     <div id="ovMsgRate"></div>
@@ -492,7 +492,7 @@ function renderGongshi(){
   htmlA+='</table>';
   htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取量 + 异常邮件跟进；视频调取量为区间内各视频日（Part2 标准作业审核表 + 群视频 Part3 + 西安流转专项视频按当日出勤整数分摊）按人累计，与核心指标「视频调取」口径完全一致、随区间筛选联动。UPPH = 个人总处理量 ÷（区间出勤天数 × 8 小时）。</div>';
   // 表B：处理的理论耗时（区间累计）
-  let htmlB='<div class="lbl" style="margin:12px 0 4px">处理的理论耗时（区间累计）</div><table><tr><th class="nm">姓名</th><th>仓</th>'
+  let htmlB='<div class="lbl" style="margin:12px 0 4px">处理的理论耗时</div><table><tr><th class="nm">姓名</th><th>仓</th>'
     +'<th>取退货理论耗时<span class="thu">(分)</span></th>'
     +'<th>消息回复理论时长<span class="thu">(分)</span></th>'
     +'<th>SW稽核理论耗时<span class="thu">(分)</span></th>'
@@ -954,7 +954,7 @@ function renderAttRange(start,end){
   }
   wrap.innerHTML=h;
   if(sm){
-    let head='<div class="hint" style="margin:10px 0 4px">区间汇总（全 '+daysAll.length+' 天）：每人出勤 / 休息天数</div>';
+    let head='<div class="hint" style="margin:10px 0 4px">区间汇总：每人出勤 / 休息天数</div>';
     let chips='';
     P.forEach(p=>{ chips+='<div class="vp-attchip"><span class="nm">'+p+'</span><span class="wh-tag">'+WAREHOUSE[p]+'</span><span class="st on">出 '+sum[p].on+'</span><span class="st off">休 '+sum[p].off+'</span></div>'; });
     sm.innerHTML=head+chips;
@@ -1003,7 +1003,7 @@ function renderAttMonth(){
     const row = ATT.attendance[d] || {};
     P.forEach(p=>{ if((row[p]||'')==='出勤') actual[p]++; });
   });
-  let h='<div class="lbl" style="margin:10px 0 4px">当月应出勤（'+dm+'）：应出勤 <b>'+should+'</b> 天 · 日均 8H · 应出勤总时长 <b>'+shouldH+'</b> H</div>';
+  let h='<div class="lbl" style="margin:10px 0 4px">当月应出勤：应出勤 <b>'+should+'</b> 天 · 日均 8H · 应出勤总时长 <b>'+shouldH+'</b> H</div>';
   h+='<table><tr><th>姓名</th><th>仓</th><th>应出勤(天)</th><th>实际出勤(本月)</th><th>出勤率</th><th>应出勤时长(H)</th><th>实际时长(H)</th></tr>';
   P.forEach(p=>{
     const a = actual[p];
@@ -1243,7 +1243,7 @@ function renderOverview(){
   if(!ov || !gsIsOverview) return;
   const cities=['西安','沈阳','成都','天津'];
   const _r=regActiveRange(), start=_r[0], end=_r[1];
-  let h='<div class="lbl" style="margin:10px 0 4px">各仓成员规模（商服 / 异常 拆分）</div><table><tr><th>仓</th><th>总人数</th><th>商服</th><th>异常</th></tr>';
+  let h='<div class="lbl" style="margin:10px 0 4px">各仓成员规模</div><table><tr><th>仓</th><th>总人数</th><th>商服</th><th>异常</th></tr>';
   cities.forEach(c=>{
     const people=CITY_PEOPLE[c]||[];
     const shangfu=people.filter(p=>CITY_SUBTYPE[p]==='商服').length;
@@ -1253,11 +1253,11 @@ function renderOverview(){
   h+='</table>';
   document.getElementById('ovMemberScale').innerHTML=h;
   const note={'西安':'真实（看板响应时长加权，按实际回复人）','沈阳':'真实（7-9月 按实际回复人 reply_to 均值）','成都':'真实（7-9月 4 群 按实际回复人均值，剔除 >24h）','天津':'真实（7-9月 4 群 按实际回复人均值，剔除 >24h）'};
-  let h2='<div class="lbl" style="margin:12px 0 4px">各仓消息回复标准工时（分/次）</div><table><tr><th>仓</th><th>标准工时</th><th>说明</th></tr>';
+  let h2='<div class="lbl" style="margin:12px 0 4px">各仓消息回复标准工时</div><table><tr><th>仓</th><th>标准工时</th><th>说明</th></tr>';
   cities.forEach(c=>{ h2+='<tr><td>'+c+'</td><td>'+(MSG_RATES[c]||MSG_RATE)+'</td><td>'+note[c]+'</td></tr>'; });
   h2+='</table>';
   document.getElementById('ovMsgRate').innerHTML=h2;
-  let h3='<div class="lbl" style="margin:12px 0 4px">各仓流转失误（'+regModeLabel()+' · 来自 wiki）</div><table><tr><th>仓</th><th>登记总次数</th></tr>';
+  let h3='<div class="lbl" style="margin:12px 0 4px">各仓流转失误</div><table><tr><th>仓</th><th>登记总次数</th></tr>';
   cities.forEach(c=>{ const agg=regAgg(c, start, end); const total=Object.values(agg).reduce((a,b)=>a+b,0); h3+='<tr><td>'+c+'</td><td>'+total+'</td></tr>'; });
   h3+='</table>';
   document.getElementById('ovRegSummary').innerHTML=h3;
