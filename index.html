@@ -1172,8 +1172,14 @@ function regRows(city, start, end){
   const reg = (REG_DATA&&REG_DATA[city])||{};
   const out=[];
   for(const d in reg){ if(d<start||d>end) continue;
-    (reg[d]||[]).forEach(e=>{ out.push({date:d, yw:e.yw, who:e.who, punish:e.punish, cnt:e.cnt}); }); }
-  out.sort((a,b)=> (a.date<b.date?1:(a.date>b.date?-1:(b.cnt-a.cnt))));   // 日期倒序（最新在前）
+    (reg[d]||[]).forEach(e=>{ out.push({date:d, yw:e.yw, who:e.who, prob:e.prob, punish:e.punish, cnt:e.cnt}); }); }
+  const _hasP=(x)=> x.prob && x.prob!=='（未填写）';
+  out.sort((a,b)=>{                                   // 日期倒序 → 有失误问题的优先 → 次数倒序
+    if(a.date!==b.date) return a.date<b.date ? 1 : -1;
+    const pa=_hasP(a)?0:1, pb=_hasP(b)?0:1;
+    if(pa!==pb) return pa-pb;
+    return b.cnt-a.cnt;
+  });
   return out;
 }
 // 流转失误聚合：返回某仓在 [start,end] 内 按 (业务分类|失误人员|处罚措施) 分组的数量
@@ -1210,15 +1216,20 @@ function renderRegSection(){
     if(!rows.length){ html+='<div class="hint">'+(regDayMode?('当日（'+start+'）'):('当前区间（'+start+' ~ '+end+'）'))+'无流转失误数据</div>'; }
     else{
       const tot=rows.reduce((a,r)=>a+r.cnt,0);
+      const miss=rows.filter(r=>!r.prob||r.prob==='（未填写）').length;
       let h='<div class="hint" style="margin-bottom:4px">共 '+rows.length+' 条、合计 '+tot+' 次'
+           +(miss?('，其中 <b>'+miss+'</b> 条源表未填写「失误问题」（显示 —）'):'')
            +(rows.length>LIMIT?('（表格较长，已按日期倒序显示最近 '+LIMIT+' 条；可用上方区间或「按日期」缩小范围）'):'')+'</div>';
       h+='<table><tr><th>日期</th><th>业务分类</th><th>失误人员</th><th>失误问题</th><th>处罚措施</th><th>登记次数</th></tr>';
+      const EMPTY='<span style="color:#9aa0a6">—</span>';
+      const cut=(v)=>{ const t=String(v||''); if(!t||t==='（未填写）'||t==='（无）') return '';
+                       return t.length>28 ? t.slice(0,28)+'…' : t; };
+      const esc=(v)=>String(v||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
       rows.slice(0,LIMIT).forEach(r=>{
-        const prob=r.prob||'—';
-        const short=prob.length>28 ? prob.slice(0,28)+'…' : prob;
-        h+='<tr><td>'+r.date+'</td><td>'+r.yw+'</td><td>'+r.who+'</td>'
-          +'<td title="'+String(prob).replace(/"/g,'&quot;')+'">'+short+'</td>'
-          +'<td>'+(r.punish||'—')+'</td><td>'+r.cnt+'</td></tr>';
+        const prob=cut(r.prob), pun=cut(r.punish);
+        h+='<tr><td>'+r.date+'</td><td>'+(r.yw||EMPTY)+'</td><td>'+r.who+'</td>'
+          +'<td title="'+esc(r.prob)+'">'+(prob||EMPTY)+'</td>'
+          +'<td title="'+esc(r.punish)+'">'+(pun||EMPTY)+'</td><td>'+r.cnt+'</td></tr>';
       });
       h+='</table>';
       html+=h;
