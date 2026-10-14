@@ -265,7 +265,6 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
             <label class="fp-whsel-opt"><input type="checkbox" data-c="天津"><span>天津</span></label>
           </div>
         </div>
-        <div id="ovEmptyTip2" class="ov-empty" style="display:none;margin:6px 0 0">未选择任何仓 —— 勾选上方仓名后展示数据（可多选，或点「全部四仓」）</div>
       </div>
       <div class="fp-btnrow"><button type="button" class="sec" id="gsTodayBtn">今天</button><button type="button" class="sec" id="gsYestBtn">昨天</button></div>
       <div class="fp-btnrow"><button type="button" class="pri" id="gsApplyBtn">应用筛选</button><button type="button" class="sec" id="gsResetBtn">重置为全量</button></div>
@@ -1842,8 +1841,6 @@ function renderOverview(){
     if(sel) sel.title = OV_SEL.length ? ('已选：'+label()) : '未选择仓，点击展开后手动勾选';
     const tip=document.getElementById('ovEmptyTip');                // 未选任何仓 → 总览区顶部提示
     if(tip) tip.style.display = OV_SEL.length ? 'none' : '';
-    const tip2=document.getElementById('ovEmptyTip2');              // 顶部筛选面板内的同款提示
-    if(tip2) tip2.style.display = OV_SEL.length ? 'none' : '';
   }
   function clickCity(c){
     if(c==='all'){ OV_SEL=OV_CITIES.slice(); }
