@@ -1457,6 +1457,14 @@ function regOnCityChange(){
   regDateInput.value = (k>=0 ? ds[k] : ds[0]);
 }
 // 流转失误明细（每条带日期）：返回 [{date,yw,who,punish,cnt}]，按日期倒序、同日按次数倒序
+// 无异常判定：空白 / 无异常 / （未填写） / 含关键字「无法关机」均视为无异常（不算失误）
+function isNoExcProb(p){
+  const t=String(p||'').trim();
+  if(!t) return true;
+  if(t==='无异常' || t==='（未填写）') return true;
+  if(t.indexOf('无法关机')>=0) return true;
+  return false;
+}
 function regRows(city, start, end){
   const reg = (REG_DATA&&REG_DATA[city])||{};
   const out=[];
@@ -1478,7 +1486,7 @@ function regAgg(city, start, end){
   for(const d in reg){ if(d<start||d>end) continue;
     (reg[d]||[]).forEach(e=>{
       const t=String(e.prob||'').trim();
-      if(!t || t==='无异常') return;                    // 「无异常」/空白：不计入失误统计
+      if(isNoExcProb(t)) return;                         // 无异常/空白/（未填写）/无法关机：不计入失误统计
       const k=e.yw+'|'+e.who+'|'+e.punish; agg[k]=(agg[k]||0)+e.cnt; }); }
   return agg;
 }
@@ -1506,7 +1514,7 @@ function renderRegSection(){
     const city=gsWhFilter;
     const unit=(city==='西安')?'单':'台';
     const all=regRows(city, start, end);        // 全量登记（含无异常 / 空白）
-    const isNA=(r)=>{ const t=String(r.prob||'').trim(); return !t || t==='无异常'; };
+    const isNA=(r)=> isNoExcProb(r.prob);
     // 每日汇总：当日共登记 X 单/台，其中失误 Y（「无异常」与空白格均按无异常统计）
     const byDay={};
     all.forEach(r=>{ const o=byDay[r.date]||(byDay[r.date]={tot:0,miss:0,na:0}); o.tot+=r.cnt; if(isNA(r)) o.na+=r.cnt; else o.miss+=r.cnt; });
@@ -1524,7 +1532,7 @@ function renderRegSection(){
     const mrows=Object.values(merged).sort((a,b)=>{ if(a.date!==b.date) return a.date<b.date?1:-1; return b.cnt-a.cnt; });
     if(!all.length){ html+='<div class="hint">'+(regDayMode?('当日（'+start+'）'):('当前区间（'+start+' ~ '+end+'）'))+'无流转失误登记数据</div>'; }
     else{
-      let h='<div class="hint" style="margin-bottom:4px">'+(regDayMode?('当日（'+start+'）'):('当前区间（'+start+' ~ '+end+'）'))+'共登记 <b>'+fmt(tot)+'</b> '+unit+'，其中失误 <b>'+fmt(totMiss)+'</b> '+unit+'、无异常 <b>'+fmt(tot-totMiss)+'</b> '+unit+'（「无异常」与空白均按无异常统计）。</div>';
+      let h='<div class="hint" style="margin-bottom:4px">'+(regDayMode?('当日（'+start+'）'):('当前区间（'+start+' ~ '+end+'）'))+'共登记 <b>'+fmt(tot)+'</b> '+unit+'，其中失误 <b>'+fmt(totMiss)+'</b> '+unit+'、无异常 <b>'+fmt(tot-totMiss)+'</b> '+unit+'（无异常 / 空白 / 未填写 / 无法关机 均按无异常统计）。</div>';
       if(!regDayMode && dayKeys.length>1){      // 区间模式（>1 天）：每日登记汇总
         h+='<div class="lbl" style="margin:8px 0 4px">每日登记汇总</div><table><tr><th>日期</th><th>登记合计('+unit+')</th><th>失误('+unit+')</th><th>无异常('+unit+')</th></tr>';
         dayKeys.forEach(d=>{ const o=byDay[d]; h+='<tr><td>'+d+'</td><td>'+o.tot+'</td><td>'+o.miss+'</td><td>'+o.na+'</td></tr>'; });
@@ -1656,9 +1664,9 @@ function ovRegAgg(start,end,sel){
         byDay['_c'+d]=(byDay['_c'+d]||0)+n;             // 当日「失误量」
         byWho[e.who||'—']=(byWho[e.who||'—']||0)+n;
         byYw[e.yw||'—']=(byYw[e.yw||'—']||0)+n;
-        const t=ovRegType(e.yw,e.prob); byType[t]=(byType[t]||0)+n;
+        if(!isNoExcProb(e.prob)){ const t=ovRegType(e.yw,e.prob); byType[t]=(byType[t]||0)+n; }   // 无异常不计入失误类型分布
         const p=String(e.prob||'').trim();
-        if(p&&p!=='（未填写）'&&p!=='（无）') byProb[p]=(byProb[p]||0)+n;
+        if(p && !isNoExcProb(p)) byProb[p]=(byProb[p]||0)+n;   // 无异常/（未填写）/无法关机 不计入高频失误问题
       });
     }
     const days=Object.keys(byDay).filter(k=>k[0]!=='_').sort();
