@@ -255,7 +255,7 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
       <div class="fp-field" id="ovWhField" style="display:none">
         <label>仓联动筛选（仓数据分析）</label>
         <div class="fp-whsel" id="ovWhSel" tabindex="0">
-          <div class="fp-whsel-val" id="ovWhSelVal" style="color:#98a2b3">未选择仓</div>
+          <div class="fp-whsel-val" id="ovWhSelVal">全部四仓</div>
           <span class="fp-whsel-arrow"></span>
           <div class="fp-whsel-panel" id="ovWhPanel">
             <div class="fp-whsel-opt all" data-c="all">全部四仓</div>
@@ -1566,7 +1566,7 @@ const OV_COLOR  = {'西安':'#2c5cc5','沈阳':'#1aa3a3','成都':'#e67e22','天
 let ovMsgQtyChart=null, ovMsgPieChart=null, ovMsgPersonChart=null, ovMsgRateChart=null,
     ovRegDayChart=null, ovRegPieChart=null, ovRegTypeChart=null, ovRegProbChart=null;
 // 总览「仓联动筛选」：当前所选仓（默认「不选」，由用户手动勾选；空数组 = 未选择任何仓 → 各区块空态并提示）
-let OV_SEL = [];
+let OV_SEL = OV_CITIES.slice();   // 默认：全部四仓（不再有"未选择仓"空态）
 const ovPct = (a,b)=> b>0 ? (a/b*100) : 0;
 const ovP1  = v => (Math.round(v*10)/10).toFixed(1);
 // 失误问题 → 失误类型（归一化；先按问题关键词，未填写则落到业务分类）
@@ -2002,14 +2002,14 @@ function renderOverview(){
   const allOpt  = sel ? sel.querySelector('[data-c="all"]') : null;
   if(!secBtns.length && !boxes.length) return;
   function closeSel(){ if(sel) sel.classList.remove('open'); }
-  function label(){ if(!OV_SEL.length) return '未选择仓'; return (OV_SEL.length===OV_CITIES.length) ? '全部四仓' : OV_SEL.join('、'); }
+  function label(){ if(!OV_SEL.length) return '全部四仓'; return (OV_SEL.length===OV_CITIES.length) ? '全部四仓' : OV_SEL.join('、'); }
   function sync(){
     const all=OV_SEL.length===OV_CITIES.length;
     secBtns.forEach(b=>{ const c=b.dataset.c;                       // 总览区筛选条：保持原多选按钮高亮
       b.classList.toggle('active', c==='all' ? all : (all || OV_SEL.indexOf(c)>=0)); });
     boxes.forEach(b=>{ b.checked = all || OV_SEL.indexOf(b.dataset.c)>=0; });   // 顶部下拉：勾选态
     if(val){ val.textContent = label(); val.style.color = OV_SEL.length ? '' : '#98a2b3'; }   // 收起态只显示摘要（未选为灰色）
-    if(sel) sel.title = OV_SEL.length ? ('已选：'+label()) : '未选择仓，点击展开后手动勾选';
+    if(sel) sel.title = OV_SEL.length ? ('已选：'+label()) : '全部四仓';
     const tip=document.getElementById('ovEmptyTip');                // 未选任何仓 → 总览区顶部提示
     if(tip) tip.style.display = OV_SEL.length ? 'none' : '';
   }
@@ -2017,8 +2017,9 @@ function renderOverview(){
     if(c==='all'){ OV_SEL=OV_CITIES.slice(); }
     else{
       const i=OV_SEL.indexOf(c);
-      if(i>=0) OV_SEL.splice(i,1); else OV_SEL.push(c);       // 全部取消 → 保持为空（可再次手动勾选）
+      if(i>=0) OV_SEL.splice(i,1); else OV_SEL.push(c);
       OV_SEL.sort((x,y)=>OV_CITIES.indexOf(x)-OV_CITIES.indexOf(y));
+      if(!OV_SEL.length) OV_SEL=OV_CITIES.slice();            // 不允许空选态：全部取消时回落为全部四仓
     }
     sync();
     if(!gsRangeManual) gsSetDefaultRange(3);      // 未手动选区间 → 跟随所选仓的数据末日（防止成都 / 天津被切空）
@@ -2038,7 +2039,7 @@ function renderOverview(){
   boxes.forEach(b=>{ b.onchange=(e)=>{ e.stopPropagation(); clickCity(b.dataset.c); }; });
   window.ovSyncCityBar=sync;          // 供 tab 切换 / 重置等场合刷新选中态
   window.ovCloseCitySel=closeSel;
-  window.ovResetCity=()=>{ OV_SEL=[]; sync(); };                     // 重置 = 回到默认「不选」
+  window.ovResetCity=()=>{ OV_SEL=OV_CITIES.slice(); sync(); };       // 重置 = 回到默认「全部四仓」
   sync();
 })();
 // 仓看板高亮（西安 / 沈阳 / 成都 / 天津 / 总览）：同步更新顶部 tab 选中态
