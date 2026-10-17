@@ -1659,14 +1659,16 @@ function ovRegAgg(start,end,sel){
     let rows=0, cnt=0;
     for(const d in reg){ if(d<start||d>end) continue;
       (reg[d]||[]).forEach(e=>{
-        const n=e.cnt||0; rows++; cnt+=n;
-        byDay[d]=(byDay[d]||0)+1;                       // 当日登记「条数」
+        const n=e.cnt||0; rows++;                        // 登记条数：全部登记均计
+        byDay[d]=(byDay[d]||0)+1;                        // 当日登记「条数」
+        if(isNoExcProb(e.prob)) return;                  // 无异常/空白/未填写/无法关机：不计入失误量
         byDay['_c'+d]=(byDay['_c'+d]||0)+n;             // 当日「失误量」
+        cnt+=n;                                          // 失误量合计
         byWho[e.who||'—']=(byWho[e.who||'—']||0)+n;
         byYw[e.yw||'—']=(byYw[e.yw||'—']||0)+n;
-        if(!isNoExcProb(e.prob)){ const t=ovRegType(e.yw,e.prob); byType[t]=(byType[t]||0)+n; }   // 无异常不计入失误类型分布
+        const t=ovRegType(e.yw,e.prob); byType[t]=(byType[t]||0)+n;
         const p=String(e.prob||'').trim();
-        if(p && !isNoExcProb(p)) byProb[p]=(byProb[p]||0)+n;   // 无异常/（未填写）/无法关机 不计入高频失误问题
+        if(p) byProb[p]=(byProb[p]||0)+n;
       });
     }
     const days=Object.keys(byDay).filter(k=>k[0]!=='_').sort();
