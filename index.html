@@ -313,11 +313,9 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
   <div class="m-video" id="secException">
     <div class="sec-title">📊 异常处理量<span id="excRangeLbl" style="display:none"></span></div>
     <div class="hint">数据源：飞书「外呼登记表」。抓取口径：日期带年份且=2026、≥2026-09-14、完成情况=是、异常原因含指定关键词（无单号 / 数量不对 / 三催 / 呆滞机器 / 调拨 / 单物不符 / 拒收件）。随上方区间筛选联动，仅西安板块展示。</div>
-    <div id="excKpi" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0"></div>
+    <div id="excDetailTable"></div>
     <div class="sec-title" style="margin-top:14px">异常原因占比</div>
     <div class="chart" id="excPieChart" style="height:320px"></div>
-    <div class="sec-title" style="margin-top:14px">各原因每日明细</div>
-    <div id="excDetailTable"></div>
     <div class="sec-title" style="margin-top:14px">每日异常处理量分析（折线）</div>
     <div class="hint">提示：点击图例可显示 / 隐藏对应原因；折线断开处表示该日暂无该原因数据。</div>
     <div class="chart" id="excLineChart" style="height:340px"></div>
@@ -577,6 +575,7 @@ function renderGongshi(){
   const emps = Array.from(new Set([...FIVE, ...(S.employees||[])]));
   // 仓筛选：仅保留所选仓的人员（默认全部）
   const _emps = emps.filter(p=> gsCityHas(p));
+  const excPer = excSplitCalc(start, end);   // 异常处理量按出勤分摊到人
   const rows = _emps.map(p=>{
     let a=0,b=0,c=0,swH2=0;
     rngDays.forEach(d=>{ const g=G.dates[d], s=S.dates[d];
@@ -591,7 +590,8 @@ function renderGongshi(){
     const mailH = +(mailQ*MAIL_RATE).toFixed(1);
     const vid = vidPer[p];   // 区间累计（整数）
     const vidVal = vid;
-    const perTot = a+b+c+vidVal+mailQ;
+    const excQ = +(excPer[p]||0).toFixed(2);   // 异常处理量（按出勤分摊；暂无工艺工时）
+    const perTot = a+b+c+vidVal+mailQ+excQ;
     // 取退货 / 视频调取 理论耗时（标准工时：取退货 4.5 分/件、视频调取 6.05 分/个）
     const TUH = (G.baseline && G.baseline.tuihuo_rate) ? G.baseline.tuihuo_rate : 4.5;
     const VID_RATE = 6.05;
@@ -600,7 +600,7 @@ function renderGongshi(){
     const totTheo = +(msgTheo + swH2 + mailH + tuihuoTheo + vidTheo).toFixed(1);
     const attDays = rngDays.filter(d=> (((ATT.attendance&&ATT.attendance[d])||{})[p])==='出勤').length;
     const upph = attDays>0 ? +(perTot/(attDays*8)).toFixed(2) : 0;
-    return {p,a,b,c,mailQ,vid,msgTheo,swH2,mailH,tuihuoTheo,vidTheo,totTheo,perTot,attDays,upph};
+    return {p,a,b,c,mailQ,vid,excQ,excH:'\u2014',msgTheo,swH2,mailH,tuihuoTheo,vidTheo,totTheo,perTot,attDays,upph};
   });
   // 综合日均UPPH = 区间总处理量 ÷ 区间总人时(出勤天数×8)
   let totProc=0, totManH=0;
@@ -614,14 +614,16 @@ function renderGongshi(){
     {k:'b',     h:'消息回复合计<span class="thu">(次)</span>',          f:r=>fmt(r.b),         n:'消息回复'},
     {k:'c',     h:'SW稽核合计<span class="thu">(次)</span>',            f:r=>fmt(r.c),         n:'SW稽核'},
     {k:'mailQ', h:'异常邮件跟进<span class="thu">(条)</span>',          f:r=>fmt(r.mailQ),     n:'异常邮件跟进'},
-    {k:'vid',   h:'视频调取量<span class="thu">(区间累计·个)</span>',    f:r=>fmt(r.vid),       n:'视频调取量'}
+    {k:'vid',   h:'视频调取量<span class="thu">(区间累计·个)</span>',    f:r=>fmt(r.vid),       n:'视频调取量'},
+    {k:'excQ',  h:'异常处理量<span class="thu">(单·按出勤分摊)</span>',  f:r=>fmt(+r.excQ.toFixed(2)), n:'异常处理量'}
   ];
   const COLS_B=[
     {k:'tuihuoTheo', h:'取退货理论耗时<span class="thu">(分)</span>',   f:r=>r.tuihuoTheo.toFixed(1), n:'取退货 4.5 分/件'},
     {k:'msgTheo',    h:'消息回复理论时长<span class="thu">(分)</span>', f:r=>r.msgTheo.toFixed(1),    n:'消息回复（按本仓标准工时）'},
     {k:'swH2',       h:'SW稽核理论耗时<span class="thu">(分)</span>',   f:r=>fmt(r.swH2),             n:'SW稽核（见「工艺工时」对照表）'},
     {k:'mailH',      h:'异常邮件理论耗时<span class="thu">(分)</span>', f:r=>r.mailH.toFixed(1),      n:'异常邮件跟进 1 分/条'},
-    {k:'vidTheo',    h:'视频调取理论耗时<span class="thu">(分)</span>', f:r=>r.vidTheo.toFixed(1),    n:'视频调取 6.05 分/个'}
+    {k:'vidTheo',    h:'视频调取理论耗时<span class="thu">(分)</span>', f:r=>r.vidTheo.toFixed(1),    n:'视频调取 6.05 分/个'},
+    {k:'excH',       h:'异常处理理论耗时<span class="thu">(分)</span>', f:r=>'\u2014',                n:'异常处理理论耗时'}
   ];
   const ca=COLS_A.filter(c=>!_zeroCol(c.k)), cb=COLS_B.filter(c=>!_zeroCol(c.k));
   const hidA=COLS_A.filter(c=>_zeroCol(c.k)).map(c=>c.n), hidB=COLS_B.filter(c=>_zeroCol(c.k)).map(c=>c.n);
@@ -636,7 +638,7 @@ function renderGongshi(){
       +'<td>'+fmt(r.perTot)+'</td><td class="c-blue"><b>'+r.upph.toFixed(2)+'</b></td></tr>';
   });
   htmlA+='</table>';
-  htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取量 + 异常邮件跟进；视频调取量为区间内各视频日（Part2 标准作业审核表 + 群视频 Part3 + 西安流转专项视频按当日出勤整数分摊）按人累计，与核心指标「视频调取」口径完全一致、随区间筛选联动。UPPH = 个人总处理量 ÷（区间出勤天数 × 8 小时）。'+hidNote('分项量',hidA)+'</div>';
+  htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取量 + 异常邮件跟进 + 异常处理量；视频调取量为区间内各视频日（Part2 标准作业审核表 + 群视频 Part3 + 西安流转专项视频按当日出勤整数分摊）按人累计，与核心指标「视频调取」口径完全一致、随区间筛选联动；异常处理量（西安外呼登记·完成=是）暂按 赵豫思 / 张霞霞 / 马红霞 / 杨凡凡 当日实际出勤平均分摊。UPPH = 个人总处理量 ÷（区间出勤天数 × 8 小时）。'+hidNote('分项量',hidA)+'</div>';
   // 表B：处理的理论耗时（区间累计）
   let htmlB='<div class="lbl" style="margin:12px 0 4px">处理的理论耗时</div><table><tr><th class="nm">姓名</th><th>仓</th>'
     + cb.map(c=>'<th>'+c.h+'</th>').join('')
@@ -646,11 +648,12 @@ function renderGongshi(){
       + cb.map(c=>'<td>'+c.f(r)+'</td>').join('')
       +'<td class="c-blue"><b>'+r.totTheo.toFixed(1)+'</b></td></tr>';
   });
-  htmlB+='</table><div class="hint" style="margin-top:6px">理论耗时 = 处理量 × 标准工时（取退货 4.5 分/件、消息回复 15.72 分/次、SW稽核见「工艺工时」对照表、异常邮件跟进 1 分/条、视频调取 6.05 分/个）；个人总处理量理论耗时 = 以上各项理论耗时之和。'+hidNote('理论耗时',hidB)+'</div>';
+  htmlB+='</table><div class="hint" style="margin-top:6px">理论耗时 = 处理量 × 标准工时（取退货 4.5 分/件、消息回复 15.72 分/次、SW稽核见「工艺工时」对照表、异常邮件跟进 1 分/条、视频调取 6.05 分/个）；异常处理量暂无工艺工时与分摊标准，理论耗时以「—」占位、暂不计入个人总处理量理论耗时；个人总处理量理论耗时 = 以上各项理论耗时之和。'+hidNote('理论耗时',hidB)+'</div>';
   document.getElementById('gsPerTotTable').innerHTML = htmlA + htmlB;
 
   // ④ 区间汇总口径（含异常邮件跟进、视频调取，与顶部汇总卡片一致）
-  const cumQ = tq+mq+sq+vq+mailq;
+  let excAll=0; for(const p in excPer) excAll+=excPer[p];
+  const cumQ = tq+mq+sq+vq+mailq+excAll;
   const cumH = +((th+mh+sh+mailq+vh).toFixed(1));
   const nDays=rngDays.length||1;
   setTxt('gsDaysCnt', hasRng?rngDays.length:'—');
@@ -1241,17 +1244,29 @@ function renderAttChart(start,end){
 }
 
 
+// 异常处理量分摊：暂无工艺工时，按 赵豫思/张霞霞/马红霞/杨凡凡 每日实际出勤平均分摊（当日出勤者才参与；分摊合计=当日总量）
+function excSplitCalc(start, end){
+  const SPLIT=['赵豫思','张霞霞','马红霞','杨凡凡'];
+  const out={}; SPLIT.forEach(p=>out[p]=0);
+  if((window.EXC_DATA||{}).daily_reason && gsCitySet().indexOf('西安')>=0){
+    Object.keys(EXC.daily_reason).forEach(d=>{
+      if(d<start||d>end) return;
+      const o=EXC.daily_reason[d]||{}; let dayTot=0; for(const k in o) dayTot+=o[k];
+      const on=SPLIT.filter(p=> (((ATT.attendance&&ATT.attendance[d])||{})[p])==='出勤');
+      if(dayTot>0 && on.length){ const v=dayTot/on.length; on.forEach(p=> out[p]+=v); }
+    });
+  }
+  return out;
+}
 // ---------- 异常处理量模块（飞书外呼登记表；仅西安板块，随区间筛选联动） ----------
 const EXC_PIE_COLORS = {'无单号':'#ea4335','数量不对':'#fbbc04','三催':'#34a853','呆滞机器':'#a142f4','调拨':'#4285f4','单物不符':'#1aa3a3','拒收件':'#e67e22'};
 function renderException(start, end){
   const setVal=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
-  const kpiWrap=document.getElementById('excKpi');
   const hasXA = gsCitySet().indexOf('西安')>=0;
   if(!hasXA){                      // 非西安（沈阳/成都/天津 或 总览不含西安）→ 清空
     if(excPieChart) excPieChart.clear();
     if(excLineChart) excLineChart.clear();
     const dt=document.getElementById('excDetailTable'); if(dt) dt.innerHTML='';
-    if(kpiWrap) kpiWrap.innerHTML='';
     setVal('gsExcQty','\u2014'); setVal('gsExcHours','\u2014');
     return;
   }
@@ -1262,15 +1277,7 @@ function renderException(start, end){
   days.forEach(d=>{ const o=EXC.daily_reason[d]||{}; reasons.forEach(r=>{ const v=o[r]||0; rTot[r]+=v; excQty+=v; }); });
   setVal('gsExcQty', days.length? fmt(excQty)+' 单' : '\u2014');
   setVal('gsExcHours', '\u2014');                       // 无标准工时定义
-  const avg = days.length? (excQty/days.length).toFixed(1) : '\u2014';
   const rActive = reasons.filter(r=> rTot[r]>0);
-  if(kpiWrap){
-    kpiWrap.innerHTML =
-      '<div class="gs-card"><div class="gs-lb">区间异常处理量</div><div class="gs-vl"><span>'+fmt(excQty)+'</span><span class="gs-un">单</span></div></div>'+
-      '<div class="gs-card"><div class="gs-lb">覆盖天数</div><div class="gs-vl"><span>'+days.length+'</span><span class="gs-un">天</span></div></div>'+
-      '<div class="gs-card"><div class="gs-lb">日均异常处理量</div><div class="gs-vl"><span>'+avg+'</span><span class="gs-un">单 / 天</span></div></div>'+
-      '<div class="gs-card"><div class="gs-lb">涉及原因数</div><div class="gs-vl"><span>'+rActive.length+'</span><span class="gs-un">类 / 7</span></div></div>';
-  }
   // ① 异常原因占比（饼图，仅显示 >0 原因）
   if(!excPieChart) excPieChart=echarts.init(document.getElementById('excPieChart'));
   if(!days.length){ excPieChart.clear(); }
@@ -1469,7 +1476,10 @@ function regAgg(city, start, end){
   const reg = (REG_DATA&&REG_DATA[city])||{};
   const agg={};
   for(const d in reg){ if(d<start||d>end) continue;
-    (reg[d]||[]).forEach(e=>{ const k=e.yw+'|'+e.who+'|'+e.punish; agg[k]=(agg[k]||0)+e.cnt; }); }
+    (reg[d]||[]).forEach(e=>{
+      const t=String(e.prob||'').trim();
+      if(!t || t==='无异常') return;                    // 「无异常」/空白：不计入失误统计
+      const k=e.yw+'|'+e.who+'|'+e.punish; agg[k]=(agg[k]||0)+e.cnt; }); }
   return agg;
 }
 // 流转失误板块：城市 tab → 该城明细表；总览 → 四仓对比表
@@ -1494,27 +1504,49 @@ function renderRegSection(){
     html+=h;
   } else {
     const city=gsWhFilter;
-    const rows=regRows(city, start, end);       // 明细：每行一条（带日期 / 业务分类 / 失误人员 / 失误问题 / 处罚措施 / 次数）
-    const LIMIT=1000;
-    if(!rows.length){ html+='<div class="hint">'+(regDayMode?('当日（'+start+'）'):('当前区间（'+start+' ~ '+end+'）'))+'无流转失误数据</div>'; }
+    const unit=(city==='西安')?'单':'台';
+    const all=regRows(city, start, end);        // 全量登记（含无异常 / 空白）
+    const isNA=(r)=>{ const t=String(r.prob||'').trim(); return !t || t==='无异常'; };
+    // 每日汇总：当日共登记 X 单/台，其中失误 Y（「无异常」与空白格均按无异常统计）
+    const byDay={};
+    all.forEach(r=>{ const o=byDay[r.date]||(byDay[r.date]={tot:0,miss:0,na:0}); o.tot+=r.cnt; if(isNA(r)) o.na+=r.cnt; else o.miss+=r.cnt; });
+    const dayKeys=Object.keys(byDay).sort().reverse();
+    const tot=all.reduce((a,r)=>a+r.cnt,0), totMiss=all.filter(r=>!isNA(r)).reduce((a,r)=>a+r.cnt,0);
+    const rows=all.filter(r=>!isNA(r));         // 明细仅展示失误单（无异常 / 空白不进表）
+    // 同日同类型（业务分类+失误问题+处罚措施）合并，数量累加；失误人员去重合并
+    const merged={};
+    rows.forEach(r=>{
+      const k=r.date+'|'+(r.yw||'')+'|'+(r.prob||'')+'|'+(r.punish||'');
+      if(!merged[k]) merged[k]={date:r.date,yw:r.yw,prob:r.prob,punish:r.punish,who:[],cnt:0};
+      merged[k].cnt+=r.cnt;
+      String(r.who||'').split(/[、,，;；\/]/).forEach(w=>{ w=w.trim(); if(w && merged[k].who.indexOf(w)<0) merged[k].who.push(w); });
+    });
+    const mrows=Object.values(merged).sort((a,b)=>{ if(a.date!==b.date) return a.date<b.date?1:-1; return b.cnt-a.cnt; });
+    if(!all.length){ html+='<div class="hint">'+(regDayMode?('当日（'+start+'）'):('当前区间（'+start+' ~ '+end+'）'))+'无流转失误登记数据</div>'; }
     else{
-      const tot=rows.reduce((a,r)=>a+r.cnt,0);
-      const miss=rows.filter(r=>!r.prob||r.prob==='（未填写）').length;
-      let h='<div class="hint" style="margin-bottom:4px">共 '+rows.length+' 条、合计 '+tot+' 次'
-           +(miss?('，其中 <b>'+miss+'</b> 条源表未填写「失误问题」（显示 —）'):'')
-           +(rows.length>LIMIT?('（表格较长，已按日期倒序显示最近 '+LIMIT+' 条；可用上方区间或「按日期」缩小范围）'):'')+'</div>';
-      h+='<table><tr><th>日期</th><th>业务分类</th><th>失误人员</th><th>失误问题</th><th>处罚措施</th></tr>';
-      const EMPTY='<span style="color:#9aa0a6">—</span>';
-      const cut=(v)=>{ const t=String(v||''); if(!t||t==='（未填写）'||t==='（无）') return '';
-                       return t.length>28 ? t.slice(0,28)+'…' : t; };
-      const esc=(v)=>String(v||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-      rows.slice(0,LIMIT).forEach(r=>{
-        const prob=cut(r.prob), pun=cut(r.punish);
-        h+='<tr><td>'+r.date+'</td><td>'+(r.yw||EMPTY)+'</td><td>'+r.who+'</td>'
-          +'<td title="'+esc(r.prob)+'">'+(prob||EMPTY)+'</td>'
-          +'<td title="'+esc(r.punish)+'">'+(pun||EMPTY)+'</td></tr>';
-      });
-      h+='</table>';
+      let h='<div class="hint" style="margin-bottom:4px">'+(regDayMode?('当日（'+start+'）'):('当前区间（'+start+' ~ '+end+'）'))+'共登记 <b>'+fmt(tot)+'</b> '+unit+'，其中失误 <b>'+fmt(totMiss)+'</b> '+unit+'、无异常 <b>'+fmt(tot-totMiss)+'</b> '+unit+'（「无异常」与空白均按无异常统计）。</div>';
+      if(!regDayMode && dayKeys.length>1){      // 区间模式（>1 天）：每日登记汇总
+        h+='<div class="lbl" style="margin:8px 0 4px">每日登记汇总</div><table><tr><th>日期</th><th>登记合计('+unit+')</th><th>失误('+unit+')</th><th>无异常('+unit+')</th></tr>';
+        dayKeys.forEach(d=>{ const o=byDay[d]; h+='<tr><td>'+d+'</td><td>'+o.tot+'</td><td>'+o.miss+'</td><td>'+o.na+'</td></tr>'; });
+        h+='</table>';
+      }
+      if(!mrows.length){ h+='<div class="hint">所选范围内无失误'+unit+'（全部登记为无异常）。</div>'; }
+      else{
+        const EMPTY='<span style="color:#9aa0a6">—</span>';
+        const cut=(v)=>{ const t=String(v||''); if(!t||t==='（未填写）'||t==='（无）') return '';
+                         return t.length>28 ? t.slice(0,28)+'…' : t; };
+        const esc=(v)=>String(v||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+        h+='<div class="lbl" style="margin:10px 0 4px">失误明细（同日同类型已合并标数量）</div>';
+        h+='<table><tr><th>日期</th><th>业务分类</th><th>失误问题</th><th>失误人员</th><th>数量('+unit+')</th><th>处罚措施</th></tr>';
+        mrows.forEach(r=>{
+          const prob=cut(r.prob), pun=cut(r.punish);
+          h+='<tr><td>'+r.date+'</td><td>'+(r.yw||EMPTY)+'</td>'
+            +'<td title="'+esc(r.prob)+'">'+(prob||EMPTY)+'</td>'
+            +'<td>'+r.who.join('、')+'</td><td><b>'+r.cnt+'</b></td>'
+            +'<td title="'+esc(r.punish)+'">'+(pun||EMPTY)+'</td></tr>';
+        });
+        h+='</table>';
+      }
       html+=h;
     }
   }
