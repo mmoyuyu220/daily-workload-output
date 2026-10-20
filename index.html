@@ -294,7 +294,7 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
     <tr id="gsRowMail"><td class="nm">异常邮件跟进</td><td id="gsMailQty">—</td><td id="gsMailHours">—</td></tr>
     <tr id="gsRowExc"><td class="nm">异常处理量<span class="thu">（外呼登记·完成=是）</span></td><td id="gsExcQty">—</td><td id="gsExcHours">—</td></tr>
     <tr class="tot" id="gsRowTot"><td class="nm">合计</td><td id="gsTotQty">—</td><td id="gsTotHours">—</td></tr>
-    <tr class="upph-row" id="gsRowUpph"><td class="nm">日均UPPH<span class="thu">（区间综合·8H）</span></td><td id="gsAvgUpph">—</td><td>—</td></tr>
+    <tr class="upph-row" id="gsRowUpph"><td class="nm">日均UPPH<span class="thu">（区间综合·实际工时）</span></td><td id="gsAvgUpph">—</td><td>—</td></tr>
   </table>
   </div>
 
@@ -401,12 +401,13 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
     <div id="ovRegDaily"></div>
     <div id="ovRegText" class="ov-text"></div>
 
-    <div class="sec-title">员工出勤时长对比分析</div>
+    <div class="sec-title">四仓人均出勤时长对比分析</div>
     <div id="ovAttSummary"></div>
     <div style="display:flex;gap:12px;flex-wrap:wrap">
-      <div class="chart" id="ovAttPersonChart" style="height:520px;flex:1 1 460px;min-width:330px"></div>
-      <div class="chart" id="ovAttCityChart" style="height:520px;flex:1 1 320px;min-width:300px"></div>
+      <div class="chart" id="ovAttCityChart" style="height:380px;flex:1 1 340px;min-width:310px"></div>
+      <div class="chart" id="ovAttUpphChart" style="height:380px;flex:1 1 340px;min-width:310px"></div>
     </div>
+    <div class="chart" id="ovAttPersonChart" style="height:460px"></div>
     <div id="ovAttText" class="ov-text"></div>
   </div>
 
@@ -484,6 +485,19 @@ function gsCitySet(){
 function gsCityAll(){ return gsCitySet().length >= ((typeof OV_CITIES!=='undefined' && OV_CITIES) ? OV_CITIES.length : 4); }
 function gsCityHas(p){ if(gsCityAll()) return true; return gsCitySet().indexOf(WAREHOUSE[p]||'西安')>=0; }
 function gsCityLabel(){ return gsCityAll() ? '所选仓' : gsCitySet().join('、'); }
+// 个人「出勤工时」= 区间内每个「出勤」日的实际打卡出勤时长之和（ATT.attDur，飞书考勤明细 AY 列）
+// 无打卡记录的「出勤」日（如 2026-08 未接入考勤明细）回退按 8H 计，保证口径连续、不丢人；
+// 返回 {h:总工时, days:出勤天数, real:有打卡天数}
+function attHoursOf(p, days){
+  let h=0, n=0, real=0;
+  (days||[]).forEach(d=>{
+    if((((ATT&&ATT.attendance&&ATT.attendance[d])||{})[p]||'')!=='出勤') return;
+    n++;
+    const v=((ATT&&ATT.attDur||{})[d]||{})[p];
+    if(typeof v==='number' && v>0){ h+=v; real++; } else { h+=8; }
+  });
+  return {h:+h.toFixed(2), days:n, real:real};
+}
 // 区间筛选选择器（gsRngStartPicker / gsRngEndPicker）在文件末尾 ATT / VIDEO_DATA 常量定义之后创建，避免 const TDZ。
 // 某日三源合计（源缺数据按 0 计；两源皆无 → null 断线）
 function gsDayTotals(d){
@@ -606,13 +620,14 @@ function renderGongshi(){
     const tuihuoTheo = +(a*TUH).toFixed(1);
     const vidTheo = +(vid*VID_RATE).toFixed(1);
     const totTheo = +(msgTheo + swH2 + mailH + tuihuoTheo + vidTheo).toFixed(1);
-    const attDays = rngDays.filter(d=> (((ATT.attendance&&ATT.attendance[d])||{})[p])==='出勤').length;
-    const upph = attDays>0 ? +(perTot/(attDays*8)).toFixed(2) : 0;
-    return {p,a,b,c,mailQ,vid,excQ,excH:'\u2014',msgTheo,swH2,mailH,tuihuoTheo,vidTheo,totTheo,perTot,attDays,upph};
+    const _ah = attHoursOf(p, rngDays);           // 实际打卡出勤工时（无打卡日回退 8H）
+    const attDays = _ah.days, attHrs = _ah.h;
+    const upph = attHrs>0 ? +(perTot/attHrs).toFixed(2) : 0;
+    return {p,a,b,c,mailQ,vid,excQ,excH:'\u2014',msgTheo,swH2,mailH,tuihuoTheo,vidTheo,totTheo,perTot,attDays,attHrs,upph};
   });
-  // 综合日均UPPH = 区间总处理量 ÷ 区间总人时(出勤天数×8)
-  let totProc=0, totManH=0;
-  rows.forEach(r=>{ totProc+=r.perTot; totManH += r.attDays*8; });
+  // 综合日均UPPH = 区间总处理量 ÷ 区间总人时（实际打卡出勤工时；无打卡日回退 8H）
+  let totProc=0, totManH=0, totAttDays=0;
+  rows.forEach(r=>{ totProc+=r.perTot; totManH += r.attHrs; totAttDays += r.attDays; });
   const avgUpph = totManH>0 ? +(totProc/totManH).toFixed(2) : 0;
   setTxt('gsAvgUpph', hasRng? avgUpph.toFixed(2)+' 件/时':'—');
   // ---- 表A / 表B 列定义：某分项列在当前「所选仓 + 所选区间」下全员均为 0 → 整列自动隐藏（表头与单元格同步） ----
@@ -639,14 +654,14 @@ function renderGongshi(){
   // 表A：处理量（含 UPPH）
   let htmlA='<table><tr><th class="nm">姓名</th><th>仓</th>'
     + ca.map(c=>'<th>'+c.h+'</th>').join('')
-    +'<th>个人总处理量<span class="thu">(件 / 次)</span></th><th class="c-blue">UPPH<span class="thu">(区间日均·8H)</span></th></tr>';
+    +'<th>个人总处理量<span class="thu">(件 / 次)</span></th><th>出勤工时<span class="thu">(H·打卡)</span></th><th class="c-blue">UPPH<span class="thu">(区间日均·实际工时)</span></th></tr>';
   rows.forEach(r=>{
     htmlA+='<tr><td class="nm">'+r.p+'</td><td>'+WAREHOUSE[r.p]+'</td>'
       + ca.map(c=>'<td>'+c.f(r)+'</td>').join('')
-      +'<td>'+fmt(r.perTot)+'</td><td class="c-blue"><b>'+r.upph.toFixed(2)+'</b></td></tr>';
+      +'<td>'+fmt(r.perTot)+'</td><td>'+r.attHrs.toFixed(1)+'</td><td class="c-blue"><b>'+r.upph.toFixed(2)+'</b></td></tr>';
   });
   htmlA+='</table>';
-  htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取量 + 异常邮件跟进 + 异常处理量；视频调取量为区间内各视频日（Part2 标准作业审核表 + 群视频 Part3 + 西安流转专项视频按当日出勤整数分摊）按人累计，与核心指标「视频调取」口径完全一致、随区间筛选联动；异常处理量（西安外呼登记·完成=是）按 赵豫思 / 张霞霞 / 马红霞 / 杨凡凡 当日出勤者整数平分，除不尽的余数随机分给其中一人（按日期播种，刷新不抖动）。UPPH = 个人总处理量 ÷（区间出勤天数 × 8 小时）。'+hidNote('分项量',hidA)+'</div>';
+  htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取量 + 异常邮件跟进 + 异常处理量；视频调取量为区间内各视频日（Part2 标准作业审核表 + 群视频 Part3 + 西安流转专项视频按当日出勤整数分摊）按人累计，与核心指标「视频调取」口径完全一致、随区间筛选联动；异常处理量（西安外呼登记·完成=是）按 赵豫思 / 张霞霞 / 马红霞 / 杨凡凡 当日出勤者整数平分，除不尽的余数随机分给其中一人（按日期播种，刷新不抖动）。UPPH = 个人总处理量 ÷ 区间「实际出勤工时」；实际出勤工时 = 区间内每个出勤日的打卡出勤时长之和（取飞书「考勤明细」AY 列，2026-09-01 起为真实打卡值；该日无打卡记录时按 8 小时/天回退，保证与历史口径连续）。'+hidNote('分项量',hidA)+'</div>';
   // 表B：处理的理论耗时（区间累计）
   let htmlB='<div class="lbl" style="margin:12px 0 4px">处理的理论耗时</div><table><tr><th class="nm">姓名</th><th>仓</th>'
     + cb.map(c=>'<th>'+c.h+'</th>').join('')
@@ -1613,7 +1628,7 @@ const OV_CITIES = ['西安','沈阳','成都','天津'];
 const OV_COLOR  = {'西安':'#2c5cc5','沈阳':'#1aa3a3','成都':'#e67e22','天津':'#a142f4'};
 let ovMsgQtyChart=null, ovMsgPieChart=null, ovMsgPersonChart=null, ovMsgRateChart=null,
     ovRegDayChart=null, ovRegPieChart=null, ovRegTypeChart=null, ovRegProbChart=null,
-    ovAttPersonChart=null, ovAttCityChart=null;
+    ovAttPersonChart=null, ovAttCityChart=null, ovAttUpphChart=null;
 // 总览「仓联动筛选」：当前所选仓（默认「不选」，由用户手动勾选；空数组 = 未选择任何仓 → 各区块空态并提示）
 let OV_SEL = OV_CITIES.slice();   // 默认：全部四仓（不再有"未选择仓"空态）
 const ovPct = (a,b)=> b>0 ? (a/b*100) : 0;
@@ -2038,92 +2053,182 @@ function renderOverview(){
     }
     document.getElementById('ovRegText').innerHTML=t.join('');
   })();
-  // ④ 员工出勤时长对比分析（打卡出勤时长，跟随全局区间 + 仓联动筛选）
+  // ④ 四仓人均出勤时长对比分析（真实打卡出勤时长 + 以实际工时计的人均UPPH，跟随全局区间 + 仓联动筛选）
   (function(){
     const start=mStart, end=mEnd;
     const summ=document.getElementById('ovAttSummary'), txtEl=document.getElementById('ovAttText');
     if(!txtEl) return;
-    const days=Object.keys(ATT.attDur||{}).filter(d=>d>=start&&d<=end).sort();
+    const rngD=((typeof GS_DATES!=='undefined'&&GS_DATES)?GS_DATES:Object.keys(ATT.attendance||{})).filter(d=>d>=start&&d<=end).sort();  // 核算区间（业务数据日，GS_START 起）：出勤时长与 UPPH 统一以此为基准
+    const days=rngD.filter(d=> (ATT.attDur||{})[d]);                                   // 核算区间内、有打卡记录的日期
+    const _clr=()=>{ [ovAttPersonChart,ovAttCityChart,ovAttUpphChart].forEach(c=>{ if(c) c.clear(); }); };
     if(!SEL.length){
-      if(summ) summ.innerHTML='<div class="ov-empty">当前<b>未选择任何仓</b>：请在上方「仓联动筛选」中选择仓（可多选）后查看出勤时长对比。</div>';
-      if(ovAttPersonChart) ovAttPersonChart.clear();
-      if(ovAttCityChart) ovAttCityChart.clear();
-      txtEl.innerHTML='';
-      return;
+      if(summ) summ.innerHTML='<div class="ov-empty">当前<b>未选择任何仓</b>：请在上方「仓联动筛选」中选择仓（可多选）后查看四仓人均出勤时长对比。</div>';
+      _clr(); txtEl.innerHTML=''; return;
     }
     const people=(ATT.people||[]).filter(p=>SEL.indexOf(WAREHOUSE[p])>=0);
+    // 每人处理量（与各仓「每人工作量」同口径）= 取退货 + 消息回复 + SW稽核 + 视频调取 + 异常邮件跟进 + 异常处理量
+    const volPer={}; people.forEach(p=>volPer[p]=0);
+    rngD.forEach(d=>{
+      const g=(G.dates||{})[d], s=(S.dates||{})[d];
+      const vd=vidDayMapBuild(d), md=mailSplit(d);
+      people.forEach(p=>{
+        let v=(g&&g.tuihuo_per&&g.tuihuo_per[p])||0;
+        v+=(g&&g.msg_reply_per&&g.msg_reply_per[p])?(g.msg_reply_per[p].replied||0):0;
+        v+=(s&&s.per&&s.per[p])?(s.per[p].qty||0):0;
+        v+=(vd[p]||0)+(md[p]||0);
+        volPer[p]+=v;
+      });
+    });
+    const excP=excSplitCalc(start,end);
+    people.forEach(p=>{ volPer[p]=Math.round(volPer[p]+(excP[p]||0)); });
+    // 每人：打卡时长 / 打卡天数 / 打卡日均 / 出勤工时（UPPH 分母）/ 处理量 / UPPH
     const rows=people.map(p=>{
       let dur=0, dn=0;
       days.forEach(d=>{ const v=(ATT.attDur[d]||{})[p]; if(v!=null){ dur+=v; dn++; } });
-      return {p, city:WAREHOUSE[p], dur:+dur.toFixed(1), days:dn, avg: dn?+(dur/dn).toFixed(2):0};
+      const ah=attHoursOf(p, rngD);
+      const avg= dn?+(dur/dn).toFixed(2):0;
+      const upph= ah.h>0? +(volPer[p]/ah.h).toFixed(2):0;
+      return {p, city:WAREHOUSE[p], dur:+dur.toFixed(1), days:dn, avg:avg, hrs:ah.h, attDays:ah.days, vol:volPer[p], upph:upph};
     });
-    const cityAgg={}; SEL.forEach(c=>{ cityAgg[c]={people:0,active:0,dur:0,days:0,avg:0,avgDay:0}; });
-    rows.forEach(r=>{ const a=cityAgg[r.city]; if(!a) return; a.people++; a.dur+=r.dur; if(r.days>0) a.active++; a.days+=r.days; });
-    SEL.forEach(c=>{ const a=cityAgg[c]; a.dur=+a.dur.toFixed(1); a.avg=a.active?+(a.dur/a.active).toFixed(1):0; a.avgDay=a.days?+(a.dur/a.days).toFixed(2):0; });
+    // 仓汇总
+    const cityAgg={}; SEL.forEach(c=>{ cityAgg[c]={people:0,active:0,dur:0,days:0,avgs:[],hrs:0,vol:0,upph:0,avg:0,avgDay:0,med:0,max:0,min:0}; });
+    rows.forEach(r=>{ const a=cityAgg[r.city]; if(!a) return;
+      a.people++; a.dur+=r.dur; a.days+=r.days; a.hrs+=r.hrs; a.vol+=r.vol;
+      if(r.days>0){ a.active++; a.avgs.push(r.avg); } });
+    SEL.forEach(c=>{ const a=cityAgg[c];
+      a.dur=+a.dur.toFixed(1); a.hrs=+a.hrs.toFixed(2); a.vol=Math.round(a.vol);
+      a.avg=a.active?+(a.dur/a.active).toFixed(1):0;
+      a.avgDay=a.days?+(a.dur/a.days).toFixed(2):0;
+      a.upph=a.hrs>0?+(a.vol/a.hrs).toFixed(2):0;
+      const s=a.avgs.slice().sort((x,y)=>x-y);
+      a.med=s.length?(s.length%2?s[(s.length-1)/2]:+((s[s.length/2-1]+s[s.length/2])/2).toFixed(2)):0;
+      a.max=s.length?s[s.length-1]:0; a.min=s.length?s[0]:0;
+    });
     const totDur=+SEL.reduce((s,c)=>s+cityAgg[c].dur,0).toFixed(1);
     const totActive=SEL.reduce((s,c)=>s+cityAgg[c].active,0);
     const totDays=SEL.reduce((s,c)=>s+cityAgg[c].days,0);
-    // 汇总表
-    let h='<div class="lbl">各仓员工出勤时长汇总（区间 '+start+' ~ '+end+'，共 '+days.length+' 天有打卡记录）</div>';
-    h+='<table><tr><th class="nm">仓</th><th>在册人数</th><th>有打卡人数</th><th>总出勤时长<span class="thu">(H)</span></th><th>人均出勤时长<span class="thu">(H)</span></th><th>日均时长<span class="thu">(H/天)</span></th><th>'+OV_PCT+'</th></tr>';
+    const totHrs=+SEL.reduce((s,c)=>s+cityAgg[c].hrs,0).toFixed(2);
+    const totVol=SEL.reduce((s,c)=>s+cityAgg[c].vol,0);
+    const globAvg=totActive?+(totDur/totActive).toFixed(1):0;    // 全公司人均出勤时长
+    const globUpph=totHrs>0?+(totVol/totHrs).toFixed(2):0;       // 全公司人均UPPH（实际工时口径）
+    // —— 对比表 ——
+    let h='<div class="lbl">各仓人均出勤时长对比（区间 '+start+' ~ '+end+'，共 '+days.length+' 天有打卡记录）</div>';
+    h+='<table><tr><th class="nm">仓</th><th>在册人数</th><th>有打卡人数</th><th>总出勤时长<span class="thu">(H)</span></th><th>人均出勤时长<span class="thu">(H)</span></th><th>日均时长<span class="thu">(H/天)</span></th><th>人均中位数<span class="thu">(H)</span></th><th>人均处理量<span class="thu">(件/次)</span></th><th class="c-blue">人均UPPH<span class="thu">(件/时)</span></th><th>'+OV_PCT+'</th></tr>';
     SEL.forEach(c=>{ const a=cityAgg[c];
       h+='<tr><td class="nm"><b style="color:'+OV_COLOR[c]+'">'+c+'</b></td><td>'+a.people+'</td><td>'+a.active+'</td>'
-        +'<td><b>'+ovP1(a.dur)+'</b></td><td>'+ovP1(a.avg)+'</td><td>'+ovP1(a.avgDay)+'</td><td>'+(totDur?ovP1(a.dur/totDur*100)+'%':'—')+'</td></tr>';
+        +'<td><b>'+ovP1(a.dur)+'</b></td><td>'+ovP1(a.avg)+(globAvg?(' <span style="color:#98a2b3;font-size:11px">'+(a.avg>=globAvg?'▲':'▼')+ovP1(Math.abs(a.avg-globAvg))+'</span>'):'')+'</td>'
+        +'<td>'+ovP1(a.avgDay)+'</td><td>'+ovP1(a.med)+'</td><td>'+fmt(a.vol)+'</td><td class="c-blue"><b>'+a.upph.toFixed(2)+'</b></td>'
+        +'<td>'+(totDur?ovP1(a.dur/totDur*100)+'%':'—')+'</td></tr>';
     });
-    h+='<tr style="background:#eaf0fa"><td class="nm"><b>合计</b></td><td>'+rows.length+'</td><td>'+totActive+'</td><td><b>'+ovP1(totDur)+'</b></td><td>'+ovP1(totActive?totDur/totActive:0)+'</td><td>'+ovP1(totDays?totDur/totDays:0)+'</td><td>100%</td></tr>';
+    h+='<tr style="background:#eaf0fa"><td class="nm"><b>合计 / 人均</b></td><td>'+rows.length+'</td><td>'+totActive+'</td><td><b>'+ovP1(totDur)+'</b></td><td><b>'+ovP1(globAvg)+'</b></td><td>'+ovP1(totDays?totDur/totDays:0)+'</td><td>—</td><td>'+fmt(totVol)+'</td><td class="c-blue"><b>'+globUpph.toFixed(2)+'</b></td><td>100%</td></tr>';
     h+='</table>';
-    h+='<div class="hint">出勤时长取自飞书「考勤明细」打卡出勤时长（AY 列），按实际打卡累计，非 8H 推算；仅当日在岗「出勤」且有打卡记录时计入；随上方全局区间与「仓联动筛选」联动（时长源当前覆盖 2026-09-01 起）。</div>';
+    h+='<div class="hint">出勤时长取自飞书「考勤明细」打卡出勤时长（AY 列），按实际打卡累计，非 8H 推算；「人均出勤时长」= 仓内总出勤时长 ÷ 有打卡人数；「人均UPPH」= 仓内个人总处理量之和 ÷ 仓内实际出勤工时之和。为保证与各仓「每人工作量」的 UPPH 同口径，本板块只统计<b>核算区间</b>（业务数据日，2026-09-14 起）内的出勤与业务量；早于该日仅有考勤、无业务量，不纳入人均对比。随上方全局区间与「仓联动筛选」联动。</div>';
     if(summ) summ.innerHTML=h;
-    // 图1：全员出勤时长（按仓着色，横向）
+    // —— 图1：四仓人均出勤时长对比（柱）+ 全公司人均基线 + 日均时长（右轴折线）——
+    if(!ovAttCityChart) ovAttCityChart=echarts.init(document.getElementById('ovAttCityChart'));
+    const rank=SEL.slice().sort((a,b)=>cityAgg[b].avg-cityAgg[a].avg);
+    ovAttCityChart.setOption({
+      title:{text:'四仓人均出勤时长对比', left:'center', top:2, textStyle:{fontSize:13, fontWeight:600}},
+      tooltip:{trigger:'axis', axisPointer:{type:'shadow'},
+        formatter:ps=>{ const c=ps[0].name, a=cityAgg[c];
+          return '<b>'+c+'</b><br/>人均出勤时长：'+ovP1(a.avg)+' H（全公司 '+ovP1(globAvg)+' H）<br/>日均时长：'+ovP1(a.avgDay)+' H/天<br/>人均中位数：'+ovP1(a.med)+' H<br/>有打卡：'+a.active+' / '+a.people+' 人'; }},
+      legend:{top:26, textStyle:{fontSize:11}, data:['人均出勤时长(H)','日均时长(H/天)']},
+      grid:{left:56, right:56, top:64, bottom:32},
+      xAxis:{type:'category', data:rank, axisLabel:{fontSize:12, fontWeight:600}},
+      yAxis:[{type:'value', name:'人均时长(H)', nameTextStyle:{fontSize:11}},
+             {type:'value', name:'日均(H/天)', nameTextStyle:{fontSize:11}, splitLine:{show:false}}],
+      series:[
+        {name:'人均出勤时长(H)', type:'bar', barWidth:'44%',
+         data:rank.map(c=>({value:cityAgg[c].avg, itemStyle:{color:OV_COLOR[c], borderRadius:[4,4,0,0]}})),
+         label:{show:true, position:'top', fontSize:11, fontWeight:600, formatter:pp=>pp.value+' H'},
+         markLine:{symbol:'none', silent:true, data:[{yAxis:globAvg, label:{formatter:'全公司人均 '+ovP1(globAvg)+' H', position:'insideEndTop', fontSize:10, color:'#8a94a6'}, lineStyle:{type:'dashed', color:'#8a94a6', width:1}}]}},
+        {name:'日均时长(H/天)', type:'line', yAxisIndex:1, symbolSize:8, lineStyle:{width:2, color:'#5b6b85'},
+         itemStyle:{color:'#5b6b85'}, data:rank.map(c=>cityAgg[c].avgDay),
+         label:{show:true, position:'top', fontSize:10, color:'#5b6b85', formatter:pp=>pp.value+' H/天'}}
+      ]
+    }, true);
+    // —— 图2：人均出勤时长 × 人均UPPH（双轴对照：投入工时 vs 产出效率）——
+    if(!ovAttUpphChart) ovAttUpphChart=echarts.init(document.getElementById('ovAttUpphChart'));
+    const rankU=SEL.slice().sort((a,b)=>cityAgg[b].upph-cityAgg[a].upph);
+    ovAttUpphChart.setOption({
+      title:{text:'四仓人均时长 × 人均UPPH', left:'center', top:2, textStyle:{fontSize:13, fontWeight:600}},
+      tooltip:{trigger:'axis', axisPointer:{type:'shadow'},
+        formatter:ps=>{ const c=ps[0].name, a=cityAgg[c];
+          return '<b>'+c+'</b><br/>人均UPPH：'+a.upph.toFixed(2)+' 件/时（全公司 '+globUpph.toFixed(2)+'）<br/>人均出勤时长：'+ovP1(a.avg)+' H<br/>人均处理量：'+fmt(a.vol)+' 件/次<br/>实际出勤工时合计：'+ovP1(a.hrs)+' H'; }},
+      legend:{top:26, textStyle:{fontSize:11}, data:['人均UPPH(件/时)','人均出勤时长(H)']},
+      grid:{left:58, right:58, top:64, bottom:32},
+      xAxis:{type:'category', data:rankU, axisLabel:{fontSize:12, fontWeight:600}},
+      yAxis:[{type:'value', name:'UPPH(件/时)', nameTextStyle:{fontSize:11}, scale:true},
+             {type:'value', name:'人均时长(H)', nameTextStyle:{fontSize:11}, splitLine:{show:false}}],
+      series:[
+        {name:'人均UPPH(件/时)', type:'bar', barWidth:'44%',
+         data:rankU.map(c=>({value:cityAgg[c].upph, itemStyle:{color:OV_COLOR[c], borderRadius:[4,4,0,0]}})),
+         label:{show:true, position:'top', fontSize:11, fontWeight:600, formatter:pp=>pp.value.toFixed(2)},
+         markLine:{symbol:'none', silent:true, data:[{yAxis:globUpph, label:{formatter:'全公司 '+globUpph.toFixed(2), position:'insideEndTop', fontSize:10, color:'#8a94a6'}, lineStyle:{type:'dashed', color:'#8a94a6', width:1}}]}},
+        {name:'人均出勤时长(H)', type:'line', yAxisIndex:1, symbolSize:8, lineStyle:{width:2, color:'#d97706'},
+         itemStyle:{color:'#d97706'}, data:rankU.map(c=>cityAgg[c].avg),
+         label:{show:true, position:'top', fontSize:10, color:'#b45309', formatter:pp=>pp.value+' H'}}
+      ]
+    }, true);
+    // —— 图3：全员出勤时长（按仓着色，横向）——
     const list=rows.filter(r=>r.dur>0).sort((a,b)=>b.dur-a.dur);
     if(!ovAttPersonChart) ovAttPersonChart=echarts.init(document.getElementById('ovAttPersonChart'));
     if(!list.length){ ovAttPersonChart.clear(); ovAttPersonChart.setOption({title:{text:'当前区间无打卡出勤时长数据', left:'center', top:'center', textStyle:{color:'#98a2b3',fontSize:13,fontWeight:'normal'}}, xAxis:{type:'value'}, yAxis:{type:'category',data:[]}, series:[]}, true); }
     else ovAttPersonChart.setOption({
-      tooltip:{trigger:'axis', axisPointer:{type:'shadow'}, formatter:pp=>pp[0].name+'<br/>出勤时长 '+pp[0].value+' H'},
-      legend:{top:4, data:SEL, textStyle:{fontSize:12}},
-      grid:{left:110, right:60, top:44, bottom:28},
+      title:{text:'全员出勤时长（区间累计，按仓着色）', left:'center', top:2, textStyle:{fontSize:13, fontWeight:600}},
+      tooltip:{trigger:'axis', axisPointer:{type:'shadow'},
+        formatter:ps=>{ const r=list.slice().reverse()[ps[0].dataIndex];
+          return '<b>'+r.p+'（'+r.city+'）</b><br/>出勤时长：'+r.dur+' H<br/>打卡天数：'+r.days+' 天 · 日均 '+r.avg+' H/天<br/>处理量：'+fmt(r.vol)+' · UPPH '+r.upph.toFixed(2); }},
+      legend:{top:24, data:SEL, textStyle:{fontSize:11}},
+      grid:{left:110, right:70, top:56, bottom:28},
       xAxis:{type:'value', name:'出勤时长(H)', nameTextStyle:{fontSize:11}},
       yAxis:{type:'category', data:list.slice().reverse().map(r=>r.p+' · '+r.city), axisLabel:{fontSize:11}},
       series:SEL.map(c=>({name:c, type:'bar', barGap:'-100%', barWidth:'64%',
         data:list.slice().reverse().map(r=>r.city===c?r.dur:null), itemStyle:{color:OV_COLOR[c], borderRadius:[0,3,3,0]},
         label:{show:true, position:'right', fontSize:10, formatter:pp=>pp.value?pp.value+' H':''}}))
     }, true);
-    // 图2：各仓人均出勤时长 + 日均时长（双轴柱）
-    if(!ovAttCityChart) ovAttCityChart=echarts.init(document.getElementById('ovAttCityChart'));
-    const rank=SEL.slice().sort((a,b)=>cityAgg[b].avg-cityAgg[a].avg);
-    ovAttCityChart.setOption({
-      tooltip:{trigger:'axis'}, legend:{top:4, textStyle:{fontSize:12}},
-      grid:{left:62, right:62, top:44, bottom:34},
-      xAxis:{type:'category', data:rank, axisLabel:{fontSize:12}},
-      yAxis:[{type:'value', name:'人均出勤时长(H)', nameTextStyle:{fontSize:11}},{type:'value', name:'日均时长(H/天)', nameTextStyle:{fontSize:11}}],
-      series:[
-        {name:'人均出勤时长(H)', type:'bar', barWidth:'40%', data:rank.map(c=>({value:cityAgg[c].avg, itemStyle:{color:OV_COLOR[c], borderRadius:[4,4,0,0]}})), label:{show:true,position:'top',fontSize:11,fontWeight:600,formatter:pp=>pp.value+' H'}},
-        {name:'日均时长(H/天)', type:'bar', yAxisIndex:1, barWidth:'40%', data:rank.map(c=>({value:cityAgg[c].avgDay, itemStyle:{color:'#8fa5c7', borderRadius:[4,4,0,0]}})), label:{show:true,position:'top',fontSize:11}}
-      ]
-    }, true);
-    // 文字分析
+    // —— 文字分析 ——
     const t=[];
-    if(!list.length){ t.push('<span class="ov-h">数据提示</span>当前区间（'+start+' ~ '+end+'）所选仓无打卡出勤时长数据，请扩大区间或确认考勤源已覆盖该时段（时长数据当前覆盖 2026-09-01 起）。'); }
+    if(!list.length){ t.push('<span class="ov-h">数据提示</span>当前区间（'+start+' ~ '+end+'）在核算区间内无打卡出勤时长数据，请扩大区间或确认考勤源已覆盖该时段（打卡时长 2026-09-01 起、业务量核算 2026-09-14 起）。'); }
     else{
       const maxP=list[0], minP=list[list.length-1];
       const rankCity=SEL.slice().sort((a,b)=>cityAgg[b].avg-cityAgg[a].avg);
       const topC=rankCity[0], lowC=rankCity[rankCity.length-1];
+      const rankUp=SEL.slice().sort((a,b)=>cityAgg[b].upph-cityAgg[a].upph);
+      const topU=rankUp[0], lowU=rankUp[rankUp.length-1];
       const overAvg=list.filter(r=>r.avg>8.5), low=list.filter(r=>r.avg>0&&r.avg<7.5);
+      const gap=cityAgg[topC].avg-cityAgg[lowC].avg;
+      const gapPct=cityAgg[lowC].avg?+(gap/cityAgg[lowC].avg*100).toFixed(1):0;
       t.push('<span class="ov-h">① 总量与人均</span><ul>'
-        +'<li>区间 '+days.length+' 天，'+OV_TOT2+'有打卡 <b>'+totActive+'</b> 人，累计出勤时长 <b>'+ovP1(totDur)+' H</b>，人均 <b>'+ovP1(totActive?totDur/totActive:0)+' H</b>、日均 <b>'+ovP1(totDays?totDur/totDays:0)+' H/天</b>。</li>'
-        +'<li>仓间人均：'+rankCity.map(c=>'<span class="tag">'+c+' '+ovP1(cityAgg[c].avg)+' H</span>').join('')+'；<b>'+topC+'</b> 最高、<b>'+lowC+'</b> 最低。</li></ul>');
-      t.push('<span class="ov-h">② 个人对比</span><ul>'
-        +'<li>出勤时长最高：<b>'+maxP.p+'（'+maxP.city+'）'+maxP.dur+' H</b>，日均 '+maxP.avg+' H/天，共 '+maxP.days+' 个打卡日。</li>'
-        +'<li>出勤时长最低：<b>'+minP.p+'（'+minP.city+'）'+minP.dur+' H</b>，日均 '+minP.avg+' H/天，共 '+minP.days+' 个打卡日。</li>'
+        +'<li>区间 '+days.length+' 天，'+OV_TOT2+'有打卡 <b>'+totActive+'</b> 人，累计出勤时长 <b>'+ovP1(totDur)+' H</b>，人均 <b>'+ovP1(globAvg)+' H</b>、日均 <b>'+ovP1(totDays?totDur/totDays:0)+' H/天</b>，全公司人均UPPH <b>'+globUpph.toFixed(2)+'</b> 件/时。</li>'
+        +'<li>四仓人均出勤时长：'+rankCity.map(c=>'<span class="tag">'+c+' '+ovP1(cityAgg[c].avg)+' H</span>').join('')+'；<b>'+topC+'</b> 最高、<b>'+lowC+'</b> 最低，相差 <b>'+ovP1(gap)+' H</b>（'+gapPct+'%）。</li>'
+        +'<li>日均时长（反映单日在岗强度）：'+rankCity.map(c=>'<span class="tag">'+c+' '+ovP1(cityAgg[c].avgDay)+' H/天</span>').join('')+'。</li></ul>');
+      t.push('<span class="ov-h">② 人均时长 × 人均UPPH（投入产出）</span><ul>'
+        +'<li>人均UPPH 排序：'+rankUp.map(c=>'<span class="tag">'+c+' '+cityAgg[c].upph.toFixed(2)+'</span>').join('')+'。'
+        +'<b>'+topU+'</b> 效率最高（人均 '+ovP1(cityAgg[topU].avg)+' H → UPPH '+cityAgg[topU].upph.toFixed(2)+'），<b>'+lowU+'</b> 效率最低（人均 '+ovP1(cityAgg[lowU].avg)+' H → UPPH '+cityAgg[lowU].upph.toFixed(2)+'）。</li>'
+        +'<li>'+(function(){
+            // 找出「时长偏高但 UPPH 偏低」的仓（时长高于全公司人均、UPPH 低于全公司）
+            const bad=SEL.filter(c=>cityAgg[c].avg>globAvg && cityAgg[c].upph<globUpph);
+            const good=SEL.filter(c=>cityAgg[c].avg<=globAvg && cityAgg[c].upph>=globUpph);
+            let s='';
+            if(bad.length) s+='<b>'+bad.join('、')+'</b>：出勤时长高于全公司人均（'+ovP1(globAvg)+' H）但 UPPH 低于全公司（'+globUpph.toFixed(2)+'），属于「投入高、产出效率待提升」，建议核查任务结构、等待/空转时长与技能熟练度。';
+            if(good.length) s+=(s?' ':'')+'<b>'+good.join('、')+'</b>：以不超过平均的工时实现了不低于平均的 UPPH，可作为排班与工序组织的对标样本。';
+            if(!s) s='各仓出勤时长与 UPPH 未出现明显「高投入低产出」背离，投入产出匹配度较好。';
+            return s; })()+'</li></ul>');
+      t.push('<span class="ov-h">③ 个人对比</span><ul>'
+        +'<li>出勤时长最高：<b>'+maxP.p+'（'+maxP.city+'）'+maxP.dur+' H</b>，日均 '+maxP.avg+' H/天，共 '+maxP.days+' 个打卡日，UPPH '+maxP.upph.toFixed(2)+'。</li>'
+        +'<li>出勤时长最低：<b>'+minP.p+'（'+minP.city+'）'+minP.dur+' H</b>，日均 '+minP.avg+' H/天，共 '+minP.days+' 个打卡日，UPPH '+minP.upph.toFixed(2)+'。</li>'
         +(overAvg.length?('<li>日均超 8.5H（偏长）：'+overAvg.slice(0,10).map(r=>'<span class="tag">'+r.p+' '+r.avg+' H/天</span>').join('')+'，注意加班与疲劳风险。</li>'):'')
         +(low.length?('<li>日均不足 7.5H（偏短）：'+low.slice(0,10).map(r=>'<span class="tag">'+r.p+' '+r.avg+' H/天</span>').join('')+'，核实是否含半天假 / 早退。</li>'):'')
         +'</ul>');
-      t.push('<span class="ov-h">③ 结论</span><ul><li>'+(cityAgg[topC].avg-cityAgg[lowC].avg>1?('仓间人均出勤时长差异较大（'+ovP1(cityAgg[topC].avg-cityAgg[lowC].avg)+' H），建议结合排班时长与业务量复核人力投放是否均衡。'):('各仓人均出勤时长较为接近，出勤投入相对均衡。'))+'</li>'
-        +'<li>出勤时长仅反映在岗打卡投入，需与 UPPH / 消息回复时效等效率指标结合判断，避免「时长长=产出高」的误判。</li></ul>');
+      t.push('<span class="ov-h">④ 结论与建议</span><ul><li>'+((gapPct>=10||gap>=20)?('仓间人均出勤时长差异较大（极差 '+ovP1(gap)+' H，'+gapPct+'%），建议结合各仓业务量与排班时长复核人力投放是否均衡。'):('四仓人均出勤时长较为接近（极差 '+ovP1(gap)+' H），出勤投入相对均衡。'))+'</li>'
+        +'<li>UPPH 已统一改为「处理量 ÷ 实际打卡出勤工时」，可横向比较各仓真实人效；工时短而 UPPH 高说明单位时间产出强，工时长而 UPPH 低需从任务结构（等待、返工、跨区支援）找原因。</li>'
+        +'<li><b>可比性提示</b>：各仓可用的处理量数据源不同（视频调取、异常处理、异常邮件跟进、SW稽核等目前仅西安有完整源，沈阳/成都/天津主要为消息回复），因此跨仓 UPPH 绝对值仅作参考，不宜直接用于绩效排名；重点看同一仓内的时间趋势与个人差异。</li>'
+        +'<li>出勤时长仅反映在岗打卡投入，需与 UPPH / 消息回复时效 / 流转失误等指标结合判断，避免「时长长=产出高」的误判。</li></ul>');
     }
     txtEl.innerHTML=t.join('');
   })();
-  ['ovMsgQtyChart','ovMsgPieChart','ovMsgPersonChart','ovMsgRateChart','ovRegDayChart','ovRegPieChart','ovRegTypeChart','ovRegProbChart','ovRegDailyChart','ovAttPersonChart','ovAttCityChart']
+  ['ovMsgQtyChart','ovMsgPieChart','ovMsgPersonChart','ovMsgRateChart','ovRegDayChart','ovRegPieChart','ovRegTypeChart','ovRegProbChart','ovRegDailyChart','ovAttPersonChart','ovAttCityChart','ovAttUpphChart']
     .forEach(id=>{ const el=document.getElementById(id); if(el && el.clientWidth>0){ const ins=echarts.getInstanceByDom(el); if(ins) ins.resize(); } });
 }
 // 总览「仓联动筛选」：按仓名称多选 → 整体联动总表 / 消息回复 / 流转失误三大区块
@@ -2303,7 +2408,7 @@ document.getElementById('dayCount').textContent='已收录 '+DAYS.length+' 天�
 document.getElementById('foot').textContent='数据生成时间：'+D.meta.generated_at+' · 数据源：飞书群聊消息 + 飞书电子表格「抖音交付、稽核汇总」+ Base「标准作业审核表」（视频调取）/ 排班表（8月及以后 · 考勤）';
 if(GS_DATES.length || (ATT&&ATT.attendance)){ renderGongshi(); }
 window.addEventListener('resize',()=>{if(trendChart)trendChart.resize();if(regionChart)regionChart.resize();if(gsCmpChart)gsCmpChart.resize();if(gsQtyChart)gsQtyChart.resize();if(gsHoursChart)gsHoursChart.resize();if(attChart)attChart.resize();if(perChart)perChart.resize();if(excPieChart)excPieChart.resize();if(excLineChart)excLineChart.resize();
-  [ovMsgQtyChart,ovMsgPieChart,ovMsgPersonChart,ovMsgRateChart,ovRegDayChart,ovRegPieChart,ovRegTypeChart,ovRegProbChart,ovAttPersonChart,ovAttCityChart].forEach(c=>{ if(c) c.resize(); });
+  [ovMsgQtyChart,ovMsgPieChart,ovMsgPersonChart,ovMsgRateChart,ovRegDayChart,ovRegPieChart,ovRegTypeChart,ovRegProbChart,ovAttPersonChart,ovAttCityChart,ovAttUpphChart].forEach(c=>{ if(c) c.resize(); });
 });
 </script>
 </body>
