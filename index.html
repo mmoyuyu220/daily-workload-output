@@ -199,6 +199,9 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
   .m-video td.att-on{color:#2c5cc5;font-weight:700;background:#eef4fd}
   .m-video td.att-off{color:#d1342f;font-weight:600;background:#fdf2f2}
   .m-video td.att-na{color:#98a2b3}
+  /* 缺考勤数据、按默认出勤(8H)计入的占位单元格 */
+  .m-video td.att-def{color:#2c5cc5;font-weight:700;background:#eafaf1;border:1px dashed #9ad7b4}
+  .m-video td.att-def small{color:#36a06a;font-weight:600}
   /* 归属状态「计算中」配色（区别于出勤绿/休息红） */
   td.att-calc{color:#e8910c;font-weight:700}
   .m-video table th,.m-video table td{padding:7px 9px}
@@ -323,7 +326,7 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
   <!-- 每人每天的出勤详情（随上方「筛选条件」联动；默认显示最近 3 天，多余天数自动隐藏） -->
   <div class="m-video">
     <div class="sec-title">📅 各人出勤<span id="attRangeLbl" style="display:none"></span></div>
-    <div class="hint">出勤=「上班」(绿)、休息=「休息」(红)、婚假(红)。每行一日、每列一人；默认仅显示最近 3 天明细，其余天数自动隐藏。如需查看完整明细，请用上方「筛选条件」选择所需区间（如近7天）。下方汇总统计所选区间全量出勤 / 休息天数。成都 / 天津 暂无排班源数据，出勤列留空（待补源后自动并入）。</div>
+    <div class="hint">出勤=「上班」(绿)、休息=「休息」(红)、婚假(红)；<b>出* = 缺考勤数据、按默认出勤(8H)计入</b>。每行一日、每列一人；默认仅显示最近 3 天明细，其余天数自动隐藏。如需查看完整明细，请用上方「筛选条件」选择所需区间（如近7天）。下方汇总统计所选区间全量出勤 / 休息天数。成都 / 天津 暂无排班源数据，出勤列留空（待补源后自动并入）。自 2026-10-20 起暂无飞书考勤明细，缺数据日期全部默认出勤（8 小时/天）。</div>
     <div id="attTableWrap" class="att-scroll"></div>
     <div id="attSummary" class="vp-attstrip att-sum"></div>
     <div id="attMonthStat" class="vp-attstrip att-sum"></div>
@@ -488,13 +491,30 @@ function gsCityLabel(){ return gsCityAll() ? '所选仓' : gsCitySet().join('、
 // 个人「出勤工时」= 区间内每个「出勤」日的实际打卡出勤时长之和（ATT.attDur，飞书考勤明细 AY 列）
 // 无打卡记录的「出勤」日（如 2026-08 未接入考勤明细）回退按 8H 计，保证口径连续、不丢人；
 // 返回 {h:总工时, days:出勤天数, real:有打卡天数}
+// —— 缺数据默认规则（2026-10-20 起）：自该日起无飞书考勤明细的日期，一律按「默认出勤 + 8 小时/天」计入，
+//    以保证 UPPH 分母与出勤统计在缺数据期间不突兀归零；有明确「休息 / 婚假」的仍按原值排除；
+//    2026-10-20 之前缺数据的早期日期（如 7 月无考勤源）维持原口径（不计入），避免历史口径被放大。
+const ATT_DEFAULT_FROM = '2026-10-20';
+function attEffStatus(d, p){               // 有效出勤状态（含缺数据默认）
+  const s = (((ATT&&ATT.attendance&&ATT.attendance[d])||{})[p]||'');
+  if(s==='出勤'||s==='休息'||s==='婚假') return s;
+  if(d >= ATT_DEFAULT_FROM) return '出勤'; // 缺数据 → 默认出勤
+  return '';
+}
+function attEffDur(d, p){                   // 有效出勤时长（含缺数据默认）
+  const v = (((ATT&&ATT.attDur||{})[d]||{})[p]);
+  if(typeof v==='number' && v>0) return v;
+  if(d >= ATT_DEFAULT_FROM) return 8;       // 缺数据 → 默认 8H
+  return null;
+}
 function attHoursOf(p, days){
   let h=0, n=0, real=0;
   (days||[]).forEach(d=>{
-    if((((ATT&&ATT.attendance&&ATT.attendance[d])||{})[p]||'')!=='出勤') return;
+    const s=attEffStatus(d, p);
+    if(s!=='出勤') return;
     n++;
-    const v=((ATT&&ATT.attDur||{})[d]||{})[p];
-    if(typeof v==='number' && v>0){ h+=v; real++; } else { h+=8; }
+    const v=attEffDur(d, p);
+    if(v!=null){ h+=v; real++; } else { h+=8; }
   });
   return {h:+h.toFixed(2), days:n, real:real};
 }
@@ -661,7 +681,7 @@ function renderGongshi(){
       +'<td>'+fmt(r.perTot)+'</td><td>'+r.attHrs.toFixed(1)+'</td><td class="c-blue"><b>'+r.upph.toFixed(2)+'</b></td></tr>';
   });
   htmlA+='</table>';
-  htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取量 + 异常邮件跟进 + 异常处理量；视频调取量为区间内各视频日（Part2 标准作业审核表 + 群视频 Part3 + 西安流转专项视频按当日出勤整数分摊）按人累计，与核心指标「视频调取」口径完全一致、随区间筛选联动；异常处理量（西安外呼登记·完成=是）按 赵豫思 / 张霞霞 / 马红霞 / 杨凡凡 当日出勤者整数平分，除不尽的余数随机分给其中一人（按日期播种，刷新不抖动）。UPPH = 个人总处理量 ÷ 区间「实际出勤工时」；实际出勤工时 = 区间内每个出勤日的打卡出勤时长之和（取飞书「考勤明细」AY 列，2026-09-01 起为真实打卡值；该日无打卡记录时按 8 小时/天回退，保证与历史口径连续）。'+hidNote('分项量',hidA)+'</div>';
+  htmlA+='<div class="hint" style="margin-top:6px">个人总处理量 = 取退货合计 + 消息回复合计 + SW稽核合计 + 视频调取量 + 异常邮件跟进 + 异常处理量；视频调取量为区间内各视频日（Part2 标准作业审核表 + 群视频 Part3 + 西安流转专项视频按当日出勤整数分摊）按人累计，与核心指标「视频调取」口径完全一致、随区间筛选联动；异常处理量（西安外呼登记·完成=是）按 赵豫思 / 张霞霞 / 马红霞 / 杨凡凡 当日出勤者整数平分，除不尽的余数随机分给其中一人（按日期播种，刷新不抖动）。UPPH = 个人总处理量 ÷ 区间「实际出勤工时」；实际出勤工时 = 区间内每个出勤日的打卡出勤时长之和（取飞书「考勤明细」AY 列，2026-09-01 起为真实打卡值；该日无打卡记录时按 8 小时/天回退，保证与历史口径连续；<b>自 2026-10-20 起缺考勤明细的日期，全部按默认出勤 8H 计入分母</b>）。'+hidNote('分项量',hidA)+'</div>';
   // 表B：处理的理论耗时（区间累计）
   let htmlB='<div class="lbl" style="margin:12px 0 4px">处理的理论耗时</div><table><tr><th class="nm">姓名</th><th>仓</th>'
     + cb.map(c=>'<th>'+c.h+'</th>').join('')
@@ -683,9 +703,8 @@ function renderGongshi(){
 
   // ④.1 顶部汇总卡片（每日处理量 / 日均UPPH / 理论耗时(区间合计) / 日均出勤人数）—— 随筛选联动
   const ATT_PEOPLE = ((ATT&&ATT.people)||[]).filter(p=> gsCityHas(p));
-  let attManDays = 0;   // 区间出勤人日 = 各日出勤人数(<== 与出勤趋势图同源：ATT.people 中当日='出勤')之和
-  rngDays.forEach(d=>{ const row=(ATT&&ATT.attendance&&ATT.attendance[d])||{};
-    attManDays += ATT_PEOPLE.filter(p=>(row[p]||'')==='出勤').length; });
+  let attManDays = 0;   // 区间出勤人日 = 各日出勤人数(<== 与出勤趋势图同源：ATT.people 中当日='出勤'，含缺数据默认出勤)之和
+  rngDays.forEach(d=>{ attManDays += ATT_PEOPLE.filter(p=>attEffStatus(d,p)==='出勤').length; });
   setTxt('gsSumQtyPerDay', hasRng?fmt(+(cumQ/nDays).toFixed(1)):'—');
   setTxt('gsSumUpph', hasRng?avgUpph.toFixed(2):'—');
   setTxt('gsSumHours', hasRng?fmt(cumH):'—');
@@ -1124,7 +1143,12 @@ function renderAttRange(start,end){
   const lbl=document.getElementById('attRangeLbl');
   if(lbl) lbl.textContent=(start&&end)?(start+' ~ '+end):'—';
   if(!wrap) return;
-  const daysAll=Object.keys(ATT.attendance).filter(d=>d>=start&&d<=end).sort();
+  const attKeys=new Set(Object.keys(ATT.attendance));
+  let daysAll=Object.keys(ATT.attendance).filter(d=>d>=start&&d<=end);
+  // 补入 ATT_DEFAULT_FROM 起缺数据的业务日（按默认出勤计入），使缺数据期不出现空白断层
+  const defDays=(typeof GS_DATES!=='undefined'&&GS_DATES?GS_DATES:[]).filter(d=> d>=ATT_DEFAULT_FROM && d>=start && d<=end && !attKeys.has(d));
+  daysAll=Array.from(new Set([...daysAll, ...defDays])).sort();
+  const hasDef = daysAll.some(d=> d>=ATT_DEFAULT_FROM && !attKeys.has(d));
   const sm=document.getElementById('attSummary');
   if(!daysAll.length){ wrap.innerHTML='<div class="empty">所选区间内无考勤数据</div>'; if(sm) sm.innerHTML='<div class="hint">区间汇总：无考勤数据</div>'; return; }
   // 默认（未手动筛选区间）仅显示最近 3 天明细，多余天数自动隐藏；手动筛选后按所选区间完整呈现
@@ -1142,23 +1166,27 @@ function renderAttRange(start,end){
   const P=ATT.people.filter(p=> gsCityHas(p));
   // 汇总始终按所选区间全量统计，避免被默认折叠误导
   const sum={}; P.forEach(p=>sum[p]={on:0,off:0});
-  daysAll.forEach(d=>{ P.forEach(p=>{ const s=(ATT.attendance[d][p]||'');
+  daysAll.forEach(d=>{ P.forEach(p=>{ const s=attEffStatus(d,p);
     if(s==='出勤') sum[p].on++; else if(s==='休息'||s==='婚假') sum[p].off++; }); });
   let h='<table><tr><th>日期</th><th>周</th>'+P.map(p=>'<th>'+p+'<br><span class="wh-tag">'+WAREHOUSE[p]+'</span></th>').join('')+'</tr>';
   days.forEach(d=>{
     const wk=ATT_WK[new Date(d).getDay()];
     h+='<tr><td class="nm">'+d.slice(5)+'</td><td>'+wk+'</td>';
     P.forEach(p=>{
-      const s=(ATT.attendance[d][p]||'');
-      let cls='att-na',txt=s;
-      if(s==='出勤'){cls='att-on';txt='出';}
+      const s=attEffStatus(d,p);
+      const isDef = !(((ATT&&ATT.attendance&&ATT.attendance[d])||{})[p]);
+      let cls='att-na',txt='—';
+      if(s==='出勤'){ if(isDef){cls='att-def';txt='出<small>*</small>';} else {cls='att-on';txt='出';} }
       else if(s==='休息'){cls='att-off';txt='休';}
       else if(s==='婚假'){cls='att-off';txt='婚';}
-      h+='<td class="'+cls+'">'+txt+'</td>';
+      h+='<td class="'+cls+'"'+(cls==='att-def'?' title="缺考勤数据·默认出勤(8H)"':'')+'>'+txt+'</td>';
     });
     h+='</tr>';
   });
   h+='</table>';
+  if(hasDef){
+    h+='<div class="hint" style="margin-top:6px">备注：自 <b>'+ATT_DEFAULT_FROM+'</b> 起暂无飞书考勤明细，<b>缺数据的日期全部按默认出勤（8 小时/天）计入</b>（表中以 出* 标注，鼠标悬停可见说明）；如有真实考勤，请以飞书「考勤明细」CSV 补录后重新部署，缺数据期将自动替换为真实打卡时长。</div>';
+  }
   if(capped){
     h+='<div class="hint" style="margin-top:6px">考勤明细默认显示最近 '+days.length+' 天（'+days[0].slice(5)+' ~ '+days[days.length-1].slice(5)+'，截至数据日 '+(gsDataMax||end)+'），其余 '+(daysAll.length-days.length)+' 天已隐藏；如需查看完整明细，请用上方「筛选条件 · 区间快速选择 / 应用筛选」选择所需区间。</div>';
   }
@@ -1166,7 +1194,7 @@ function renderAttRange(start,end){
   if(sm){
     const tot=daysAll.length;
     const cats=[], onA=[], offA=[], othA=[], durA=[];
-    const durSum={}; P.forEach(p=>{ let s=0; daysAll.forEach(d=>{ const dr=(ATT.attDur&&ATT.attDur[d])||{}; if(dr[p]!=null) s+=dr[p]; }); durSum[p]=s; });
+    const durSum={}; P.forEach(p=>{ let s=0; daysAll.forEach(d=>{ const v=attEffDur(d,p); if(v!=null) s+=v; }); durSum[p]=s; });
     let t='<div class="lbl" style="margin:10px 0 4px">区间汇总：每人出勤 / 休息天数（'+daysAll[0]+' ~ '+daysAll[daysAll.length-1]+'，共 '+tot+' 天）</div>';
     t+='<table><tr><th class="nm">姓名</th><th>仓</th><th>出勤<span class="thu">(天)</span></th><th>出勤时长<span class="thu">(H)</span></th><th>休息<span class="thu">(天)</span></th><th>其它 / 未登记<span class="thu">(天)</span></th><th>出勤率</th></tr>';
     P.forEach(p=>{
@@ -1244,11 +1272,14 @@ function renderAttMonth(){
   const shouldH = should * 8;
   const P = ATT.people.filter(p=> gsCityHas(p));
   const actual = {}; const monthDur = {}; P.forEach(p=>{ actual[p]=0; monthDur[p]=0; });
-  Object.keys(ATT.attendance).forEach(d=>{
-    if(!d.startsWith(dm)) return;
-    const row = ATT.attendance[d] || {};
-    const dr = (ATT.attDur&&ATT.attDur[d])||{};
-    P.forEach(p=>{ if((row[p]||'')==='出勤'){ actual[p]++; if(dr[p]!=null) monthDur[p]+=dr[p]; } });
+  const attKeys=new Set(Object.keys(ATT.attendance));
+  const monthDays=Array.from(new Set([
+    ...Object.keys(ATT.attendance).filter(d=>d.startsWith(dm)),
+    ...((typeof GS_DATES!=='undefined'&&GS_DATES)?GS_DATES:[]).filter(d=> d.startsWith(dm) && d>=ATT_DEFAULT_FROM && !attKeys.has(d))
+  ])).sort();
+  const hasDefM = monthDays.some(d=> d>=ATT_DEFAULT_FROM && !attKeys.has(d));
+  monthDays.forEach(d=>{
+    P.forEach(p=>{ if(attEffStatus(d,p)==='出勤'){ actual[p]++; const v=attEffDur(d,p); if(v!=null) monthDur[p]+=v; } });
   });
   let h='<div class="lbl" style="margin:10px 0 4px">当月应出勤：应出勤 <b>'+should+'</b> 天 · 日均 8H · 应出勤总时长 <b>'+shouldH+'</b> H</div>';
   h+='<table><tr><th>姓名</th><th>仓</th><th>应出勤(天)</th><th>实际出勤(本月)</th><th>出勤时长<span class="thu">(H·打卡)</span></th><th>出勤率</th><th>应出勤时长(H)</th></tr>';
@@ -1258,7 +1289,7 @@ function renderAttMonth(){
     h+='<tr><td class="nm">'+p+'</td><td>'+WAREHOUSE[p]+'</td><td>'+should+'</td><td>'+a+'</td><td style="color:#2c5cc5;font-weight:600">'+(monthDur[p]?monthDur[p].toFixed(1):'—')+'</td><td>'+rate.toFixed(1)+'%</td><td>'+shouldH+'</td></tr>';
   });
   h+='</table>';
-  h+='<div class="hint" style="margin-top:6px">应出勤天数 = 当月自然日 − 周六日 − 法定假日 + 调休上班日（2026：中秋 9/25–9/27、9/20 周日调休上班；国庆 10/1–10/7、10/10 周六调休上班等）；日均按 8H 计；实际出勤按当月排班「出勤」天数统计；出勤时长 = 当月各出勤日「打卡出勤时长」求和（取自飞书考勤明细，真实打卡，非 8H 推算）。</div>';
+  h+='<div class="hint" style="margin-top:6px">应出勤天数 = 当月自然日 − 周六日 − 法定假日 + 调休上班日（2026：中秋 9/25–9/27、9/20 周日调休上班；国庆 10/1–10/7、10/10 周六调休上班等）；日均按 8H 计；实际出勤按当月排班「出勤」天数统计；出勤时长 = 当月各出勤日「打卡出勤时长」求和（取自飞书考勤明细，真实打卡，非 8H 推算）；自 '+ATT_DEFAULT_FROM+' 起缺考勤明细的日期全部按默认出勤 8H 计入'+(hasDefM?'（本月含缺数据日，已用默认 8H 补全）':'')+'。</div>';
   wrap.innerHTML = h;
 }
 
