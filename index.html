@@ -205,6 +205,15 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
   /* 归属状态「计算中」配色（区别于出勤绿/休息红） */
   td.att-calc{color:#e8910c;font-weight:700}
   .m-video table th,.m-video table td{padding:7px 9px}
+  #gsVidQty{text-align:left;vertical-align:top}
+  .vid-bd{font-size:11px;color:#8a93a3;font-weight:400;margin-top:3px;line-height:1.45}
+  .vp-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
+  .vp-tbl th,.vp-tbl td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;text-align:left;line-height:1.55}
+  .vp-tbl th{background:#f6f8fc;font-weight:600;color:#344563;white-space:nowrap}
+  .vp-tbl td.nm{font-weight:600;color:#344563;white-space:nowrap}
+  .vp-tbl td.rt{text-align:right;font-weight:700;color:#1677ff;white-space:nowrap}
+  .vp-tbl td.nt{color:#8a93a3;font-size:12px}
+  .vp-tbl tr.tot td{background:#eef4fd;font-weight:700}
   .m-video .vp-attstrip{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}
   .m-video .vp-attchip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:13px;background:#fff}
   .m-video .vp-attchip .nm{font-weight:600;color:#344563}
@@ -274,7 +283,7 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
     </div>
     <div class="fp-quick"><span>区间快速选择：</span><button type="button" data-range="all">全部</button><button type="button" data-range="7">近7天</button><button type="button" data-range="3" class="active">近3天</button></div>
     <div class="fp-note" id="gongshiNote"></div>
-    <div class="fp-note">区间口径：取退货 / 消息对接 / SW稽核 / 视频调取 / 考勤 · 数据更新逻辑 T-1（核算起始 2026-09-14）；核心「视频调取量」与每人表「视频调取量」均为区间内各视频日（part2per + 群视频 Part3 + 西安流转专项视频按出勤分摊至王妙星/张霞霞）按人累计，口径完全一致、随区间筛选联动；视频数据覆盖 9/14 ~ 9/19（其中「群视频 Part3」来自飞书群「视频调取」实际抓取，9/18、9/19 仅有群视频、无标准作业审核表折算）。</div>
+    <div class="fp-note">区间口径：取退货 / 消息对接 / SW稽核 / 视频调取 / 考勤 · 数据更新逻辑 T-1（核算起始 2026-09-14）；核心「视频调取量」与每人表「视频调取量」均为区间内各视频日（part2per + 群视频 Part3 + 西安流转专项视频按出勤分摊至王妙星/张霞霞）按人累计，口径完全一致、随区间筛选联动；视频调取量 = 区间内各视频日（①视频调取主体·Base标准作业审核表 + ②群视频·飞书群 + ③西安流转专项·wiki）三部分合计，按人累计，随区间筛选联动；视频数据自 2026-09-14 起每日 T-1 自动刷新，三部分具体构成见下方「视频调取构成」板块。</div>
   </div>
 
   <!-- 区间汇总卡片（随上方「筛选条件」联动：每日处理量 / 日均UPPH / 理论耗时 / 日均出勤人数） -->
@@ -299,6 +308,12 @@ td.c-blue,td.c-blue b{color:#2c5cc5}
     <tr class="tot" id="gsRowTot"><td class="nm">合计</td><td id="gsTotQty">—</td><td id="gsTotHours">—</td></tr>
     <tr class="upph-row" id="gsRowUpph"><td class="nm">日均UPPH<span class="thu">（区间综合·实际工时）</span></td><td id="gsAvgUpph">—</td><td>—</td></tr>
   </table>
+  </div>
+
+  <div class="m-video" id="secVideoParts" style="display:none">
+    <div class="sec-title">🎬 视频调取构成（三部分）<span id="vpRangeLbl" style="display:none"></span></div>
+    <div class="hint">视频调取量由三部分组成，以下为所选区间各自的合计与总合计，<b>随上方区间筛选联动</b>：① 视频调取主体（飞书 Base「标准作业审核表」· 稽核点=工艺sw素养 · SW检查表附件数×5，按修改人归属，张/王二人按当日出勤分摊）；② 群视频（飞书群「视频调取」· 仅杨/马/赵计入西安 5 人，其余发视频人入 others 不计入）；③ 西安流转专项（wiki「客诉、流转风险识别」· 仓=西安 & 业务分类=流转专项 实际行数）。</div>
+    <div id="vpTableWrap"></div>
   </div>
 
   <div id="secGongshi">
@@ -554,6 +569,7 @@ function renderGongshi(){
   ['gsRowTq','gsRowSw','gsRowVid','gsRowMail','gsRowUpph','gsRowExc'].forEach(id=>_sec(id,_hasXA));
   ['gsRowMsg','gsRowTot'].forEach(id=>_sec(id,true));
   _sec('secException', _hasXA && !gsIsOverview);
+  _sec('secVideoParts', _hasXA && !gsIsOverview);
   const rngDays=gsRangeDays();
   const hasRng = rngDays.length>0;
   const setTxt=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
@@ -569,6 +585,16 @@ function renderGongshi(){
   Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).forEach(d=>{
     const m = vidDayMapBuild(d);
     FIVE.forEach(p=>{ vq += m[p]; });
+  });
+  // 视频三部分区间各自合计（用于核心指标行下钻 & 「视频调取构成」板块；与 vidDayMapBuild 同源，仅拆开口径）
+  let vqP2=0, vqP3=0, vqP1=0;
+  Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).forEach(d=>{
+    const rec=VIDEO_DATA[d];
+    const p2=rec.part2per||{};
+    vqP2 += ['王妙星','张霞霞','马红霞','杨凡凡','赵豫思'].reduce((a,k)=>a+Number(p2[k]||0),0);
+    const p3=rec.part3||{};
+    vqP3 += Number(p3['杨凡凡']||0)+Number(p3['马红霞']||0)+Number(p3['赵豫思']||0);
+    vqP1 += (rec.part1&&rec.part1.cells!=null)?Number(rec.part1.cells):0;
   });
   // 流转专项视频已并入「视频调取」（按出勤分摊到王妙星/张霞霞），避免与每人表口径冲突、不再单列
   // 异常邮件跟进（区间累计：运营中心=西安条数）；理论耗时 = 数量 × 标准工时 1 分/条（工艺工时摸底「异常邮件处理」）
@@ -593,12 +619,13 @@ function renderGongshi(){
   const _cityPick = f => _ALLPICK ? ({tq, mq, sq, th, mh, shh: sh})[f] : sel[f];
   tq=_cityPick('tq'); mq=_cityPick('mq'); sq=_cityPick('sq');
   th=_cityPick('th'); mh=_cityPick('mh'); sh=_cityPick('shh');
-  if(!_ALLPICK && _AC.indexOf('西安')<0){ vq=0; mailq=0; }   // 视频调取 / 异常邮件跟进 仅分摊至西安人员 → 所选仓不含西安则 0
+  if(!_ALLPICK && _AC.indexOf('西安')<0){ vq=0; mailq=0; vqP2=0; vqP3=0; vqP1=0; }   // 视频调取 / 异常邮件跟进 仅分摊至西安人员 → 所选仓不含西安则 0
   setTxt('gsRangeLbl2', (start&&end)?(start+' ~ '+end):'—');
   setTxt('gsTqQty', hasRng?fmt(tq)+' 件':'—');
   setTxt('gsMsgQty', hasRng?fmt(mq)+' 次':'—');
   setTxt('gsSwQty', hasRng?fmt(sq)+' 次':'—');
-  setTxt('gsVidQty', hasRng?fmt(vq)+' 个':'—');
+  const vpEl=document.getElementById('gsVidQty');
+  if(vpEl){ vpEl.innerHTML = hasRng ? ('<b>'+fmt(vq)+' 个</b><div class="vid-bd">主体 '+fmt(vqP2)+' · 群视频 '+fmt(vqP3)+' · 流转专项 '+fmt(vqP1)+'</div>') : '—'; }
   setTxt('gsMailQty', (hasRng&&mailq>0)?fmt(mailq)+' 条':'—');
   setTxt('gsMailHours', (hasRng&&mailq>0)?fmt(mailq*1)+' 分':'—');
   const vh = vq*6.05;  // 视频调取理论耗时 =（含群视频+流转专项）数量 × 工艺工时(6.05, 取每日明细Q列平均)
@@ -813,6 +840,7 @@ function renderGongshi(){
   renderAttChart(start,end);
   renderPerChart(start,end);
   renderException(start,end);
+  renderVideoParts(start,end);   // 视频调取构成（三部分，随区间联动）
   renderRegSection();     // 流转失误（按所选仓 / 总览四仓对比）
   renderOverview();       // 总看板对比分析（仅总览可见）
 }
@@ -1211,6 +1239,40 @@ function vidDayMapBuild(day){
     for(let i=0;i<n;i++){ out[pool[i%pool.length]] += 1; }
   }
   return out;
+}
+// 视频调取构成（三部分）板块：区间各视频日按口径拆成 主体(Part2) / 群视频(Part3) / 西安流转专项(Part1) 各自合计
+function renderVideoParts(start, end){
+  const wrap=document.getElementById('vpTableWrap');
+  const lbl=document.getElementById('vpRangeLbl');
+  if(lbl) lbl.textContent=(start&&end)?(start+' ~ '+end):'—';
+  if(!wrap) return;
+  const _AC=gsCitySet(), _ALLPICK=gsCityAll();
+  const hasXA = _ALLPICK || _AC.indexOf('西安')>=0;
+  if(!hasXA){ wrap.innerHTML='<div class="empty">所选仓不含西安，无视频调取数据</div>'; return; }
+  const days=Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).sort();
+  if(!days.length){ wrap.innerHTML='<div class="empty">所选区间内无视频数据</div>'; return; }
+  let p2=0,p3=0,p1=0;
+  const p2per={}; FIVE.forEach(p=>p2per[p]=0);   // Part2 按人（张/王按出勤分摊后的值）
+  days.forEach(d=>{
+    const rec=VIDEO_DATA[d];
+    const p2r=rec.part2per||{};
+    FIVE.forEach(p=>{ p2per[p]+=Number(p2r[p]||0); });   // Part2 区间按人累计（直接用 part2per，避免与 p3/p1 重复）
+    const p3r=rec.part3||{}; p3 += Number(p3r['杨凡凡']||0)+Number(p3r['马红霞']||0)+Number(p3r['赵豫思']||0);
+    p1 += (rec.part1&&rec.part1.cells!=null)?Number(rec.part1.cells):0;
+  });
+  // Part2 区间合计 = 各人累计之和
+  const p2tot=FIVE.reduce((a,p)=>a+p2per[p],0);
+  const total=p2tot+p3+p1;
+  const fmtN=v=>fmt(v);
+  let h='<table class="vp-tbl"><tr><th>组成部分</th><th>合计</th><th>说明</th></tr>';
+  h+='<tr><td class="nm">① 视频调取主体<br><span class="thu">Part2·Base标准作业审核表</span></td><td class="rt">'+fmtN(p2tot)+'</td><td class="nt">稽核点=工艺sw素养 · SW检查表附件数×5，按修改人归属；张/王按当日出勤分摊</td></tr>';
+  h+='<tr><td class="nm">② 群视频<br><span class="thu">Part3·飞书群「视频调取」</span></td><td class="rt">'+fmtN(p3)+'</td><td class="nt">仅杨/马/赵计入西安 5 人，其余发视频人入 others 不计入</td></tr>';
+  h+='<tr><td class="nm">③ 西安流转专项<br><span class="thu">Part1·wiki客诉流转风险识别</span></td><td class="rt">'+fmtN(p1)+'</td><td class="nt">仓=西安 & 业务分类=流转专项 实际行数（每日自动抓取）</td></tr>';
+  h+='<tr class="tot"><td class="nm">合计（=视频调取量）</td><td class="rt">'+fmtN(total)+'</td><td class="nt">①+②+③，与核心指标 / 每人表口径一致</td></tr>';
+  h+='</table>';
+  // 附：Part2 按人区间累计（让用户看清主体部分归属）
+  h+='<div class="hint" style="margin-top:8px">视频调取主体(Part2) 区间按人累计：'+FIVE.map(p=>p+' '+fmtN(p2per[p])).join(' · ')+'。</div>';
+  wrap.innerHTML=h;
 }
 // （原「西安流转专项视频数量 / 异常邮件跟进」独立汇总块已移除：两项已按出勤整数分摊并入上方每人工作量表的「处理量」与「处理的理论耗时」两块）
 function renderAttRange(start,end){
