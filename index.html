@@ -545,6 +545,9 @@ function attHoursOf(p, days){
   });
   return {h:+h.toFixed(2), days:n, real:real};
 }
+// 全员名单（西安5目标人 + 考勤名单全部26人 + SW名单）：SW 自 2026-10-24 起锁死仅统计西安5目标人，
+// S.employees 不再含三仓人员 → 每人工作量 / 理论耗时 / 对比图在三仓 tab 下曾整表空行；以考勤名单兜底修复。
+function gsAllPeople(){ return Array.from(new Set([...FIVE, ...((ATT&&ATT.people)||[]), ...(S.employees||[])])); }
 // 区间筛选选择器（gsRngStartPicker / gsRngEndPicker）在文件末尾 ATT / VIDEO_DATA 常量定义之后创建，避免 const TDZ。
 // 某日三源合计（源缺数据按 0 计；两源皆无 → null 断线）
 function gsDayTotals(d){
@@ -645,15 +648,15 @@ function renderGongshi(){
 
   // ③ 每人工作量 —— 拆成「处理量」表（含 UPPH）+「处理的理论耗时」表（UPPH 跟随处理量表）
   // 视频调取「每人区间累计」（Part2+Part3+西安流转专项视频按出勤整数分摊），区间各视频日求和 → 与核心指标「视频调取」口径完全一致、随区间筛选联动
-  const vidPer = {}; Array.from(new Set([...FIVE, ...(S.employees||[])])).forEach(p=>vidPer[p]=0);
+  const vidPer = {}; gsAllPeople().forEach(p=>vidPer[p]=0);
   Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).forEach(d=>{
     const m=vidDayMapBuild(d); FIVE.forEach(p=>{ vidPer[p]+=(m[p]||0); });
   });
   // 异常邮件跟进（区间累计）：2026-10-25 起每日 byDay 在 张霞霞/马红霞/杨凡凡 中按当日出勤整数平分（此前 赵豫思/杨凡凡/马红霞 历史不变）；
   const MAIL_RATE = 1; // 异常邮件跟进 标准工时 1 分/条
-  const mailPer = {}; Array.from(new Set([...FIVE, ...(S.employees||[])])).forEach(p=>mailPer[p]=0);
+  const mailPer = {}; gsAllPeople().forEach(p=>mailPer[p]=0);
   rngDays.forEach(d=>{ const m=mailSplit(d); FIVE.forEach(p=>{ mailPer[p]+=m[p]; }); });
-  const emps = Array.from(new Set([...FIVE, ...(S.employees||[])]));
+  const emps = gsAllPeople();
   // 仓筛选：仅保留所选仓的人员（默认全部）
   const _emps = emps.filter(p=> gsCityHas(p));
   const excPer = excSplitCalc(start, end);   // 异常处理量按出勤分摊到人
@@ -1600,7 +1603,7 @@ function renderPerChart(start,end){
   // 视频调取：区间内各视频日按人累计（与表格/核心指标口径一致、随区间联动）
   const vidPer={}; FIVE.forEach(p=>vidPer[p]=0);
   Object.keys(VIDEO_DATA).filter(d=>d>=start&&d<=end).forEach(d=>{ const m=vidDayMapBuild(d); FIVE.forEach(p=>{ vidPer[p]+=(m[p]||0); }); });
-  const P=Array.from(new Set([...FIVE, ...(S.employees||[])])).filter(p=> gsCityHas(p));
+  const P=gsAllPeople().filter(p=> gsCityHas(p));
   const aArr=[],bArr=[],cArr=[],vArr=[],mArr=[];
   P.forEach(p=>{
     let a=0,b=0,c=0;
